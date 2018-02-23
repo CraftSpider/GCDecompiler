@@ -1,0 +1,15 @@
+
+# Visual Studio
+.vs/
+*.sln
+*.vcxproj*
+
+# Build Folders
+*x64/
+*Debug/
+*Release/
+
+# ISO Files and Output
+*root/
+*dump/
+*.rel
