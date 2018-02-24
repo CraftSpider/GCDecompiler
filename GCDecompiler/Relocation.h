@@ -4,16 +4,10 @@
 #include <unordered_map>
 #include "Section.h"
 #include "Import.h"
-
-#define int unsigned int
+#include "RelType.h"
+#include "types.h"
 
 class Import;
-
-enum RelType {
-	R_PPC_NONE = 0, R_PPC_ADDR32 = 1, R_PPC_ADDR24 = 2, R_PPC_ADDR16 = 3, R_PPC_ADDR16_LO = 4,
-	R_PPC_ADDR16_HI = 5, R_PPC_ADDR16_HA = 6, R_PPC_ADDR14 = 7, R_PPC_REL24 = 10, R_PPC_REL14 = 11,
-	R_RVL_NONE = 201, R_RVL_SECT = 202, R_RVL_STOP = 203
-};
 
 const std::unordered_map<RelType, std::string> RelNames({
 	{R_PPC_NONE, "R_PPC_NONE"}, {R_PPC_ADDR32, "R_PPC_ADDR32"}, {R_PPC_ADDR24, "R_PPC_ADDR24"},
@@ -23,21 +17,19 @@ const std::unordered_map<RelType, std::string> RelNames({
 });
 
 class Relocation {
-	int dest_offset;
+	uint dest_offset;
 	Section *src_section, *dest_section;
 	Import *import;
 
 public:
-	int position, prev_offset, relative_offset;
+	uint position, prev_offset, relative_offset;
 	RelType type;
 
-	Relocation(Import *import, int position, int relative_offset, int prev_offset, int dest_offset, RelType type, Section *src_section, Section *dest_section);
-	int get_src_offset();
-	int get_dest_offset();
+	Relocation(Import *import, uint position, uint relative_offset, uint prev_offset, uint dest_offset, RelType type, Section *src_section, Section *dest_section);
+	uint get_src_offset();
+	uint get_dest_offset();
 	Section get_src_section();
 	Section get_dest_section();
 	Import get_import();
 
 };
-
-#undef int

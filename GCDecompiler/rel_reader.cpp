@@ -7,41 +7,40 @@
 #include <sstream>
 #include <iomanip>
 #include "rel_reader.h"
-
-#define int unsigned int
+#include "types.h"
 
 using std::string;
 using std::ios;
 using std::vector;
 using std::endl;
 
-int btoi(char *bytes, int len) {
-	int out = 0;
-	for (int i = 0; i < len; i++) {
+uint btoi(char *bytes, uint len) {
+	uint out = 0;
+	for (uint i = 0; i < len; i++) {
 		out += bytes[i] << (8 * (len - i - 1));
 	}
 	return out;
 }
 
-const char* itob(int num, int length = 4) {
+const char* itob(uint num, uint length = 4) {
 	char *output = new char [length]();
-	for (int i = 0; i < length; i++) {
+	for (uint i = 0; i < length; i++) {
 		output[i] = num >> (8 * (length - i - 1));
 	}
 	return output;
 }
 
-string itoh(int num) {
+string itoh(uint num) {
 	std::stringstream out;
 	out << "0x";
 	out << std::hex << std::uppercase << num;
 	return out.str();
 }
 
-int next_int(std::fstream *file, int length) {
+uint next_int(std::fstream *file, uint length) {
 	char *input = new char [length]();
 	file->read(input, length);
-	int out = btoi(input, length);
+	uint out = btoi(input, length);
 	delete[] input;
 	return out;
 }
@@ -53,15 +52,15 @@ REL::REL(string filename) {
 	// Read in Header File
 	this->id = next_int(file, 4);
 	file->seekg(8, ios::cur); // Skip over the next and previous module values
-	int num_sections = next_int(file , 4);
-	int section_offset = next_int(file, 4);
+	uint num_sections = next_int(file , 4);
+	uint section_offset = next_int(file, 4);
 	this->name_offset = next_int(file, 4);
 	this->name_size = next_int(file, 4);
 	this->version = next_int(file, 4);
 	this->bss_size = next_int(file, 4);
 	file->seekg(4, ios::cur); // Because we don't need to know the relocation offset
-	int import_offset = next_int(file, 4);
-	int num_imports = next_int(file, 4) / 8; // Convert length of imports to number of imports
+	uint import_offset = next_int(file, 4);
+	uint num_imports = next_int(file, 4) / 8; // Convert length of imports to number of imports
 	this->prolog_section = next_int(file, 1);
 	this->epilog_section = next_int(file, 1);
 	this->unresolved_section = next_int(file, 1);
@@ -80,11 +79,11 @@ REL::REL(string filename) {
 
 	// Read in Section table
 	file->seekg(section_offset, ios::beg);
-	for (int i = 0; i < num_sections; i++) {
-		int offset = next_int(file, 4);
+	for (uint i = 0; i < num_sections; i++) {
+		uint offset = next_int(file, 4);
 		bool exec = offset & 1;
 		offset = offset >> 1 << 1;
-		int length = next_int(file, 4);
+		uint length = next_int(file, 4);
 		this->sections.push_back(Section(i, offset, exec, length));
 	}
 
@@ -100,9 +99,9 @@ REL::REL(string filename) {
 
 	// Read in Import table
 	file->seekg(import_offset, ios::beg);
-	for (int i = 0; i < num_imports; i++) {
-		int module_id = next_int(file, 4);
-		int offset = next_int(file, 4);
+	for (uint i = 0; i < num_imports; i++) {
+		uint module_id = next_int(file, 4);
+		uint offset = next_int(file, 4);
 		this->imports.push_back(Import(module_id, offset));
 	}
 
@@ -111,26 +110,26 @@ REL::REL(string filename) {
 		file->seekg(imp->offset, ios::beg);
 		RelType rel_type = RelType(0);
 		while (rel_type != R_RVL_STOP) {
-			int position = file->tellg();
-			int prev_offset = next_int(file, 2);
+			uint position = file->tellg();
+			uint prev_offset = next_int(file, 2);
 			rel_type = RelType(next_int(file, 1));
 			Section *section = &this->sections.at(next_int(file, 1));
-			int rel_offset = next_int(file, 4);
+			uint rel_offset = next_int(file, 4);
 			imp->add_relocation(rel_type, position, rel_offset, prev_offset, section);
 		}
 	}
 }
 
-int REL::num_sections() {
+uint REL::num_sections() {
 	return this->sections.size();
 }
 
-int REL::num_imports() {
+uint REL::num_imports() {
 	return this->imports.size();
 }
 
-int REL::num_relocations() {
-	int out = 0;
+uint REL::num_relocations() {
+	uint out = 0;
 	for (vector<Import>::iterator imp = this->imports.begin(); imp != imports.end(); imp++) {
 		out += imp->instructions.size();
 	}
@@ -195,7 +194,7 @@ void REL::compile(string filename) {
 
 	// Write Section Table to the file
 	out.seekp(this->section_offset(), ios::beg);
-	for (int i = 0; i < this->num_sections(); i++) {
+	for (uint i = 0; i < this->num_sections(); i++) {
 		Section section = this->sections.at(i);
 		out.write(itob(section.offset | (int)section.exec), 4); // Add exec bit back in
 		out.write(itob(section.length), 4);
@@ -211,7 +210,7 @@ void REL::compile(string filename) {
 
 	// Write the Import Table
 	out.seekp(this->import_offset(), ios::beg);
-	for (int i = 0; i < this->num_imports(); i++) {
+	for (uint i = 0; i < this->num_imports(); i++) {
 		Import imp = this->imports.at(i);
 		out.write(itob(imp.module), 4);
 		out.write(itob(imp.offset), 4);
@@ -220,7 +219,7 @@ void REL::compile(string filename) {
 	// Write the Relocation Instructions
 	for (vector<Import>::iterator imp = this->imports.begin(); imp != this->imports.end(); imp++) {
 		out.seekp(imp->offset, ios::beg);
-		int loc = out.tellp();
+		uint loc = out.tellp();
 		for (vector<Relocation>::iterator reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
 			out.write(itob(reloc->prev_offset, 2), 2);
 			out.write(itob(reloc->type, 1), 1);

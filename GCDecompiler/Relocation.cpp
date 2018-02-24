@@ -1,9 +1,8 @@
 
 #include "Relocation.h"
+#include "types.h"
 
-#define int unsigned int
-
-Relocation::Relocation(Import *import, int position, int relative_offset, int prev_offset, int dest_offset, RelType type, Section *src_section, Section *dest_section) {
+Relocation::Relocation(Import *import, uint position, uint relative_offset, uint prev_offset, uint dest_offset, RelType type, Section *src_section, Section *dest_section) {
 	this->import = import;
 	this->position = position;
 	this->relative_offset = relative_offset;
@@ -14,11 +13,11 @@ Relocation::Relocation(Import *import, int position, int relative_offset, int pr
 	this->dest_section = dest_section;
 }
 
-int Relocation::get_dest_offset() {
+uint Relocation::get_dest_offset() {
 	return this->dest_offset;
 }
 
-int Relocation::get_src_offset() {
+uint Relocation::get_src_offset() {
 	if (this->import->module == 0) {
 		return this->relative_offset;
 	}
