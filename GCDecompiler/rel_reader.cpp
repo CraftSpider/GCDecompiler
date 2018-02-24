@@ -54,13 +54,13 @@ REL::REL(string filename) {
 	this->id = next_int(file, 4);
 	file->seekg(8, ios::cur); // Skip over the next and previous module values
 	int num_sections = next_int(file , 4);
-	this->section_offset = next_int(file, 4);
+	int section_offset = next_int(file, 4);
 	this->name_offset = next_int(file, 4);
 	this->name_size = next_int(file, 4);
 	this->version = next_int(file, 4);
 	this->bss_size = next_int(file, 4);
-	this->relocation_offset = next_int(file, 4);
-	this->import_offset = next_int(file, 4);
+	file->seekg(4, ios::cur); // Because we don't need to know the relocation offset
+	int import_offset = next_int(file, 4);
 	int num_imports = next_int(file, 4) / 8; // Convert length of imports to number of imports
 	this->prolog_section = next_int(file, 1);
 	this->epilog_section = next_int(file, 1);
@@ -79,7 +79,7 @@ REL::REL(string filename) {
 	this->header_size = (int)file->tellg();
 
 	// Read in Section table
-	file->seekg(this->section_offset, ios::beg);
+	file->seekg(section_offset, ios::beg);
 	for (int i = 0; i < num_sections; i++) {
 		int offset = next_int(file, 4);
 		bool exec = offset & 1;
@@ -99,7 +99,7 @@ REL::REL(string filename) {
 	}
 
 	// Read in Import table
-	file->seekg(this->import_offset, ios::beg);
+	file->seekg(import_offset, ios::beg);
 	for (int i = 0; i < num_imports; i++) {
 		int module_id = next_int(file, 4);
 		int offset = next_int(file, 4);
@@ -137,6 +137,31 @@ int REL::num_relocations() {
 	return out;
 }
 
+int REL::section_offset() {
+	return header_size;
+}
+
+int REL::import_offset() {
+	int out = this->relocation_offset();
+	for (vector<Import>::iterator imp = this->imports.begin(); imp != imports.end(); imp++) {
+		out += imp->instructions.size() * 8;
+	}
+	return out;
+}
+
+int REL::relocation_offset() {
+	int out = 0;
+	out += this->header_size;
+	out += this->num_sections() * 8;
+	for (vector<Section>::iterator section = this->sections.begin(); section != this->sections.end(); section++) {
+		if (section->offset != 0) {
+			out += section->length;
+		}
+	}
+	out += 16;
+	return out;
+}
+
 void REL::compile(string filename) {
 	std::fstream out(filename, ios::out | ios::binary);
 	// Recalculate any necessary numbers for offsets
@@ -145,13 +170,13 @@ void REL::compile(string filename) {
 	out.write(itob(this->id), 4);
 	out.write(new char[8](), 8); // Padding for Prev and Next module addresses.
 	out.write(itob(this->num_sections()), 4);
-	out.write(itob(this->section_offset), 4);
+	out.write(itob(this->section_offset()), 4);
 	out.write(itob(this->name_offset), 4);
 	out.write(itob(this->name_size), 4);
 	out.write(itob(this->version), 4);
 	out.write(itob(this->bss_size), 4);
-	out.write(itob(this->relocation_offset), 4);
-	out.write(itob(this->import_offset), 4);
+	out.write(itob(this->relocation_offset()), 4);
+	out.write(itob(this->import_offset()), 4);
 	out.write(itob(this->num_imports() * 8), 4); // Convert number of imports to length of imports
 	out.write(itob(this->prolog_section, 1), 1);
 	out.write(itob(this->epilog_section, 1), 1);
@@ -169,6 +194,7 @@ void REL::compile(string filename) {
 	}
 
 	// Write Section Table to the file
+	out.seekp(this->section_offset(), ios::beg);
 	for (int i = 0; i < this->num_sections(); i++) {
 		Section section = this->sections.at(i);
 		out.write(itob(section.offset | (int)section.exec), 4); // Add exec bit back in
@@ -184,7 +210,7 @@ void REL::compile(string filename) {
 	}
 
 	// Write the Import Table
-	out.seekp(this->import_offset, ios::beg);
+	out.seekp(this->import_offset(), ios::beg);
 	for (int i = 0; i < this->num_imports(); i++) {
 		Import imp = this->imports.at(i);
 		out.write(itob(imp.module), 4);
@@ -212,11 +238,11 @@ string REL::dump_header() {
 	out << "  Name Offset: " << itoh(this->name_offset) << endl;
 	out << "  Name Size: " << itoh(this->name_size) << endl;
 	out << "  .bss Size: " << itoh(this->bss_size) << endl;
-	out << "  Sections Start: " << itoh(this->section_offset) << endl;
+	out << "  Sections Start: " << itoh(this->section_offset()) << endl;
 	out << "  Num Sections: " << this->num_sections() << endl;
-	out << "  Import Start: " << itoh(this->import_offset) << endl;
+	out << "  Import Start: " << itoh(this->import_offset()) << endl;
 	out << "  Num Imports: " << this->num_imports() << endl;
-	out << "  Relocation Start: " << itoh(this->relocation_offset) << endl;
+	out << "  Relocation Start: " << itoh(this->relocation_offset()) << endl;
 	out << "  Num Relocations: " << this->num_relocations() << endl;
 	out << "  Prolog Index: " << this->prolog_section << endl;
 	out << "  Prolog Offset: " << itoh(this->prolog_offset) << endl;
