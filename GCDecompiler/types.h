@@ -1,3 +1,4 @@
 #pragma once
+#include <cstdint>
 
-typedef unsigned int uint;
+typedef std::uint32_t uint;
