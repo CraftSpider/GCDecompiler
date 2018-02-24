@@ -1,15 +1,14 @@
 
 #include "Import.h"
+#include "types.h"
 
-#define int unsigned int
-
-Import::Import(int module, int offset) {
+Import::Import(uint module, uint offset) {
 	this->module = module;
 	this->offset = offset;
 	this->section = nullptr;
 }
 
-void Import::add_relocation(RelType type, int position, int relative_offset, int prev_offset, Section *src_section) {
+void Import::add_relocation(RelType type, uint position, uint relative_offset, uint prev_offset, Section *src_section) {
 	if (type == R_RVL_SECT) {
 		this->pointer = src_section->offset;
 		this->section = src_section;

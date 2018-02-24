@@ -1,17 +1,15 @@
 #pragma once
 
-#define int unsigned int
+#include "types.h"
 
 class Section {
 public:
-	int id, offset, length;
+	uint id, offset, length;
 	bool exec;
 	char *data;
 
-	Section(int id, int offset, bool exec, int length);
-	int get_start();
-	int get_end();
-	int *get_range();
+	Section(uint id, uint offset, bool exec, uint length);
+	uint get_start();
+	uint get_end();
+	uint *get_range();
 };
-
-#undef int
