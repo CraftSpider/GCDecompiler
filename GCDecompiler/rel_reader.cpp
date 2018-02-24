@@ -136,11 +136,11 @@ uint REL::num_relocations() {
 	return out;
 }
 
-int REL::section_offset() {
+uint REL::section_offset() {
 	return header_size;
 }
 
-int REL::import_offset() {
+uint REL::import_offset() {
 	int out = this->relocation_offset();
 	for (vector<Import>::iterator imp = this->imports.begin(); imp != imports.end(); imp++) {
 		out += imp->instructions.size() * 8;
@@ -148,7 +148,7 @@ int REL::import_offset() {
 	return out;
 }
 
-int REL::relocation_offset() {
+uint REL::relocation_offset() {
 	int out = 0;
 	out += this->header_size;
 	out += this->num_sections() * 8;
