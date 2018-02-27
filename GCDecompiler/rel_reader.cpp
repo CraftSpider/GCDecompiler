@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <cstring>
 #include "rel_reader.h"
 #include "types.h"
 
@@ -364,7 +365,7 @@ int main(int argc, char *argv[]) {
 			std::cout << "Dumping REL" << endl;
 			rel.dump_all(output);
 			std::cout << "REL dump complete" << endl;
-		} else if (!std::strcmp(argv[0], "recompile")) {
+		} else if (!std::strcmp(argv[1], "recompile")) {
 			std::cout << "Recompiling REL" << endl;
 			rel.compile(output);
 			std::cout << "REL recompile complete" << endl;
