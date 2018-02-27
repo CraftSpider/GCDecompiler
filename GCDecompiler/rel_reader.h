@@ -29,11 +29,11 @@ public:
 
 	void compile(string filename);
 
-	string dump_header();
+	string dump_header(int pad_len = 0);
 	void dump_header(string filename);
-	string dump_sections();
+	string dump_sections(int pad_len = 0);
 	void dump_sections(string filename);
-	string dump_imports();
+	string dump_imports(int pad_len = 0);
 	void dump_imports(string filename);
 	string dump_all();
 	void dump_all(string filename);

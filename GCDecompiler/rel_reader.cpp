@@ -7,7 +7,10 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <Windows.h>
+#include "utils.h"
 #include "rel_reader.h"
+#include "ppc_reader.h"
 #include "types.h"
 
 using std::string;
@@ -15,43 +18,6 @@ using std::ios;
 using std::vector;
 using std::endl;
 
-uint btoi(char *bytes, uint len) {
-	uint out = 0;
-	for (uint i = 0; i < len; i++) {
-		out += bytes[i] << (8 * (len - i - 1));
-	}
-	return out;
-}
-
-const char* itob(uint num, uint length = 4) {
-	char *output = new char [length]();
-	for (uint i = 0; i < length; i++) {
-		output[i] = num >> (8 * (length - i - 1));
-	}
-	return output;
-}
-
-string itoh(uint num) {
-	std::stringstream out;
-	out << "0x";
-	out << std::hex << std::uppercase << num;
-	return out.str();
-}
-
-uint next_int(std::fstream *file, uint length) {
-	char *input = new char [length]();
-	file->read(input, length);
-	uint out = btoi(input, length);
-	delete[] input;
-	return out;
-}
-
-void write_int(std::fstream *file, uint num, uint length = 4) {
-	const char *to_write;
-	to_write = itob(num, length);
-	file->write(to_write, length);
-	delete[] to_write;
-}
 
 REL::REL(string filename) {
 	std::fstream file_r (filename, ios::binary | ios::in);
@@ -118,7 +84,7 @@ REL::REL(string filename) {
 		file->seekg(imp->offset, ios::beg);
 		RelType rel_type = RelType(0);
 		while (rel_type != R_RVL_STOP) {
-			uint position = file->tellg();
+			uint position = (uint)file->tellg();
 			uint prev_offset = next_int(file, 2);
 			rel_type = RelType(next_int(file, 1));
 			Section *section = &this->sections.at(next_int(file, 1));
@@ -129,17 +95,17 @@ REL::REL(string filename) {
 }
 
 uint REL::num_sections() {
-	return this->sections.size();
+	return (uint)this->sections.size();
 }
 
 uint REL::num_imports() {
-	return this->imports.size();
+	return (uint)this->imports.size();
 }
 
 uint REL::num_relocations() {
 	uint out = 0;
 	for (vector<Import>::iterator imp = this->imports.begin(); imp != imports.end(); imp++) {
-		out += imp->instructions.size();
+		out += (uint)imp->instructions.size();
 	}
 	return out;
 }
@@ -151,7 +117,7 @@ uint REL::section_offset() {
 uint REL::import_offset() {
 	int out = this->relocation_offset();
 	for (vector<Import>::iterator imp = this->imports.begin(); imp != imports.end(); imp++) {
-		out += imp->instructions.size() * 8;
+		out += (uint)imp->instructions.size() * 8;
 	}
 	return out;
 }
@@ -170,11 +136,13 @@ uint REL::relocation_offset() {
 }
 
 void REL::compile(string filename) {
+	std::cout << "Compiling REL file " << this->id << endl;
 	std::fstream out_r(filename, ios::out | ios::binary);
 	std::fstream *out = &out_r;
 	// Recalculate any necessary numbers for offsets
 
 	// Write Header to the file
+	std::cout << "  Writing header" << endl;
 	write_int(out, this->id);
 	write_int(out, 0, 8); // Padding for Prev and Next module addresses.
 	write_int(out, this->num_sections());
@@ -202,6 +170,7 @@ void REL::compile(string filename) {
 	}
 
 	// Write Section Table to the file
+	std::cout << "  Writing section table" << endl;
 	out->seekp(this->section_offset(), ios::beg);
 	for (uint i = 0; i < this->num_sections(); i++) {
 		Section section = this->sections.at(i);
@@ -210,6 +179,7 @@ void REL::compile(string filename) {
 	}
 
 	// Write actual sections to the file
+	std::cout << "  Writing section data" << endl;
 	for (vector<Section>::iterator section = this->sections.begin(); section != this->sections.end(); section++) {
 		if (section->offset != 0) {
 			out->seekp(section->offset, ios::beg);
@@ -218,6 +188,7 @@ void REL::compile(string filename) {
 	}
 
 	// Write the Import Table
+	std::cout << "  Writing import table" << endl;
 	out->seekp(this->import_offset(), ios::beg);
 	for (uint i = 0; i < this->num_imports(); i++) {
 		Import imp = this->imports.at(i);
@@ -226,9 +197,10 @@ void REL::compile(string filename) {
 	}
 
 	// Write the Relocation Instructions
+	std::cout << "  Writing relocation instructions" << endl;
 	for (vector<Import>::iterator imp = this->imports.begin(); imp != this->imports.end(); imp++) {
 		out->seekp(imp->offset, ios::beg);
-		uint loc = out->tellp();
+		uint loc = (uint)out->tellp();
 		for (vector<Relocation>::iterator reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
 			write_int(out, reloc->prev_offset, 2);
 			write_int(out, reloc->type, 1);
@@ -236,9 +208,12 @@ void REL::compile(string filename) {
 			write_int(out, reloc->relative_offset);
 		}
 	}
+	std::cout << "REL compile complete" << endl;
 }
 
-string REL::dump_header() {
+string REL::dump_header(int pad_len) {
+	string padding(pad_len, ' ');
+	std::cout << padding << "Dumping Header" << endl;
 	std::stringstream out;
 	out << "REL Header:" << endl;
 	out << "  ID: " << this->id << endl;
@@ -273,7 +248,9 @@ void REL::dump_header(string filename) {
 	out << this->dump_header();
 }
 
-string REL::dump_sections() {
+string REL::dump_sections(int pad_len) {
+	string padding(pad_len, ' ');
+	std::cout << padding << "Dumping Sections" << endl;
 	std::stringstream out;
 	out << "Section Table:" << endl;
 	for (vector<Section>::iterator section = this->sections.begin(); section != sections.end(); section++) {
@@ -293,10 +270,13 @@ void REL::dump_sections(string filename) {
 	out << this->dump_sections();
 }
 
-string REL::dump_imports() {
+string REL::dump_imports(int pad_len) {
+	string padding(pad_len, ' ');
+	std::cout << padding << "Dumping Imports" << endl;
 	std::stringstream out;
 	out << "Import Table:" << endl;
 	for (vector<Import>::iterator imp = this->imports.begin(); imp != this->imports.end(); imp++) {
+		std::cout << padding << "  Dumping Import " << imp->module << endl;
 		out << "  Import:" << endl;
 		out << "    Module: " << imp->module << endl;
 		out << "    Offset: " << itoh(imp->offset) << endl;
@@ -334,15 +314,22 @@ string REL::dump_all() {
 }
 
 void REL::dump_all(string filename) {
+	std::cout << "Dumping REL file" << endl;
 	std::fstream out(filename, ios::out);
-	out << this->dump_header() << endl;
-	out << this->dump_sections() << endl;
-	out << this->dump_imports() << endl;
+	out << this->dump_header(2) << endl;
+	out << this->dump_sections(2) << endl;
+	out << this->dump_imports(2) << endl;
+	std::cout << "REL dump complete" << endl;
 }
 
 int main(int argc, char *argv[]) {
+
+	//PPC::decompile("C:\\ProgrammingFiles\\GCDecompiler\\GCDecompiler\\root\\mkb2.main_loop.rel", "C:\\ProgrammingFiles\\GCDecompiler\\Debug\\out.dsm", 0xD8, 0x16D500);
+	//return 0;
+
 	if (argc == 1) {
-		std::cout << "Usage:" << endl << "GCDecompiler dump <file in> [file out]" << endl;
+		std::cout << "Usage:" << endl;
+		std::cout << "GCDecompiler dump <file in> [directory out]" << endl;
 		std::cout << "GCDecompiler recompile <file in> [file out]" << endl;
 	} else if (argc == 2) {
 		std::cout << "Need a file in parameter";
@@ -352,22 +339,27 @@ int main(int argc, char *argv[]) {
 			output = argv[3];
 		} else {
 			if (!std::strcmp(argv[1], "dump")) {
-				output = "dump.txt";
+				output = "dump";
 			} else if (!std::strcmp(argv[1], "recompile")) {
 				output = "recomp.rel";
 			}
 		}
-
 		REL rel(argv[2]);
 		if (!std::strcmp(argv[1], "dump")) {
-			std::cout << argv[2] << endl;
-			std::cout << "Dumping REL" << endl;
-			rel.dump_all(output);
-			std::cout << "REL dump complete" << endl;
+			const char *path = output.c_str();
+			//CreateDirectory(path, nullptr);
+			rel.dump_header(output + "\\header.txt");
+			rel.dump_sections(output + "\\sections.txt");
+			rel.dump_imports(output + "\\imports.txt");
+			for (vector<Section>::iterator sect = rel.sections.begin(); sect != rel.sections.end(); sect++) {
+				if (sect->exec && sect->offset) {
+					std::stringstream name;
+					name << output << "\\Section" << sect->id << ".ppc";
+					PPC::decompile(argv[2], name.str(), sect->offset, sect->offset + sect->length);
+				}
+			}
 		} else if (!std::strcmp(argv[0], "recompile")) {
-			std::cout << "Recompiling REL" << endl;
 			rel.compile(output);
-			std::cout << "REL recompile complete" << endl;
 		} else {
 			std::cout << "Unrecognized Operation" << endl;
 		}
