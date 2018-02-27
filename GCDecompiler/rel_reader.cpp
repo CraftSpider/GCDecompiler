@@ -9,6 +9,7 @@
 #include <iostream>
 #include <Windows.h>
 #include "utils.h"
+#include <cstring>
 #include "rel_reader.h"
 #include "ppc_reader.h"
 #include "types.h"
@@ -358,7 +359,7 @@ int main(int argc, char *argv[]) {
 					PPC::decompile(argv[2], name.str(), sect->offset, sect->offset + sect->length);
 				}
 			}
-		} else if (!std::strcmp(argv[0], "recompile")) {
+		} else if (!std::strcmp(argv[1], "recompile")) {
 			rel.compile(output);
 		} else {
 			std::cout << "Unrecognized Operation" << endl;
