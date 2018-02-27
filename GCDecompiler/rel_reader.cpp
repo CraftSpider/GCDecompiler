@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <cstring>
 #include "rel_reader.h"
 #include "types.h"
 
