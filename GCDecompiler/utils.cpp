@@ -3,6 +3,12 @@
 #include <fstream>
 #include <sstream>
 #include "types.h"
+#if defined(_WIN32) || defined(WIN32)
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <sys/stat.h>
+#endif
 
 uint btoi(char *bytes, uint len) {
 	uint out = 0;
@@ -60,4 +66,13 @@ void write_int(std::fstream *file, uint num, uint length = 4) {
 	to_write = itob(num, length);
 	file->write(to_write, length);
 	delete[] to_write;
+}
+
+void create_directory(std::string name) {
+	const char *path = name.c_str();
+	#if defined(_WIN32) || defined(WIN32)
+	CreateDirectory(path, nullptr);
+	#else
+	mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	#endif
 }

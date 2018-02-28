@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 #include "types.h"
 #include "utils.h"
 
