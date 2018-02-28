@@ -27,6 +27,8 @@ set(SOURCE_FILES
     ./GCDecompiler/rel_reader.cpp
     ./GCDecompiler/Relocation.cpp
     ./GCDecompiler/Section.cpp
+    ./GCDecompiler/utils.cpp
+    ./GCDecompiler/ppc_reader.cpp
     )
 
 set(HEADER_FILES
@@ -34,6 +36,8 @@ set(HEADER_FILES
     ./GCDecompiler/rel_reader.h
     ./GCDecompiler/Relocation.h
     ./GCDecompiler/Section.h
+    ./GCDecompiler/utils.h
+    ./GCDecompiler/ppc_reader.h
     ./GCDecompiler/types.h
     )
 
