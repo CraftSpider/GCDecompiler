@@ -7,7 +7,13 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+
+#if defined(_WIN32) || defined(WIN32)
 #include <Windows.h>
+#else
+#include <sys/stat.h>
+#endif
+
 #include "utils.h"
 #include <cstring>
 #include "rel_reader.h"
@@ -348,14 +354,20 @@ int main(int argc, char *argv[]) {
 		REL rel(argv[2]);
 		if (!std::strcmp(argv[1], "dump")) {
 			const char *path = output.c_str();
-			//CreateDirectory(path, nullptr);
-			rel.dump_header(output + "\\header.txt");
-			rel.dump_sections(output + "\\sections.txt");
-			rel.dump_imports(output + "\\imports.txt");
+
+			#if defined(_WIN32) || defined(WIN32)
+			CreateDirectory(path, nullptr);
+			#else
+			mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+			#endif
+
+			rel.dump_header(output + "/header.txt");
+			rel.dump_sections(output + "/sections.txt");
+			rel.dump_imports(output + "/imports.txt");
 			for (vector<Section>::iterator sect = rel.sections.begin(); sect != rel.sections.end(); sect++) {
 				if (sect->exec && sect->offset) {
 					std::stringstream name;
-					name << output << "\\Section" << sect->id << ".ppc";
+					name << output << "/Section" << sect->id << ".ppc";
 					PPC::decompile(argv[2], name.str(), sect->offset, sect->offset + sect->length);
 				}
 			}
