@@ -67,3 +67,12 @@ void write_int(std::fstream *file, uint num, uint length) {
 	file->write(to_write, length);
 	delete[] to_write;
 }
+
+void create_directory(std::string name) {
+	const char *path = name.c_str();
+	#if defined(_WIN32) || defined(WIN32)
+	CreateDirectory(path, nullptr);
+	#else
+	mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	#endif
+}

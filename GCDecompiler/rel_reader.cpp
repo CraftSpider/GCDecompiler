@@ -14,7 +14,6 @@
 #include "ppc_reader.h"
 #include "types.h"
 
-using std::experimental::filesystem::create_directory;
 using std::string;
 using std::ios;
 using std::vector;
