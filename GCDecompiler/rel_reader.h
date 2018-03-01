@@ -39,3 +39,14 @@ public:
 	void dump_all(string filename);
 
 };
+
+class DOL {
+
+public:
+	uint entry_offset;
+
+	std::vector<Section> sections;
+
+	DOL(string filename);
+
+};

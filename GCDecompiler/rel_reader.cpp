@@ -7,8 +7,8 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
-#include "utils.h"
 #include <cstring>
+#include "utils.h"
 #include "rel_reader.h"
 #include "ppc_reader.h"
 #include "types.h"
@@ -19,45 +19,64 @@ using std::vector;
 using std::endl;
 
 
-REL::REL(string filename) {
-	std::fstream file_r (filename, ios::binary | ios::in);
+DOL::DOL(string filename) {
+	std::fstream file_r(filename, ios::binary | ios::in);
 	std::fstream *file = &file_r;
 
-	// Read in Header File
-	this->id = next_int(file, 4);
+	// Read in file Header
+	std::vector<uint> text_offsets;
+	std::vector<uint> data_offsets;
+
+	for (int i = 0; i < 7; i++) {
+		text_offsets.push_back(next_int(file));
+		std::cout << text_offsets.back() << endl;
+	}
+	for (int i = 0; i < 11; i++) {
+		data_offsets.push_back(next_int(file));
+		std::cout << data_offsets.back() << endl;
+	}
+
+}
+
+REL::REL(string filename) {
+	std::fstream file_r(filename, ios::binary | ios::in);
+	std::fstream *file = &file_r;
+
+	// Read in file Header
+	this->id = next_int(file);
 	file->seekg(8, ios::cur); // Skip over the next and previous module values
-	uint num_sections = next_int(file , 4);
-	uint section_offset = next_int(file, 4);
-	this->name_offset = next_int(file, 4);
-	this->name_size = next_int(file, 4);
-	this->version = next_int(file, 4);
-	this->bss_size = next_int(file, 4);
+	uint num_sections = next_int(file);
+	uint section_offset = next_int(file);
+	this->name_offset = next_int(file);
+	this->name_size = next_int(file);
+	this->version = next_int(file);
+	this->bss_size = next_int(file);
 	file->seekg(4, ios::cur); // Because we don't need to know the relocation offset
-	uint import_offset = next_int(file, 4);
-	uint num_imports = next_int(file, 4) / 8; // Convert length of imports to number of imports
+	uint import_offset = next_int(file);
+	uint num_imports = next_int(file) / 8; // Convert length of imports to number of imports
 	this->prolog_section = next_int(file, 1);
 	this->epilog_section = next_int(file, 1);
 	this->unresolved_section = next_int(file, 1);
 	file->seekg(1, ios::cur); // Skip padding
-	this->prolog_offset = next_int(file, 4);
-	this->epilog_offset = next_int(file, 4);
-	this->unresolved_offset = next_int(file, 4);
+	this->prolog_offset = next_int(file);
+	this->epilog_offset = next_int(file);
+	this->unresolved_offset = next_int(file);
 	if (this->version >= 2) {
-		this->align = next_int(file, 4);
-		this->bss_align = next_int(file, 4);
+		this->align = next_int(file);
+		this->bss_align = next_int(file);
 	}
 	if (this->version >= 3) {
-		this->fix_size = next_int(file, 4);
+		this->fix_size = next_int(file);
 	}
 	this->header_size = (int)file->tellg();
 
 	// Read in Section table
 	file->seekg(section_offset, ios::beg);
 	for (uint i = 0; i < num_sections; i++) {
-		uint offset = next_int(file, 4);
+		uint offset = next_int(file);
 		bool exec = offset & 1;
 		offset = offset >> 1 << 1;
-		uint length = next_int(file, 4);
+		uint length = next_int(file);
 		this->sections.push_back(Section(i, offset, exec, length));
 	}
 
@@ -74,8 +93,8 @@ REL::REL(string filename) {
 	// Read in Import table
 	file->seekg(import_offset, ios::beg);
 	for (uint i = 0; i < num_imports; i++) {
-		uint module_id = next_int(file, 4);
-		uint offset = next_int(file, 4);
+		uint module_id = next_int(file);
+		uint offset = next_int(file);
 		this->imports.push_back(Import(module_id, offset));
 	}
 
@@ -88,7 +107,7 @@ REL::REL(string filename) {
 			uint prev_offset = next_int(file, 2);
 			rel_type = RelType(next_int(file, 1));
 			Section *section = &this->sections.at(next_int(file, 1));
-			uint rel_offset = next_int(file, 4);
+			uint rel_offset = next_int(file);
 			imp->add_relocation(rel_type, position, rel_offset, prev_offset, section);
 		}
 	}
@@ -200,7 +219,6 @@ void REL::compile(string filename) {
 	std::cout << "  Writing relocation instructions" << endl;
 	for (vector<Import>::iterator imp = this->imports.begin(); imp != this->imports.end(); imp++) {
 		out->seekp(imp->offset, ios::beg);
-		uint loc = (uint)out->tellp();
 		for (vector<Relocation>::iterator reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
 			write_int(out, reloc->prev_offset, 2);
 			write_int(out, reloc->type, 1);
@@ -324,8 +342,8 @@ void REL::dump_all(string filename) {
 
 int main(int argc, char *argv[]) {
 
-	//PPC::decompile("C:\\ProgrammingFiles\\GCDecompiler\\GCDecompiler\\root\\mkb2.main_loop.rel", "C:\\ProgrammingFiles\\GCDecompiler\\Debug\\out.dsm", 0xD8, 0x16D500);
-	//return 0;
+	DOL dol("C:/ProgrammingFiles/GCDecompiler/GCDecompiler/root/&&systemdata/Start.dol");
+	return 0;
 
 	if (argc == 1) {
 		std::cout << "Usage:" << endl;
@@ -359,6 +377,8 @@ int main(int argc, char *argv[]) {
 			}
 		} else if (!std::strcmp(argv[1], "recompile")) {
 			rel.compile(output);
+		} else if (!std::strcmp(argv[1], "dol")) {
+			DOL dol(argv[2]);
 		} else {
 			std::cout << "Unrecognized Operation" << endl;
 		}

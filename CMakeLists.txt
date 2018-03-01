@@ -45,3 +45,5 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "gcd")
+

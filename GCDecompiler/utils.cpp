@@ -61,7 +61,7 @@ uint next_int(std::fstream *file, uint length) {
 	return out;
 }
 
-void write_int(std::fstream *file, uint num, uint length = 4) {
+void write_int(std::fstream *file, uint num, uint length) {
 	const char *to_write;
 	to_write = itob(num, length);
 	file->write(to_write, length);

@@ -9,7 +9,7 @@
 
 class Import;
 
-const std::unordered_map<RelType, std::string> RelNames({
+const std::unordered_map<int, std::string> RelNames({
 	{R_PPC_NONE, "R_PPC_NONE"}, {R_PPC_ADDR32, "R_PPC_ADDR32"}, {R_PPC_ADDR24, "R_PPC_ADDR24"},
 	{R_PPC_ADDR16, "R_PPC_ADDR16"}, {R_PPC_ADDR16_LO, "R_PPC_ADDR16_LO"}, {R_PPC_ADDR16_HI, "R_PPC_ADDR16_HI"},
 	{R_PPC_ADDR16_HA, "R_PPC_ADDR16_HA"}, {R_PPC_ADDR14, "R_PPC_ADDR14"}, {R_PPC_REL24, "R_PPC_REL24"},
