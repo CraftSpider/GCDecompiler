@@ -6,7 +6,7 @@ configure_file("cmake/uninstall.cmake" "cmake/uninstall.cmake" COPYONLY)
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "cmake/uninstall.cmake")
 
 #Use C++ 11
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 #Export compile commands for editor autocomplete
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
