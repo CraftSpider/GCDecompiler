@@ -10,6 +10,10 @@ Section::Section(uint id, uint offset, bool exec, uint length) {
 	this->data = new char[length]();
 }
 
+Section::Section(uint id, uint offset, bool exec, uint length, uint address) : Section(id, offset, exec, length) {
+	this->address = address;
+}
+
 uint Section::get_start() {
 	return this->offset;
 }

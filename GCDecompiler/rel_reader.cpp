@@ -24,18 +24,60 @@ DOL::DOL(string filename) {
 	std::fstream *file = &file_r;
 
 	// Read in file Header
-	std::vector<uint> text_offsets;
-	std::vector<uint> data_offsets;
+	uint offset, address, size;
 
 	for (int i = 0; i < 7; i++) {
-		text_offsets.push_back(next_int(file));
-		std::cout << text_offsets.back() << endl;
-	}
-	for (int i = 0; i < 11; i++) {
-		data_offsets.push_back(next_int(file));
-		std::cout << data_offsets.back() << endl;
+		file->seekg(0x0 + i*4, ios::beg);
+		offset = next_int(file);
+		file->seekg(0x48 + i*4, ios::beg);
+		address = next_int(file);
+		file->seekg(0x90 + i*4, ios::beg);
+		size = next_int(file);
+		this->sections.push_back(Section(i, offset, true, size, address));
 	}
 
+	for (int i = 0; i < 11; i++) {
+		file->seekg(0x1C + i * 4, ios::beg);
+		offset = next_int(file);
+		file->seekg(0x64 + i * 4, ios::beg);
+		address = next_int(file);
+		file->seekg(0xAC + i * 4, ios::beg);
+		size = next_int(file);
+		this->sections.push_back(Section(i + 7, offset, false, size, address));
+	}
+
+	this->bss_address = next_int(file);
+	this->bss_size = next_int(file);
+	this->entry_offset = next_int(file);
+
+}
+
+string DOL::dump_all() {
+	std::cout << "Dumping DOL" << endl;
+	std::stringstream out;
+
+	out << "Header Data:" << endl;
+	out << "  BSS Address: " << itoh(this->bss_address) << endl;
+	out << "  BSS Size: " << itoh(this->bss_size) << endl;
+	out << "  Entry Point Offset: " << itoh(this->entry_offset) << endl;
+
+	out << "Section Table:" << endl;
+	for (vector<Section>::iterator section = this->sections.begin(); section != sections.end(); section++) {
+		out << "  Section " << section->id << ":" << endl;
+		out << "    Offset: " << itoh(section->offset) << endl;
+		out << "    Length: " << itoh(section->length) << endl;
+		if (section->offset > 0) {
+			out << "    Range: " << itoh(section->offset) << " - " << itoh(section->offset + section->length) << endl;
+		}
+		out << "    Address: " << itoh(section->address) << endl;
+		out << "    Executable: " << section->exec << endl;
+	}
+	return out.str();
+}
+
+void DOL::dump_all(string filename) {
+	std::fstream out(filename, ios::out);
+	out << this->dump_all();
 }
 
 REL::REL(string filename) {
@@ -342,28 +384,29 @@ void REL::dump_all(string filename) {
 
 int main(int argc, char *argv[]) {
 
-	DOL dol("C:/ProgrammingFiles/GCDecompiler/GCDecompiler/root/&&systemdata/Start.dol");
-	return 0;
-
 	if (argc == 1) {
 		std::cout << "Usage:" << endl;
-		std::cout << "GCDecompiler dump <file in> [directory out]" << endl;
-		std::cout << "GCDecompiler recompile <file in> [file out]" << endl;
+		std::cout << "gcd dump <file in> [directory out]" << endl;
+		std::cout << "gcd recompile <file in> [file out]" << endl;
+		std::cout << "gcd dol <file in> [directory out]" << endl;
 	} else if (argc == 2) {
-		std::cout << "Need a file in parameter";
+		std::cout << "Missing file input parameter";
 	} else {
 		string output = "out.txt";
 		if (argc > 3) {
 			output = argv[3];
 		} else {
 			if (!std::strcmp(argv[1], "dump")) {
-				output = "dump";
+				output = "rel_dump";
 			} else if (!std::strcmp(argv[1], "recompile")) {
 				output = "recomp.rel";
+			} else if (!std::strcmp(argv[1], "dol")) {
+				output = "dol_dump";
 			}
 		}
-		REL rel(argv[2]);
+		
 		if (!std::strcmp(argv[1], "dump")) {
+			REL rel(argv[2]);
 			create_directory(output);
 			rel.dump_header(output + "/header.txt");
 			rel.dump_sections(output + "/sections.txt");
@@ -376,9 +419,19 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		} else if (!std::strcmp(argv[1], "recompile")) {
+			REL rel(argv[2]);
 			rel.compile(output);
 		} else if (!std::strcmp(argv[1], "dol")) {
 			DOL dol(argv[2]);
+			create_directory(output);
+			dol.dump_all(output + "/dol.txt");
+			for (vector<Section>::iterator sect = dol.sections.begin(); sect != dol.sections.end(); sect++) {
+				if (sect->exec && sect->offset) {
+					std::stringstream name;
+					name << output << "/Section" << sect->id << ".ppc";
+					PPC::decompile(argv[2], name.str(), sect->offset, sect->offset + sect->length);
+				}
+			}
 		} else {
 			std::cout << "Unrecognized Operation" << endl;
 		}

@@ -22,7 +22,7 @@ namespace PPC {
 
 	char opcode;
 	int LI, r1, r2, r3, r4, r5, BD;
-	uint position, decider, e_decider, d, UIMM;
+	uint position, decider, e_decider, d, UIMM, crm;
 	int SIMM;
 	bool AA, LK, OE, RC, func_end, q1, q2, q3;
 	string i_type;
@@ -136,8 +136,13 @@ namespace PPC {
 		add_arg();
 	}
 
-	void arg_crf() {
+	void arg_crf1() {
 		stream << "crf" << get_range(7, 9);
+		add_arg();
+	}
+
+	void arg_crf2() {
+		stream << "crf" << get_range(12, 14);
 		add_arg();
 	}
 
@@ -169,6 +174,11 @@ namespace PPC {
 		add_arg();
 	}
 
+	void arg_SR() {
+		stream << get_range(13, 16);
+		add_arg();
+	}
+
 	void arg_dr2() {
 		stream << itoh(d) << "(r" << r2 << ")";
 		add_arg();
@@ -180,7 +190,7 @@ namespace PPC {
 	}
 
 	void decompile(string file_in, string file_out, int start = 0, int end = -1) {
-		std::cout << "Decompiling PPC" << endl;
+		std::cout << "Disassembling PPC" << endl;
 		std::fstream input(file_in, ios::in | ios::binary);
 		std::fstream output(file_out, ios::out);
 
@@ -218,13 +228,14 @@ namespace PPC {
 			AA = get_bit(31);
 			RC = LK = get_bit(32);
 			LI = get_range(7, 30);
-			SIMM = get_signed_range(17, 32);
 			r1 = get_range(7, 11);
 			r2 = get_range(12, 16);
 			r3 = get_range(17, 21);
 			r4 = get_range(22, 26);
 			r5 = get_range(27, 31);
 			BD = get_range(17, 30);
+			crm = get_range(13, 20);
+			SIMM = get_signed_range(17, 32);
 			d = UIMM = get_range(17, 32);
 
 			args.clear();
@@ -255,7 +266,7 @@ namespace PPC {
 				} else {
 					i_type = "cmplwi";
 				}
-				arg_crf();
+				arg_crf1();
 				if (get_bit(11)) {
 					stream << "1";
 					add_arg();
@@ -269,7 +280,7 @@ namespace PPC {
 				} else {
 					i_type = "cmpwi";
 				}
-				arg_crf();
+				arg_crf1();
 				if (get_bit(11)) {
 					stream << "1";
 					add_arg();
@@ -318,6 +329,7 @@ namespace PPC {
 				break;
 			case 17:
 				i_type = "sc";
+				add_arg();
 				break;
 			case 18:
 				i_type = "b";
@@ -335,6 +347,11 @@ namespace PPC {
 				break;
 			case 19:
 				switch (e_decider) {
+				case 0:
+					i_type = "mcrf";
+					arg_crf1();
+					arg_crf2();
+					break;
 				case 16:
 					i_type = "bclr";
 					if (r1 == 20) {
@@ -349,6 +366,14 @@ namespace PPC {
 						i_type += "l";
 					}
 					break;
+				case 50:
+					i_type = "rfi";
+					add_arg();
+					break;
+				case 150:
+					i_type = "isync";
+					add_arg();
+					break;
 				case 193:
 					i_type = "crxor";
 					if (r1 == r2 && r2 == r3) {
@@ -359,6 +384,12 @@ namespace PPC {
 						arg_crb2();
 						arg_crb3();
 					}
+					break;
+				case 257:
+					i_type = "crand";
+					arg_crb1();
+					arg_crb2();
+					arg_crb3();
 					break;
 				case 289:
 					i_type = "creqv";
@@ -433,9 +464,14 @@ namespace PPC {
 				break;
 			case 24:
 				i_type = "ori";
-				arg_r2();
-				arg_r1();
-				arg_UIMM();
+				if (r2 == 0 && r1 == 0 && UIMM == 0) {
+					i_type = "nop";
+					add_arg();
+				} else {
+					arg_r2();
+					arg_r1();
+					arg_UIMM();
+				}
 				break;
 			case 25:
 				i_type = "oris";
@@ -572,6 +608,17 @@ namespace PPC {
 					arg_r2();
 					arg_r3();
 					break;
+				case 200:
+					i_type = "subfze";
+					if (OE) {
+						i_type += "o";
+					}
+					if (RC) {
+						i_type += ".";
+					}
+					arg_r1();
+					arg_r2();
+					break;
 				case 202:
 					i_type = "addze";
 					if (OE) {
@@ -699,7 +746,7 @@ namespace PPC {
 						else {
 							i_type = "cmpw";
 						}
-						arg_crf();
+						arg_crf1();
 						if (get_bit(11)) {
 							stream << "1";
 							add_arg();
@@ -736,11 +783,16 @@ namespace PPC {
 						else {
 							i_type = "cmplw";
 						}
-						arg_crf();
+						arg_crf1();
 						if (get_bit(11)) {
 							stream << "1";
 							add_arg();
 						}
+						arg_r2();
+						arg_r3();
+						break;
+					case 54:
+						i_type = "dcbst";
 						arg_r2();
 						arg_r3();
 						break;
@@ -751,6 +803,15 @@ namespace PPC {
 						}
 						arg_r2();
 						arg_r1();
+						arg_r3();
+						break;
+					case 83:
+						i_type = "mfmsr";
+						arg_r1();
+						break;
+					case 86:
+						i_type = "dcbf";
+						arg_r2();
 						arg_r3();
 						break;
 					case 87:
@@ -773,9 +834,34 @@ namespace PPC {
 							arg_r3();
 						}
 						break;
+					case 144:
+						i_type = "mtcrf";
+						if (crm == 0xFF) {
+							i_type = "mtcr";
+							arg_r1();
+						} else {
+							stream << crm;
+							add_arg();
+							arg_r1();
+						}
+						break;
+					case 146:
+						i_type = "mtmsr";
+						arg_r1();
+						break;
 					case 151:
 						i_type = "stwx";
 						arg_r1();
+						arg_r2();
+						arg_r3();
+						break;
+					case 210:
+						i_type = "mtsr";
+						arg_SR();
+						arg_r1();
+						break;
+					case 278:
+						i_type = "dcbt";
 						arg_r2();
 						arg_r3();
 						break;
@@ -783,6 +869,15 @@ namespace PPC {
 						i_type = "lhzx";
 						arg_r1();
 						arg_r2();
+						arg_r3();
+						break;
+					case 284:
+						i_type = "eqv";
+						if (RC) {
+							i_type += ".";
+						}
+						arg_r2();
+						arg_r1();
 						arg_r3();
 						break;
 					case 316:
@@ -800,6 +895,16 @@ namespace PPC {
 						arg_r2();
 						arg_r3();
 						break;
+					case 371:
+						i_type = "mftb";
+						arg_r1();
+						d = get_range(12, 16) + (get_range(17, 21) << 5);
+						if (d == 269) {
+							i_type = "mftbu";
+						} else if (d != 268) {
+							arg_d();
+						}
+						break;
 					case 407:
 						i_type = "sthx";
 						arg_r1();
@@ -815,8 +920,47 @@ namespace PPC {
 						arg_r1();
 						arg_r3();
 						break;
+					case 470:
+						i_type = "dcbi";
+						arg_r2();
+						arg_r3();
+						break;
+					case 512:
+						i_type = "mcrxr";
+						arg_crf1();
+						break;
 					case 534:
 						i_type = "lwbrx";
+						arg_r1();
+						arg_r2();
+						arg_r3();
+						break;
+					case 536:
+						i_type = "srw";
+						if (RC) {
+							i_type += ".";
+						}
+						arg_r2();
+						arg_r1();
+						arg_r3();
+						break;
+					case 595:
+						i_type = "mfsr";
+						arg_r1();
+						arg_SR();
+						break;
+					case 598:
+						i_type = "sync";
+						add_arg();
+						break;
+					case 599:
+						i_type = "lfdx";
+						arg_fr1();
+						arg_r2();
+						arg_r3();
+						break;
+					case 662:
+						i_type = "stwbrx";
 						arg_r1();
 						arg_r2();
 						arg_r3();
@@ -861,6 +1005,17 @@ namespace PPC {
 						arg_r2();
 						arg_r1();
 						break;
+					case 982:
+						i_type = "icbi";
+						arg_r2();
+						arg_r3();
+						break;
+					case 983:
+						i_type = "stfiwx";
+						arg_fr1();
+						arg_r2();
+						arg_r3();
+						break;
 					}
 					break;
 				}
@@ -882,6 +1037,8 @@ namespace PPC {
 				break;
 			case 35:
 				i_type = "lbzu";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 36:
 				i_type = "stw";
@@ -900,6 +1057,8 @@ namespace PPC {
 				break;
 			case 39:
 				i_type = "stbu";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 40:
 				i_type = "lhz";
@@ -908,6 +1067,8 @@ namespace PPC {
 				break;
 			case 41:
 				i_type = "lhzu";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 42:
 				i_type = "lha";
@@ -924,12 +1085,18 @@ namespace PPC {
 				break;
 			case 45:
 				i_type = "sthu";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 46:
 				i_type = "lmw";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 47:
 				i_type = "stmw";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 48:
 				i_type = "lfs";
@@ -938,6 +1105,8 @@ namespace PPC {
 				break;
 			case 49:
 				i_type = "lfsu";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 50:
 				i_type = "lfd";
@@ -946,6 +1115,8 @@ namespace PPC {
 				break;
 			case 51:
 				i_type = "lfdu";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 52:
 				i_type = "stfs";
@@ -954,6 +1125,8 @@ namespace PPC {
 				break;
 			case 53:
 				i_type = "stfsu";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 54:
 				i_type = "stfd";
@@ -962,6 +1135,8 @@ namespace PPC {
 				break;
 			case 55:
 				i_type = "stfdu";
+				arg_r1();
+				arg_dr2();
 				break;
 			case 56:
 				i_type = "lfq";
@@ -997,6 +1172,14 @@ namespace PPC {
 					arg_fr2();
 					arg_fr3();
 					break;
+				case 24:
+					i_type = "fres";
+					if (RC) {
+						i_type += ".";
+					}
+					arg_r1();
+					arg_r3();
+					break;
 				case 25:
 					i_type = "fmuls";
 					if (RC) {
@@ -1005,6 +1188,16 @@ namespace PPC {
 					arg_fr1();
 					arg_fr2();
 					arg_fr4();
+					break;
+				case 28:
+					i_type = "fmsubs";
+					if (RC) {
+						i_type += ".";
+					}
+					arg_fr1();
+					arg_fr2();
+					arg_fr4();
+					arg_fr3();
 					break;
 				case 29:
 					i_type = "fmadds";
@@ -1018,6 +1211,16 @@ namespace PPC {
 					break;
 				case 30:
 					i_type = "fnmsubs";
+					if (RC) {
+						i_type += ".";
+					}
+					arg_fr1();
+					arg_fr2();
+					arg_fr4();
+					arg_fr3();
+					break;
+				case 31:
+					i_type = "fnmadds";
 					if (RC) {
 						i_type += ".";
 					}
@@ -1079,11 +1282,48 @@ namespace PPC {
 					arg_fr1();
 					arg_fr3();
 					break;
+				case 28:
+					i_type = "fmsub";
+					if (RC) {
+						i_type += ".";
+					}
+					arg_fr1();
+					arg_fr2();
+					arg_fr4();
+					arg_fr3();
+					break;
+				case 29:
+					i_type = "fmadd";
+					arg_fr1();
+					arg_fr2();
+					arg_fr4();
+					arg_fr3();
+					break;
+				case 30:
+					i_type = "fnmsub";
+					if (RC) {
+						i_type += ".";
+					}
+					arg_fr1();
+					arg_fr2();
+					arg_fr4();
+					arg_fr3();
+					break;
+				case 31:
+					i_type = "fnmadd";
+					if (RC) {
+						i_type += ".";
+					}
+					arg_fr1();
+					arg_fr2();
+					arg_fr4();
+					arg_fr3();
+					break;
 				default:
 					switch (e_decider) {
 					case 0:
 						i_type = "fcmpu";
-						arg_crf();
+						arg_crf1();
 						arg_fr2();
 						arg_fr3();
 						break;
@@ -1113,7 +1353,7 @@ namespace PPC {
 						break;
 					case 32:
 						i_type = "fcmpo";
-						arg_crf();
+						arg_crf1();
 						arg_fr2();
 						arg_fr3();
 						break;
@@ -1132,6 +1372,11 @@ namespace PPC {
 						arg_fr1();
 						arg_fr3();
 						break;
+					case 64:
+						i_type = "mcrfs";
+						arg_crf1();
+						arg_crf2();
+						break;
 					case 70:
 						i_type = "mtfsb0";
 						if (RC) {
@@ -1141,6 +1386,14 @@ namespace PPC {
 						break;
 					case 72:
 						i_type = "fmr";
+						if (RC) {
+							i_type += ".";
+						}
+						arg_fr1();
+						arg_fr3();
+						break;
+					case 136:
+						i_type = "fnabs";
 						if (RC) {
 							i_type += ".";
 						}
@@ -1202,7 +1455,7 @@ namespace PPC {
 			}
 			output << endl;
 		}
-		std::cout << "PPC decompile finished";
+		std::cout << "PPC disassembly finished" << endl;
 	}
 
 }
