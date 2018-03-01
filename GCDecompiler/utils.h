@@ -9,5 +9,3 @@ std::string itoh(int num);
 std::string ctoh(char num);
 uint next_int(std::fstream *file, uint length = 4);
 void write_int(std::fstream *file, uint num, uint length = 4);
-
-void create_directory(std::string name);
