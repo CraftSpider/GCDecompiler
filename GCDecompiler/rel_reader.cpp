@@ -8,17 +8,13 @@
 #include <iomanip>
 #include <iostream>
 #include <cstring>
-#include <filesystem>
+#include <experimental/filesystem>
 #include "utils.h"
 #include "rel_reader.h"
 #include "ppc_reader.h"
 #include "types.h"
 
-#ifdef _WIN32
 using std::experimental::filesystem::create_directory;
-#else
-using std::create_directory;
-#endif
 using std::string;
 using std::ios;
 using std::vector;
