@@ -2,9 +2,9 @@
 
 #include <string>
 #include <unordered_map>
-#include "Section.h"
-#include "Import.h"
-#include "RelType.h"
+#include "section.h"
+#include "import.h"
+#include "enums.h"
 #include "types.h"
 
 class Import;

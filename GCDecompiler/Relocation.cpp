@@ -1,5 +1,5 @@
 
-#include "Relocation.h"
+#include "relocation.h"
 #include "types.h"
 
 Relocation::Relocation(Import *import, uint position, uint relative_offset, uint prev_offset, uint dest_offset, RelType type, Section *src_section, Section *dest_section) {

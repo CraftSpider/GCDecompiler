@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 #include "types.h"
 #if defined(_WIN32) || defined(WIN32)
 #include <windows.h>
@@ -51,6 +52,11 @@ std::string itoh(int num) {
 	out << "0x";
 	out << std::hex << std::uppercase << num;
 	return out.str();
+}
+
+bool ends_with(std::string val, std::string ending) {
+	if (ending.size() > val.size()) return false;
+	return !val.compare(val.length() - ending.length(), ending.length(), ending);
 }
 
 uint next_int(std::fstream *file, uint length) {

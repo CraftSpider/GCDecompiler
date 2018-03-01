@@ -1,5 +1,5 @@
 
-#include "Import.h"
+#include "import.h"
 #include "types.h"
 
 Import::Import(uint module, uint offset) {

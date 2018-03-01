@@ -1,5 +1,4 @@
-#include "Section.h"
-
+#include "section.h"
 #include "types.h"
 
 Section::Section(uint id, uint offset, bool exec, uint length) {

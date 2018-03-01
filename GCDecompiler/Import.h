@@ -2,8 +2,8 @@
 
 #include <vector>
 #include "Section.h"
-#include "Relocation.h"
-#include "RelType.h"
+#include "relocation.h"
+#include "enums.h"
 #include "types.h"
 
 class Relocation;
