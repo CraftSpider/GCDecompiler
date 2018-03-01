@@ -23,21 +23,26 @@ if(UNIX)
 endif(UNIX)
 
 set(SOURCE_FILES
-    ./GCDecompiler/Import.cpp
+    ./GCDecompiler/import.cpp
     ./GCDecompiler/rel_reader.cpp
-    ./GCDecompiler/Relocation.cpp
-    ./GCDecompiler/Section.cpp
+    ./GCDecompiler/relocation.cpp
+    ./GCDecompiler/section.cpp
     ./GCDecompiler/utils.cpp
+	./GCDecompiler/rel.cpp
+	./GCDecompiler/dol.cpp
     ./GCDecompiler/ppc_reader.cpp
     )
 
 set(HEADER_FILES
-    ./GCDecompiler/Import.h
+    ./GCDecompiler/import.h
     ./GCDecompiler/rel_reader.h
-    ./GCDecompiler/Relocation.h
-    ./GCDecompiler/Section.h
+    ./GCDecompiler/relocation.h
+    ./GCDecompiler/section.h
     ./GCDecompiler/utils.h
     ./GCDecompiler/ppc_reader.h
+	./GCDecompiler/rel.h
+	./GCDecompiler/dol.h
+	./GCDecompiler/enums.h
     ./GCDecompiler/types.h
     )
 
