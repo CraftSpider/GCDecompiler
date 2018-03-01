@@ -2,6 +2,7 @@
 #include <limits.h>
 #include <vector>
 #include <string>
+#include <cstring>
 #include <sstream>
 #include <iostream>
 #include <experimental/filesystem>
