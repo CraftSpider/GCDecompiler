@@ -15,6 +15,7 @@ using std::endl;
 REL::REL(string filename) {
 	std::fstream file_r(filename, ios::binary | ios::in);
 	std::fstream *file = &file_r;
+	this->filename = filename;
 
 	// Read in file Header
 	this->id = next_int(file);

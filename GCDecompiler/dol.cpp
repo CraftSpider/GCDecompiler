@@ -16,6 +16,7 @@ using std::endl;
 DOL::DOL(string filename) {
 	std::fstream file_r(filename, ios::binary | ios::in);
 	std::fstream *file = &file_r;
+	this->filename = filename;
 
 	// Read in file Header
 	uint offset, address, size;
@@ -61,9 +62,12 @@ string DOL::dump_all() {
 		out << "    Offset: " << itoh(section->offset) << endl;
 		out << "    Length: " << itoh(section->length) << endl;
 		if (section->offset > 0) {
-			out << "    Range: " << itoh(section->offset) << " - " << itoh(section->offset + section->length) << endl;
+			out << "    File Range: " << itoh(section->offset) << " - " << itoh(section->offset + section->length) << endl;
 		}
 		out << "    Address: " << itoh(section->address) << endl;
+		if (section->offset > 0) {
+			out << "    Mem Range: " << itoh(section->address) << " - " << itoh(section->address + section->length) << endl;
+		}
 		out << "    Executable: " << section->exec << endl;
 	}
 	return out.str();

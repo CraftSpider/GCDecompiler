@@ -10,6 +10,7 @@ class DOL {
 
 public:
 	uint entry_offset, bss_address, bss_size;
+	string filename;
 
 	std::vector<Section> sections;
 

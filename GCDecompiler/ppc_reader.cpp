@@ -7,7 +7,9 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <set>
 #include "types.h"
+#include "rel.h"
 #include "utils.h"
 
 using std::string;
@@ -16,24 +18,23 @@ using std::endl;
 
 namespace PPC {
 
-	char instruction[4];
-	std::stringstream stream;
-	std::vector<string> args;
+	static char instruction[4];
+	static std::stringstream stream;
+	static std::vector<string> args;
 
-	char opcode;
-	int LI, r1, r2, r3, r4, r5, BD;
-	uint position, decider, e_decider, d, UIMM, crm;
-	int SIMM;
-	bool AA, LK, OE, RC, func_end, q1, q2, q3;
-	string i_type;
+	static char opcode;
+	static int LI, r1, r2, r3, r4, r5, BD, SIMM;
+	static uint position, decider, e_decider, d, UIMM, crm;
+	static bool AA, LK, OE, RC, func_end, q1, q2, q3;
+	static string i_type;
 
-	bool get_bit(char pos) {
+	static bool get_bit(char pos) {
 		pos -= 1;
 		int loc = (int)floor(pos / 8);
 		return instruction[loc] & (int)pow(2, 7 - (pos % 8));
 	}
 
-	uint get_range(char start, char end) {
+	static uint get_range(char start, char end) {
 		uint out = 0;
 		char num_bits = (end - start) + 1;
 		for (char i = start, j = 1; i <= end; i++, j++) {
@@ -42,154 +43,148 @@ namespace PPC {
 		return out;
 	}
 
-	int get_signed_range(char start, char end) {
+	static int get_signed_range(char start, char end) {
 		uint value = get_range(start, end);
 		char num_bits = end - start;
 		uint mask = 1 << num_bits;
 		return -((int)(value & mask)) + (int)(value & (mask - 1));
 	}
 
-	void set_type(string type) {
-		if (i_type.length() == 0) {
-			i_type = type;
-		}
-	}
-
-	void add_arg() {
+	static void add_arg() {
 		args.push_back(stream.str());
 		stream.clear();
 		stream.str("");
 	}
 
-	void arg_1() {
+	static void arg_1() {
 		stream << get_range(7, 11);
 		add_arg();
 	}
 
-	void arg_r1() {
+	static void arg_r1() {
 		stream << "r";
 		arg_1();
 	}
 
-	void arg_fr1() {
+	static void arg_fr1() {
 		stream << "fr";
 		arg_1();
 	}
 
-	void arg_crb1() {
+	static void arg_crb1() {
 		stream << "crb";
 		arg_1();
 	}
 
-	void arg_2() {
+	static void arg_2() {
 		stream << get_range(12, 16);
 		add_arg();
 	}
 
-	void arg_r2() {
+	static void arg_r2() {
 		stream << "r";
 		arg_2();
 	}
 
-	void arg_fr2() {
+	static void arg_fr2() {
 		stream << "fr";
 		arg_2();
 	}
 
-	void arg_crb2() {
+	static void arg_crb2() {
 		stream << "crb";
 		arg_2();
 	}
 
-	void arg_3() {
+	static void arg_3() {
 		stream << get_range(17, 21);
 		add_arg();
 	}
 
-	void arg_r3() {
+	static void arg_r3() {
 		stream << "r";
 		arg_3();
 	}
 
-	void arg_fr3() {
+	static void arg_fr3() {
 		stream << "fr";
 		arg_3();
 	}
 
-	void arg_crb3() {
+	static void arg_crb3() {
 		stream << "crb";
 		arg_3();
 	}
 
-	void arg_4() {
+	static void arg_4() {
 		stream << get_range(22, 26);
 		add_arg();
 	}
 
-	void arg_fr4() {
+	static void arg_fr4() {
 		stream << "fr";
 		arg_4();
 	}
 
-	void arg_5() {
+	static void arg_5() {
 		stream << get_range(27, 31);
 		add_arg();
 	}
 
-	void arg_crf1() {
+	static void arg_crf1() {
 		stream << "crf" << get_range(7, 9);
 		add_arg();
 	}
 
-	void arg_crf2() {
+	static void arg_crf2() {
 		stream << "crf" << get_range(12, 14);
 		add_arg();
 	}
 
-	void arg_BO() {
+	static void arg_BO() {
 		arg_1();
 	}
 
-	void arg_BI() {
+	static void arg_BI() {
 		arg_2();
 	}
 
-	void arg_BD() {
+	static void arg_BD() {
 		stream << itoh(BD);
 		add_arg();
 	}
 
-	void arg_SIMM() {
+	static void arg_SIMM() {
 		stream << itoh(SIMM);
 		add_arg();
 	}
 
-	void arg_UIMM() {
+	static void arg_UIMM() {
 		stream << itoh(UIMM);
 		add_arg();
 	}
 
-	void arg_d() {
+	static void arg_d() {
 		stream << itoh(d);
 		add_arg();
 	}
 
-	void arg_SR() {
+	static void arg_SR() {
 		stream << get_range(13, 16);
 		add_arg();
 	}
 
-	void arg_dr2() {
+	static void arg_dr2() {
 		stream << itoh(d) << "(r" << r2 << ")";
 		add_arg();
 	}
 
-	void arg_SIMMr2() {
+	static void arg_SIMMr2() {
 		stream << itoh(SIMM) << "(r" << r2 << ")";
 		add_arg();
 	}
 
-	void decompile(string file_in, string file_out, int start = 0, int end = -1) {
+	void disassemble(string file_in, string file_out, int start, int end) {
 		std::cout << "Disassembling PPC" << endl;
 		std::fstream input(file_in, ios::in | ios::binary);
 		std::fstream output(file_out, ios::out);
@@ -203,6 +198,7 @@ namespace PPC {
 			end = (int)input.tellg();
 		}
 		int size = end - start;
+		int hex_length = (int)std::floor((std::log(size) / std::log(16)) + 1) + 2;
 
 		input.seekg(start, ios::beg);
 		while (input.tellg() < end) {
@@ -1440,8 +1436,10 @@ namespace PPC {
 				func_end = false;
 			}
 
-			output << ctoh(instruction[0]) << " " << ctoh(instruction[1]) << " " << ctoh(instruction[2]) <<
-				" " << ctoh(instruction[3]) << "    ";
+			string hex = itoh(position);
+			string padding(hex_length - hex.length(), ' ');
+			output << padding << hex << "    " << ctoh(instruction[0]) << " " << ctoh(instruction[1]) << " " <<
+				ctoh(instruction[2]) << " " << ctoh(instruction[3]) << "    ";
 
 			output << i_type;
 			for (std::vector<string>::iterator arg = args.begin(); arg != args.end(); arg++) {
@@ -1456,6 +1454,56 @@ namespace PPC {
 			output << endl;
 		}
 		std::cout << "PPC disassembly finished" << endl;
+	}
+
+	void read_data(string file_in, string file_out, int start, int end) {
+		std::cout << "Reading data section" << endl;
+		std::fstream input(file_in, ios::in | ios::binary);
+		std::fstream output(file_out, ios::out);
+
+		//TODO: Data guessing (tm)
+	}
+
+	void read_data(REL *to_read, Section *section, std::vector<REL*> knowns, string file_out) {
+		// open the file, look through every import in every REL file to check if they refer to a
+		// location in the right area in this one. If they do, add it to the list. Once done, go through
+		// the list and generate output values. Anything leftover goes in a separate section clearly marked.
+		std::cout << "Reading REL data section" << endl;
+		std::fstream output(file_out, ios::out);
+		std::set<int> offsets;
+		for (std::vector<REL*>::iterator rel_r = knowns.begin(); rel_r != knowns.end(); rel_r++) {
+			REL *rel = (*rel_r);
+			for (std::vector<Import>::iterator imp = rel->imports.begin(); imp != rel->imports.end(); imp++) {
+				if (imp->module != to_read->id && rel->id != to_read->id) {
+					continue;
+				}
+				for (std::vector<Relocation>::iterator reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
+					if (reloc->get_src_section().id == section->id && imp->module == rel->id) {
+						offsets.insert(reloc->get_src_offset());
+					}
+					if (rel->id == to_read->id && reloc->get_dest_section().id == section->id) {
+						offsets.insert(reloc->get_dest_offset());
+					}
+				}
+			}
+		}
+		for (int offset : offsets) {
+			output << itoh(offset) << ": ";
+			output << ctoh(section->data[offset++ - section->offset]) << endl;
+			// Need to add non ASCII stuff later
+			char dat = section->data[offset - section->offset];
+			string out = "";
+			while (dat >= 32 && dat <= 126 && offsets.find(offset) == offsets.end()) {
+				out.append({ dat });
+				dat = section->data[++offset - section->offset];
+			}
+			if (dat == 0) {
+				std::cout << out << endl;
+			} else {
+				
+			}
+		}
+		std::cout << "REL data section read complete" << endl;
 	}
 
 }

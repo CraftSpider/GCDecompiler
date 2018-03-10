@@ -9,8 +9,8 @@ Relocation::Relocation(Import *import, uint position, uint relative_offset, uint
 	this->prev_offset = prev_offset;
 	this->dest_offset = dest_offset;
 	this->type = type;
-	this->src_section = src_section;
 	this->dest_section = dest_section;
+	this->src_section = src_section;
 }
 
 uint Relocation::get_dest_offset() {
