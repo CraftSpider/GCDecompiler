@@ -57,6 +57,10 @@ void process_dol(DOL *dol, string output) {
 
 int main(int argc, char *argv[]) {
 
+	//string temp = "C:/ProgrammingFiles/GCDecompiler/GCDecompiler/root/mkb2.main_loop.rel";
+	//REL rel(temp);
+	//process_rel(&rel, "C:/ProgrammingFiles/GCDecompiler/Debug/root_dump");
+
 	if (argc == 1) {
 		std::cout << "Usage:" << endl;
 		std::cout << "gcd dump <path to root> [directory out]" << endl;
@@ -84,7 +88,7 @@ int main(int argc, char *argv[]) {
 			std::cout << "Beginnning Root Dump. This may take a while." << endl;
 			fs::create_directory(output);
 			std::vector<REL*> knowns;
-			DOL *main;
+			DOL *main = new DOL("");
 			// Form list of files to process. Mostly RELs and DOL file.
 			for (auto dir : fs::recursive_directory_iterator(argv[2])) {
 				if (ends_with(dir.path().string(), ".rel")) {
@@ -93,6 +97,7 @@ int main(int argc, char *argv[]) {
 					knowns.push_back(rel); 
 				} else if (ends_with(dir.path().string(), ".dol")) {
 					string filename = dir.path().filename().string();
+					delete main;
 					main = new DOL(dir.path().string());
 				}
 			}
