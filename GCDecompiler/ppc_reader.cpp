@@ -347,11 +347,11 @@ namespace PPC {
 
 			int opcode = get_range(instruction, 0, 5);
 			Instruction *instruct = create_instruction(opcode, instruction);
-			if (instruct->code_name() == "blr") {
+			if (instruct->code_name() == "blr" || instruct->code_name() == "rfi") {
 				func_end = true;
 			}
 
-			if (func_end && instruct->code_name() != "blr") {
+			if (func_end && instruct->code_name() != "blr" && instruct->code_name() != "rfi" && instruct->code_name() != "PADDING") {
 				output << "; function: f_" << std::hex << position << std::dec << " at " << itoh(position) << endl;
 				func_end = false;
 			}
