@@ -24,7 +24,7 @@ endif(UNIX)
 
 set(SOURCE_FILES
     ./GCDecompiler/import.cpp
-    ./GCDecompiler/rel_reader.cpp
+    ./GCDecompiler/gcd_main.cpp
     ./GCDecompiler/relocation.cpp
     ./GCDecompiler/section.cpp
     ./GCDecompiler/utils.cpp
@@ -35,11 +35,12 @@ set(SOURCE_FILES
 
 set(HEADER_FILES
     ./GCDecompiler/import.h
-    ./GCDecompiler/rel_reader.h
+    ./GCDecompiler/gcd_main.h
     ./GCDecompiler/relocation.h
     ./GCDecompiler/section.h
     ./GCDecompiler/utils.h
     ./GCDecompiler/ppc_reader.h
+	./GCDecompiler/ppc_codes.h
 	./GCDecompiler/rel.h
 	./GCDecompiler/dol.h
 	./GCDecompiler/enums.h
