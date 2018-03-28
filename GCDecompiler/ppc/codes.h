@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <set>
 #include <string>
 
 namespace PPC {
@@ -87,5 +88,14 @@ namespace PPC {
 		{40, "fr{6,10}, fr{16,20}"},{64, "crf{6,8}, crf{11,13}"},{70, "crb{6,10}"},{72, "fr{6,10}, fr{16,20}"},{134, "crf{6,8}, {X|16,19}"},{136, "fr{6,10}, fr{16,20}"},
 		{264, "fr{6,10}, fr{16,20}"},{583, "fr{6,10}, fr{16,20}"},{711, "{X|7,14}, fr{16,20}"}
 		});
+
+	// Codes without destination register
+
+	static const std::set<int> primary_missing_dest({3, 16, 17, 18, 19, 36, 37, 38, 39, 44, 45, 47, 52, 53, 54, 55});
+
+	static const std::set<int> secondary_missing_dest_math({4, 54, 86, 144, 146, 150, 151, 183, 210, 215, 242, 246, 247, 278, 306, 370, 407, 438, 439, 467, 470,
+															566, 598, 661, 662, 663, 695, 725, 727, 758, 759, 854, 918, 982, 983, 1014});
+
+	static const std::set<int> secondary_missing_dest_double({711});
 
 }

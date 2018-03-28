@@ -18,6 +18,5 @@ public:
 
 	Import(uint module, uint offset);
 	void add_relocation(RelType type, uint position, uint prev_offset, uint relative_offset, Section *src_section);
-	Section get_section();
 
 };

@@ -20,11 +20,7 @@ uint Relocation::get_dest_offset() {
 uint Relocation::get_src_offset() {
 	if (this->import->module == 0) {
 		return this->relative_offset;
-	}
-	else if (this->get_src_section().offset == 0) {
-		return -1;
-	}
-	else {
+	} else {
 		return this->relative_offset + this->get_src_section().offset;
 	}
 }

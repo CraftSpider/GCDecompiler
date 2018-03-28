@@ -18,7 +18,3 @@ void Import::add_relocation(RelType type, uint position, uint relative_offset, u
 	Relocation reloc = Relocation(this, position, relative_offset, prev_offset, this->pointer, type, src_section, this->section);
 	this->instructions.push_back(reloc);
 }
-
-Section Import::get_section() {
-	return *(this->section);
-}

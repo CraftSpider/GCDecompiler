@@ -55,7 +55,37 @@ void process_dol(DOL *dol, string output) {
 	}
 }
 
+void decomp_game(DOL *dol, std::vector<REL*> rels, string output) {
+	for (vector<Section>::iterator sect = dol->sections.begin(); sect != dol->sections.end(); sect++) {
+		if (sect->exec && sect->offset) {
+			std::stringstream name;
+			name << output << "/Section" << sect->id << ".c";
+			PPC::decompile(dol->filename, name.str(), sect->offset, sect->offset + sect->length);
+		}
+	}
+}
+
 int main(int argc, char *argv[]) {
+
+	/*string output = "decomp_dump";
+	fs::create_directory(output);
+	std::vector<REL*> knowns;
+	DOL *main = nullptr;
+	// Form list of files to process. Mostly RELs and DOL file.
+	for (auto dir : fs::recursive_directory_iterator("./root/")) {
+		if (ends_with(dir.path().string(), ".rel")) {
+			string filename = dir.path().filename().string();
+			REL *rel = new REL(dir.path().string());
+			knowns.push_back(rel);
+		} else if (ends_with(dir.path().string(), ".dol")) {
+			string filename = dir.path().filename().string();
+			main = new DOL(dir.path().string());
+		}
+	}
+	// Process list of files.
+	decomp_game(main, knowns, output);
+
+	return 0;//*/
 
 	//string temp = "C:/ProgrammingFiles/GCDecompiler/GCDecompiler/root/mkb2.main_loop.rel";
 	//REL rel(temp);
@@ -63,6 +93,7 @@ int main(int argc, char *argv[]) {
 
 	if (argc == 1) {
 		std::cout << "Usage:" << endl;
+		std::cout << "gcd decomp <path to root> [directory out]" << endl;
 		std::cout << "gcd dump <path to root> [directory out]" << endl;
 		std::cout << "gcd rel <file in> [directory out]" << endl;
 		std::cout << "gcd dol <file in> [directory out]" << endl;
@@ -73,7 +104,9 @@ int main(int argc, char *argv[]) {
 		if (argc > 3) {
 			output = argv[3];
 		} else {
-			if (!std::strcmp(argv[1], "dump")) {
+			if (!std::strcmp(argv[1], "decomp")) {
+				output = "root_decomp";
+			} else if (!std::strcmp(argv[1], "dump")) {
 				output = "root_dump";
 			} else if (!std::strcmp(argv[1], "recompile")) {
 				output = "recomp.rel";
@@ -84,11 +117,29 @@ int main(int argc, char *argv[]) {
 			}
 		}
 		
-		if (!std::strcmp(argv[1], "dump")) {
+		if (!std::strcmp(argv[1], "decomp")) {
+			std::cout << "Beginning root decompile. This will take a while." << endl;
+			fs::create_directory(output);
+			std::vector<REL*> knowns;
+			DOL *main = nullptr;
+			// Form list of files to process. Mostly RELs and DOL file.
+			for (auto dir : fs::recursive_directory_iterator(argv[2])) {
+				if (ends_with(dir.path().string(), ".rel")) {
+					string filename = dir.path().filename().string();
+					REL *rel = new REL(dir.path().string());
+					knowns.push_back(rel);
+				} else if (ends_with(dir.path().string(), ".dol")) {
+					string filename = dir.path().filename().string();
+					main = new DOL(dir.path().string());
+				}
+			}
+			// Process list of files.
+			decomp_game(main, knowns, output);
+		} else if (!std::strcmp(argv[1], "dump")) {
 			std::cout << "Beginnning Root Dump. This may take a while." << endl;
 			fs::create_directory(output);
 			std::vector<REL*> knowns;
-			DOL *main = new DOL("");
+			DOL *main = nullptr;
 			// Form list of files to process. Mostly RELs and DOL file.
 			for (auto dir : fs::recursive_directory_iterator(argv[2])) {
 				if (ends_with(dir.path().string(), ".rel")) {
@@ -97,7 +148,6 @@ int main(int argc, char *argv[]) {
 					knowns.push_back(rel); 
 				} else if (ends_with(dir.path().string(), ".dol")) {
 					string filename = dir.path().filename().string();
-					delete main;
 					main = new DOL(dir.path().string());
 				}
 			}

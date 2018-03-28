@@ -49,16 +49,16 @@ std::string itoh(int num) {
 	return out.str();
 }
 
-bool get_bit(char *instruction, char pos) {
+bool get_bit(char *chars, char pos) {
 	int loc = (int)floor(pos / 8);
-	return instruction[loc] & (int)pow(2, 7 - (pos % 8));
+	return chars[loc] & (int)pow(2, 7 - (pos % 8));
 }
 
-uint get_range(char *instruction, char start, char end) {
+uint get_range(char *chars, char start, char end) {
 	uint out = 0;
 	char num_bits = (end - start) + 1;
 	for (char i = start, j = 1; i <= end; i++, j++) {
-		out += (uint)pow(2, (num_bits - j))*get_bit(instruction, i);
+		out += (uint)pow(2, (num_bits - j))*get_bit(chars, i);
 	}
 	return out;
 }
@@ -92,6 +92,7 @@ std::string char_format(char *chars, std::string to_format) {
 				format.str("");
 				format.clear();
 				start = 0, end = 0;
+				mod_mask = 0;
 				continue;
 			} else if (mods == true && ((to_format[i] >= 'A' && to_format[i] <= 'Z') || (to_format[i] >= 'a' && to_format[i] <= 'z'))) { // If we're in the mod_code section, read in codes.
 				if (to_format[i] == 's') {
@@ -148,6 +149,7 @@ std::string char_format(char *chars, std::string to_format) {
 							format << uresult;
 						}
 					}
+					format << std::nouppercase;
 					skip--;
 				}
 			}
@@ -159,6 +161,14 @@ std::string char_format(char *chars, std::string to_format) {
 bool ends_with(std::string val, std::string ending) {
 	if (ending.size() > val.size()) return false;
 	return !val.compare(val.length() - ending.length(), ending.length(), ending);
+}
+
+bool is_num(char c) {
+	return (c >= '0' && c <= '9');
+}
+
+bool is_letter(char c) {
+	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
 }
 
 uint next_int(std::fstream *file, uint length) {

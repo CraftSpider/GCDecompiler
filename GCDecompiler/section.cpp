@@ -1,3 +1,6 @@
+
+#include <iostream>
+#include <iterator>
 #include "section.h"
 #include "types.h"
 
@@ -13,6 +16,27 @@ Section::Section(uint id, uint offset, bool exec, uint length, uint address) : S
 	this->address = address;
 }
 
+Section::Section(const Section &sect) {
+	this->id = sect.id;
+	this->offset = sect.offset;
+	this->exec = sect.exec;
+	this->length = sect.length;
+	this->data = new char[this->length];
+	for (int i = 0; i < this->length; i++) {
+		this->data[i] = sect.data[i];
+	}
+	this->address = sect.address;
+}
+
+Section::~Section() {
+	delete[] this->data;
+}
+
+void Section::set_data(char *data) {
+	delete[] this->data;
+	this->data = data;
+}
+
 uint Section::get_start() {
 	return this->offset;
 }
@@ -23,4 +47,8 @@ uint Section::get_end() {
 
 uint* Section::get_range() {
 	return new uint[2] { this->get_start(), this->get_end() };
+}
+
+char* Section::get_data() {
+	return this->data;
 }

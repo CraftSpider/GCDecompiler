@@ -44,7 +44,6 @@ DOL::DOL(string filename) {
 	this->bss_address = next_int(file);
 	this->bss_size = next_int(file);
 	this->entry_offset = next_int(file);
-
 }
 
 string DOL::dump_all() {

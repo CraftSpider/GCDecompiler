@@ -12,7 +12,10 @@
 #include "types.h"
 #include "rel.h"
 #include "utils.h"
-#include "ppc_codes.h"
+#include "ppc/codes.h"
+#include "ppc/register.h"
+#include "ppc/instruction.h"
+#include "ppc/symbol.h"
 
 using std::string;
 using std::ios;
@@ -20,296 +23,35 @@ using std::endl;
 
 namespace PPC {
 
-	class Instruction {
+	static Instruction* create_instruction(char *instruction) {
+		int opcode = get_range(instruction, 0, 5);
 
-	protected:
+		if (opcode == 10 || opcode == 11) return new CmpFamily(opcode, instruction);
+		else if (opcode >= 12 && opcode <= 15) return new AddFamily(opcode, instruction);
+		else if (opcode == 16 || opcode == 18) return new BFamily(opcode, instruction);
+		else if (opcode == 19) return new SpecBranchFamily(opcode, instruction);
+		else if (opcode == 23) return new ConditionInstruction(opcode, instruction);
+		else if (opcode == 31) return new MathFamily(opcode, instruction);
+		else if (opcode == 59) return new FloatSingleFamily(opcode, instruction);
+		else if (opcode == 63) return new FloatDoubleFamily(opcode, instruction);
+		else return new Instruction(opcode, instruction);
+	}
 
-		string name, pattern;
-		char *instruction;
-
-	public:
-
-		Instruction() {
-			this->name = "UNKNOWN INSTRUCTION";
-		}
-
-		Instruction(int type, char *instruction) {
-			try {
-				this->name = primary_codes.at(type);
-			} catch (const std::exception e) {
-				this->name = "UNKNOWN INSTRUCTION";
-			}
-			try {
-				this->pattern = primary_patterns.at(type);
-			} catch (const std::exception e) {
-				this->pattern = "FIX ME";
-			}
-
-			if (type == 0 && get_range(instruction, 6, 31) == 0) {
-				this->name = "PADDING";
-				this->pattern = "{}";
-			}
-
-			this->instruction = instruction;
-		}
-
-		virtual string code_name() {
-			return name;
-		}
-
-		virtual string get_variables() {
-			if (this->pattern == "") {
-				return "FIX ME";
-			}
-			return char_format(this->instruction, this->pattern);
-		}
-
-	};
-
-	class ConditionInstruction : public Instruction {
-
-	public:
-
-		ConditionInstruction(int type, char *instruction) : Instruction(type, instruction) {
-			if (get_bit(instruction, 31)) {
-				this->name += ".";
-			}
-		}
-
-	};
-
-	class Ori : public Instruction {
-
-	public:
-
-		Ori(int type, char *instruction) : Instruction(type, instruction) {
-			if (get_range(instruction, 6, 31) == 0) {
-				this->name = "nop";
-				this->pattern = "{}";
-			}
-		}
-
-	};
-
-	class AddFamily : public Instruction {
-
-	public:
-
-		AddFamily(int type, char *instruction) : Instruction(type, instruction) {
-			this->pattern = "r{6,10}, r{11,15}, {sX|16,31}";
-			if (get_signed_range(instruction, 16, 31) < 0) {
-				this->name = "sub" + this->name.substr(3, this->name.length());
-				this->pattern = "r{6,10}, r{11,15}, {aX|16,31}";
-			}
-		}
-
-	};
-
-	class CmpFamily : public Instruction {
-
-	public:
-
-		CmpFamily(int type, char *instruction) : Instruction(type, instruction) {
-			if (!get_bit(instruction, 10)) {
-				this->name = this->name.substr(0, this->name.length() - 1) + "wi";
-				this->pattern = "crf{6,8}, r{11,15}, {X|16,31}";
-			} else {
-				this->pattern = "crf{6,8}, {10,10}, r{11,15}, {X|16,31}";
-			}
-		}
-
-	};
-
-	class BFamily : public Instruction {
-
-	public:
-
-		BFamily(int type, char *instruction) : Instruction(type, instruction) {
-			if (get_bit(instruction, 31)) {
-				this->name += "l";
-			}
-			if (get_bit(instruction, 30)) {
-				this->name += "a";
-			}
-
-			if (type == 16) {
-				int BO = get_range(instruction, 6, 10);
-				int BI = get_range(instruction, 11, 15);
-				if (BO == 12 && BI == 0) {
-					this->name = "blt";
-					this->pattern = "{X|16,29}";
-				} else if (BO == 4 && BI == 10) {
-					this->name = "bne";
-					this->pattern = "{X|16,29}";
-				}
-			}
-		}
-
-	};
-
-	class SpecBranchFamily : public Instruction {
-
-	public:
-
-		SpecBranchFamily(int type, char *instruction) : Instruction(type, instruction) {
-			int stype = get_range(instruction, 21, 30);
-			try {
-				this->name = secondary_codes_sb.at(stype);
-			} catch (const std::exception e) {}
-			try {
-				this->pattern = secondary_patterns_sb.at(stype);
-			} catch (const std::exception e) {}
-			// Set up commands with special conditions
-			if (stype == 16 || stype == 528) { // If it's a branch command, set up that
-				int BO = get_range(instruction, 6, 10);
-				int BI = get_range(instruction, 11, 15);
-				this->pattern = "{6,10}, {11,15}";
-				if (get_bit(instruction, 31)) {
-					this->name += "l";
-				}
-				if (BO == 20) {
-					this->name = "b" + this->name.substr(2, this->name.length());
-					this->pattern = "{}";
-				}
-			}
-		}
-
-	};
-
-	class MathFamily : public ConditionInstruction {
-
-	public:
-
-		MathFamily(int type, char *instruction) : ConditionInstruction(type, instruction) {
-			int stype = get_range(instruction, 21, 30);
-			try {
-				this->name = secondary_codes_math.at(stype);
-				if (this->name.substr(this->name.length() - 1, this->name.length()) == ".") {
-					this->name += ".";
-				}
-			} catch (const std::exception e) {}
-			try {
-				this->pattern = secondary_patterns_math.at(stype);
-			} catch (const std::exception e) {}
-			// Set up commands with special conditions.
-			if (stype == 0 || stype == 32) {
-				if (!get_bit(instruction, 10)) {
-					this->name += "w";
-					this->pattern = "crf{6,8}, r{11,15}, r{16,20}";
-				} else {
-					this->pattern = "crf{6,8}, {10,10}, r{11,15}, r{16,20}";
-				}
-			} else if (stype == 124) {
-				if (get_range(instruction, 6, 10) == get_range(instruction, 16, 20)) {
-					this->name = "not";
-					this->pattern = "r{11,15}, r{6,10}";
-				}
-			} else if (stype == 144) {
-				if (get_range(instruction, 12, 19) == 0xFF) {
-					this->name == "mtcr";
-					this->pattern = "r{6,10}";
-				} else {
-					this->pattern = "{X|12,19}, r{6,10}";
-				}
-			} else if (stype == 339 || stype == 467) {
-				int reg = get_range(instruction, 11, 15) + (get_range(instruction, 16, 20) << 5);
-				if (reg == 0b1) {
-					this->name = this->name.substr(0, 2) + "xer";
-					this->pattern = "r{6,10}";
-				} else if (reg == 0b01000) {
-					this->name = this->name.substr(0, 2) + "lr";
-					this->pattern = "r{6,10}";
-				} else if (reg == 0b01001) {
-					this->name = this->name.substr(0, 2) + "ctr";
-					this->pattern = "r{6,10}";
-				} else {
-					std::stringstream out;
-					if (stype == 339) {
-						out << reg << ", r{6,10}";
-						this->pattern = out.str();
-					} else {
-						out << "r{6,10}, " << reg;
-						this->pattern = out.str();
+	void relocate(REL *input, uint bss_pos, string file_out) {
+		for (std::vector<Import>::iterator imp = input->imports.begin(); imp != input->imports.end(); imp++) {
+			if (imp->module == input->id) {
+				for (std::vector<Relocation>::iterator reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
+					uint abs_offset = reloc->get_src_offset();
+					if (reloc->get_src_section().address == 0) {
+						abs_offset += bss_pos;
 					}
 				}
-			} else if (stype == 371) {
-				int reg = get_range(instruction, 11, 15) + (get_range(instruction, 16, 20) << 5);
-				if (reg == 0b0100001100) {
-					this->name = "mftb";
-					this->pattern = "r{6,10}";
-				} else if (reg == 0b0100001101) {
-					this->name = "mftbu";
-					this->pattern = "r{6,10}";
-				} else {
-					std::stringstream out;
-					out << "r{6,10}, " << reg;
-					this->pattern = out.str();
-				}
-			} else if (stype == 444) {
-				if (get_range(instruction, 6, 10) == get_range(instruction, 16, 20)) {
-					this->name = "mr";
-					this->pattern = "r{11,15}, r{6,10}";
-				}
 			}
 		}
+	}
 
-	};
-
-	class FloatSingleFamily : public ConditionInstruction {
-
-	public:
-
-		FloatSingleFamily(int type, char *instruction) : ConditionInstruction(type, instruction) {
-			int stype = get_range(instruction, 26, 30);
-			try {
-				this->name = secondary_codes_float.at(stype);
-				if (this->name.substr(this->name.length() - 1, this->name.length()) == ".") {
-					this->name += ".";
-				}
-			} catch (const std::exception e) {}
-			try {
-				this->pattern = secondary_patterns_float.at(stype);
-			} catch (const std::exception e) {}
-			// Set up commands with special conditions
-		}
-
-	};
-
-	class FloatDoubleFamily : public ConditionInstruction {
-
-	public:
-
-		FloatDoubleFamily(int type, char *instruction) : ConditionInstruction(type, instruction) {
-			int stype;
-			if (get_bit(instruction, 26)) {
-				stype = get_range(instruction, 26, 30);
-			} else {
-				stype = get_range(instruction, 21, 30);
-			}
-			try {
-				this->name = secondary_codes_double.at(stype);
-				if (this->name.substr(this->name.length() - 1, this->name.length()) == ".") {
-					this->name += ".";
-				}
-			} catch (const std::exception e) {}
-			try {
-				this->pattern = secondary_patterns_double.at(stype);
-			} catch (const std::exception e) {}
-			// Set up commands with special conditions
-		}
-
-	};
-
-	static Instruction* create_instruction(int type, char *instruction) {
-		if (type == 10 || type == 11) return new CmpFamily(type, instruction);
-		else if (type >= 12 && type <= 15) return new AddFamily(type, instruction);
-		else if (type == 16 || type == 18) return new BFamily(type, instruction);
-		else if (type == 19) return new SpecBranchFamily(type, instruction);
-		else if (type == 23) return new ConditionInstruction(type, instruction);
-		else if (type == 31) return new MathFamily(type, instruction);
-		else if (type == 59) return new FloatSingleFamily(type, instruction);
-		else if (type == 63) return new FloatDoubleFamily(type, instruction);
-		else return new Instruction(type, instruction);
+	void relocate(REL *input, string file_out) {
+		relocate(input, input->file_size, file_out);
 	}
 
 	void disassemble(string file_in, string file_out, int start, int end) {
@@ -317,8 +59,8 @@ namespace PPC {
 		std::fstream input(file_in, ios::in | ios::binary);
 		std::fstream output(file_out, ios::out);
 
-		static uint position;
-		static bool func_end = false, q1 = false, q2 = false, q3 = false;
+		uint position;
+		bool func_end = true, q1 = false, q2 = false, q3 = false;
 
 		if (end == -1) {
 			input.seekg(0, ios::end);
@@ -326,7 +68,7 @@ namespace PPC {
 		}
 		int size = end - start;
 		int hex_length = (int)std::floor((std::log(size) / std::log(16)) + 1) + 2;
-		static char instruction[4];
+		char instruction[4];
 
 		input.seekg(start, ios::beg);
 		while (input.tellg() < end) {
@@ -345,8 +87,8 @@ namespace PPC {
 
 			input.read(instruction, 4);
 
-			int opcode = get_range(instruction, 0, 5);
-			Instruction *instruct = create_instruction(opcode, instruction);
+			Instruction *instruct = create_instruction(instruction);
+
 			if (instruct->code_name() == "blr" || instruct->code_name() == "rfi") {
 				func_end = true;
 			}
@@ -366,6 +108,7 @@ namespace PPC {
 			output << endl;
 			delete instruct;
 		}
+
 		std::cout << "PPC disassembly finished" << endl;
 	}
 
@@ -404,19 +147,19 @@ namespace PPC {
 			output << itoh(offset) << ": ";
 			// Need to add non ASCII stuff later
 			int lookahead = offset;
-			char dat = section->data[lookahead++ - section->offset];
+			char dat = section->get_data()[lookahead++ - section->offset];
 			string out = "";
 			while (dat >= 32 && dat <= 126 && offsets.find(lookahead) == offsets.end()) {
 				out.append({ dat });
-				dat = section->data[lookahead++ - section->offset];
+				dat = section->get_data()[lookahead++ - section->offset];
 			}
 			if (dat == 0 && out != "") {
 				output << out << endl;
 			} else {
 				lookahead = offset;
-				out = ctoh(section->data[lookahead++ - section->offset]);
+				out = ctoh(section->get_data()[lookahead++ - section->offset]);
 				while (offsets.find(lookahead) == offsets.end() && lookahead - offset < 5) {
-					out += ctoh(section->data[lookahead++ - section->offset]);
+					out += ctoh(section->get_data()[lookahead++ - section->offset]);
 				}
 				if (out != "") {
 					output << out << endl;
@@ -424,6 +167,139 @@ namespace PPC {
 			}
 		}
 		std::cout << "REL data section read complete" << endl;
+	}
+
+	void decompile(string file_in, string file_out, int start, int end) {
+		std::cout << "Decompiling PPC" << endl;
+		std::fstream input(file_in, ios::in | ios::binary);
+		std::fstream output(file_out, ios::out);
+
+		uint position;
+		bool in_func = true, q1 = false, q2 = false, q3 = false, branch = false;
+
+		if (end == -1) {
+			input.seekg(0, ios::end);
+			end = (int)input.tellg();
+		}
+		int size = end - start;
+		char instruction[4];
+
+		input.seekg(start, ios::beg);
+
+		// First read/generate/write symbol table.
+		//   Read in an existing symbol table into symbol objects
+		// Generate list of symbol objects from code, using existing symbol objects.
+		std::vector<Symbol> symbols;
+		int f_start = 0, f_end = 0;
+		while (input.tellg() < end) {
+			
+			position = (int)input.tellg() - start;
+
+			if ((float)position / size > .25 && !q1) {
+				std::cout << "  25% Complete" << endl;
+				q1 = true;
+			} else if ((float)position / size > .5 && !q2) {
+				std::cout << "  50% Complete" << endl;
+				q2 = true;
+			} else if ((float)position / size > .75 && !q3) {
+				std::cout << "  75% Complete" << endl;
+				q3 = true;
+			}
+
+			input.read(instruction, 4);
+
+			Instruction *instruct = create_instruction(instruction);
+
+			if (!in_func && instruct->code_name() != "blr" && instruct->code_name() != "rfi" && instruct->code_name() != "PADDING") {
+				f_start = position;
+				in_func = true;
+			}
+
+			if (instruct->code_name() == "blr" || instruct->code_name() == "rfi") {
+				f_end = position;
+				std::stringstream name;
+				name << "f_" << f_start << "_" << f_end;
+				symbols.push_back(Symbol(f_start, f_end, name.str()));
+				in_func = false;
+			} else if (instruct->code_name() == "PADDING" && branch) {
+				f_end = position - 4;
+				std::stringstream name;
+				name << "f_" << f_start << "_" << f_end;
+				symbols.push_back(Symbol(f_start, f_end, name.str()));
+				in_func = false;
+			}
+
+			if (instruct->code_name() == "b") {
+				branch = true;
+			} else {
+				branch = false;
+			}
+
+			delete instruct;
+		}
+		f_end = position;
+		std::stringstream name;
+		name << "f_" << f_start << "_" << f_end;
+		symbols.push_back(Symbol(f_start, f_end, name.str()));
+
+		// Check internal code to determine inputs/return.
+		for (std::vector<Symbol>::iterator sym = symbols.begin(); sym != symbols.end(); sym++) {
+			//std::cout << std::hex << sym->start << " " << sym->end << std::dec << endl;
+			input.seekg(sym->start + start, ios::beg);
+
+			char *registers = new char[10]();
+			while (input.tellg() < sym->end + start + 4) {
+
+				input.read(instruction, 4);
+				Instruction *instruct = create_instruction(instruction);
+
+				std::set<Register> sources = instruct->source_registers();
+				for (char i = 0; i < 10; i++) {
+					if (registers[i] == 0) {
+						Register tester = Register(i + 3, Register::REGULAR);
+						if (sources.find(tester) != sources.end()) {
+							registers[i] = 1;
+						} else if (instruct->destination_register() == tester) {
+							registers[i] = 2;
+						}
+					}
+				}
+
+				delete instruct;
+			}
+			
+			for (char i = 0; i < 10; ++i) {
+				if (registers[i] == 1) {
+					sym->add_source(Register(i + 3, Register::REGULAR));
+				}
+			}
+
+			delete[] registers;
+		}
+
+		// Write final list to symbol table
+		for (std::vector<Symbol>::iterator sym = symbols.begin(); sym != symbols.end(); sym++) {
+			output << "f_" << std::hex << sym->start << "_" << sym->end << std::dec << "(";
+			bool start = true;
+			for (std::set<char>::iterator num = sym->r_input.begin(); num != sym->r_input.end(); ++num) {
+				if (!start) {
+					output << ", ";
+				} else {
+					start = false;
+				}
+				output << "r" << ((int)*num);
+			}
+			output << ");" << endl;
+		}
+
+		// Start,Stop,Output,Name,[Type,Input]
+
+		// Second read/generate/write C function internals
+		//   Parse relocations if this is a rel
+
+		// Third read/generate/write output files
+
+		std::cout << "PPC decompile finished" << endl;
 	}
 
 }

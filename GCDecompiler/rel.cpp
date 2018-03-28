@@ -13,11 +13,13 @@ using std::ios;
 using std::endl;
 
 REL::REL(string filename) {
-	std::fstream file_r(filename, ios::binary | ios::in);
+	std::fstream file_r(filename, ios::binary | ios::in | ios::ate);
 	std::fstream *file = &file_r;
 	this->filename = filename;
+	this->file_size = (uint)file->tellg();
 
 	// Read in file Header
+	file->seekg(0, ios::beg);
 	this->id = next_int(file);
 	file->seekg(8, ios::cur); // Skip over the next and previous module values
 	uint num_sections = next_int(file);
@@ -61,7 +63,7 @@ REL::REL(string filename) {
 			file->seekg(section->offset, ios::beg);
 			char *data = new char[section->length];
 			file->read(data, section->length);
-			section->data = data;
+			section->set_data(data);
 		}
 	}
 
@@ -177,7 +179,7 @@ void REL::compile(string filename) {
 	for (vector<Section>::iterator section = this->sections.begin(); section != this->sections.end(); section++) {
 		if (section->offset != 0) {
 			out->seekp(section->offset, ios::beg);
-			out->write(section->data, section->length);
+			out->write(section->get_data(), section->length);
 		}
 	}
 

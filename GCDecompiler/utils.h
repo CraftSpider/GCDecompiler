@@ -14,5 +14,8 @@ int get_signed_range(char *instruction, char start, char end);
 std::string char_format(char *chars, std::string to_format);
 
 bool ends_with(std::string val, std::string ending);
+bool is_num(char c);
+bool is_letter(char c);
+
 uint next_int(std::fstream *file, uint length = 4);
 void write_int(std::fstream *file, uint num, uint length = 4);

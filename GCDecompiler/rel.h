@@ -13,14 +13,13 @@ class REL {
 
 public:
 	uint id, name_offset, name_size, version, bss_size, prolog_section, epilog_section, unresolved_section,
-		prolog_offset, epilog_offset, unresolved_offset, align, bss_align, fix_size, header_size;
+		prolog_offset, epilog_offset, unresolved_offset, align, bss_align, fix_size, header_size, file_size;
 	string filename;
 
 	std::vector<Section> sections;
 	std::vector<Import> imports;
 
 	REL(string filename);
-	std::vector<Section> used_sections();
 	uint num_sections();
 	uint num_imports();
 	uint num_relocations();
