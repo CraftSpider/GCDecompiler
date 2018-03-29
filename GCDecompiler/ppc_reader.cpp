@@ -37,17 +37,56 @@ namespace PPC {
 		else return new Instruction(opcode, instruction);
 	}
 
-	void relocate(REL *input, uint bss_pos, string file_out) {
-		for (std::vector<Import>::iterator imp = input->imports.begin(); imp != input->imports.end(); imp++) {
-			if (imp->module == input->id) {
+	void relocate(REL *rel, uint bss_pos, string file_out) {
+		std::cout << "Relocating file" << endl;
+
+		std::fstream file_r = std::fstream(rel->filename, ios::binary | ios::in);
+		std::fstream *input = &file_r;
+		std::fstream output_r = std::fstream(file_out, ios::binary | ios::out);
+		std::fstream *output = &output_r;
+
+		char *data = new char[rel->file_size];
+		input->read(data, rel->file_size);
+		output->write(data, rel->file_size);
+
+		for (std::vector<Import>::iterator imp = rel->imports.begin(); imp != rel->imports.end(); imp++) {
+			if (imp->module == rel->id) {
 				for (std::vector<Relocation>::iterator reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
 					uint abs_offset = reloc->get_src_offset();
 					if (reloc->get_src_section().address == 0) {
 						abs_offset += bss_pos;
 					}
+
+					// Reloc in the output file
+					output->seekg(reloc->get_dest_offset());
+					switch (reloc->type) {
+					case R_PPC_ADDR32:
+						write_int(output, abs_offset, 4);
+						break;
+					case R_PPC_ADDR24:
+						write_int(output, abs_offset, 3);
+						break;
+					case R_PPC_ADDR16:
+						write_int(output, abs_offset, 2);
+						break;
+					case R_PPC_ADDR16_LO:
+						write_int(output, abs_offset & ((int)pow(2, 16) - 1), 2);
+						break;
+					case R_PPC_ADDR16_HI:
+						write_int(output, abs_offset << 16, 2);
+						break;
+					case R_PPC_ADDR16_HA:
+						write_int(output, (abs_offset << 16) + 0x10000, 2);
+						break;
+					case R_PPC_REL24:
+						write_int(output, abs_offset - reloc->get_dest_offset());
+						break;
+					}
 				}
 			}
 		}
+
+		std::cout << "Relocation Complete" << endl;
 	}
 
 	void relocate(REL *input, string file_out) {

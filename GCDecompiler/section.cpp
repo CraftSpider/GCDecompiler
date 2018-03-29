@@ -37,6 +37,10 @@ void Section::set_data(char *data) {
 	this->data = data;
 }
 
+void Section::set_data_at(uint pos, char data) {
+	this->data[pos] = data;
+}
+
 uint Section::get_start() {
 	return this->offset;
 }

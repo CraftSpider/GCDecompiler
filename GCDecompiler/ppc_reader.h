@@ -11,6 +11,9 @@ namespace PPC {
 
 	static Instruction* create_instruction(char *instruction);
 
+	void relocate(REL *input, uint bss_pos, string file_out);
+	void relocate(REL *input, string file_out);
+
 	void disassemble(string file_in, string file_out, int start = 0, int end = -1);
 	
 	void read_data(string file_in, string file_out, int start = 0, int end = -1);
