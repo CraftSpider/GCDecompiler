@@ -4,17 +4,38 @@
 #include <sstream>
 #include <iostream>
 #include <cmath>
+#include "utils.h"
 #include "types.h"
 
-uint btoi(char *bytes, uint len) {
+uint btoi(char *bytes, uint len, Endian endian) {
 	uint out = 0;
 	for (uint i = 0; i < len; i++) {
-		out += bytes[i] << (8 * (len - i - 1));
+		int multiplier;
+		if (endian == BIG) {
+			multiplier = len - i - 1;
+		} else if (endian == LITTLE) {
+			multiplier = i;
+		}
+		out += bytes[i] << (8 * multiplier);
 	}
 	return out;
 }
 
-const char* itob(uint num, uint length = 4) {
+uint btoi(char *bytes, uint start, uint end, Endian endian) {
+	uint out = 0;
+	for (uint i = start; i < end; i++) {
+		int multiplier;
+		if (endian == BIG) {
+			multiplier = end - i - 1;
+		} else if (endian == LITTLE) {
+			multiplier = i - start;
+		}
+		out += bytes[i] << (8 * multiplier);
+	}
+	return out;
+}
+
+const char* itob(uint num, uint length) {
 	char *output = new char[length]();
 	for (uint i = 0; i < length; i++) {
 		output[i] = num >> (8 * (length - i - 1));

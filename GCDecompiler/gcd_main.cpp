@@ -12,6 +12,7 @@
 #include "dol.h"
 #include "gcd_main.h"
 #include "ppc_reader.h"
+#include "lz.h"
 
 namespace fs = std::experimental::filesystem;
 using std::string;
@@ -90,6 +91,10 @@ int main(int argc, char *argv[]) {
 	//string temp = "C:/ProgrammingFiles/GCDecompiler/GCDecompiler/root/mkb2.main_loop.rel";
 	//REL rel(temp);
 	//process_rel(&rel, "C:/ProgrammingFiles/GCDecompiler/Debug/root_dump");
+
+	/*LZ lz = LZ("C:/ProgrammingFiles/GCDecompiler/Debug/STAGE001.lz");
+	lz.write_decompressed("C:/ProgrammingFiles/GCDecompiler/Debug/STAGE001.dz");
+	return 0;*/
 
 	if (argc == 1) {
 		std::cout << "Usage:" << endl;

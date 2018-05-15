@@ -51,6 +51,14 @@ namespace PPC {
 
 	};
 
+	class PairedSingleFamily : public Instruction {
+
+	public:
+
+		PairedSingleFamily(int type, char *instruction);
+
+	};
+
 	class AddFamily : public Instruction {
 
 	public:

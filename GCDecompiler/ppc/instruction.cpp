@@ -206,6 +206,50 @@ namespace PPC {
         }
     }
 
+	PairedSingleFamily::PairedSingleFamily(int type, char *instruction) : Instruction(type, instruction) {
+		int stype = get_range(instruction, 26, 30);
+		if (secondary_codes_ps.count(stype) > 0) {
+			this->name = secondary_codes_ps.at(stype);
+		}
+		if (secondary_patterns_ps.count(stype) > 0) {
+			this->pattern = secondary_patterns_ps.at(stype);
+		}
+		if (stype == 0) {
+			if (get_bit(instruction, 25)) {
+				this->name += "o";
+			} else {
+				this->name += "u";
+			}
+			if (get_bit(instruction, 24)) {
+				this->name += "1";
+			} else {
+				this->name += "0";
+			}
+		} else if (stype == 8) {
+			int ttype = get_range(instruction, 21, 25);
+			if (ttype == 1) {
+				this->name = "ps_neg";
+			} else if (ttype == 2) {
+				this->name = "ps_mr";
+			} else if (ttype == 4) {
+				this->name = "ps_nabs";
+			} else if (ttype == 8) {
+				this->name = "ps_abs";
+			}
+		} else if (stype == 16) {
+			if (get_bit(instruction, 24)) {
+				this->name += "1";
+			} else {
+				this->name += "0";
+			}
+			if (get_bit(instruction, 25)) {
+				this->name += "1";
+			} else {
+				this->name += "0";
+			}
+		}
+	}
+
     AddFamily::AddFamily(int type, char *instruction) : Instruction(type, instruction) {
         this->pattern = "r{6,10}, r{11,15}, {sX|16,31}";
         if (get_signed_range(instruction, 16, 31) < 0) {

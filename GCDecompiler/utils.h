@@ -2,7 +2,13 @@
 
 #include "types.h"
 
-uint btoi(char *bytes, uint len);
+enum Endian {
+	LITTLE,
+	BIG
+};
+
+uint btoi(char *bytes, uint len, Endian endian = BIG);
+uint btoi(char *bytes, uint start, uint end, Endian endian = BIG);
 const char* itob(uint num, uint length = 4);
 std::string itoh(uint num);
 std::string itoh(int num);

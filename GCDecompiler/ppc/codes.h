@@ -8,11 +8,17 @@ namespace PPC {
 
 	// Codes to names
 
-	static const std::unordered_map<int, std::string> primary_codes({{3, "twi"},{7, "mulli"},{8, "subfic"},{10, "cmpli"},{11, "cmpi"},{12, "addic"},{13, "addic."},{14, "addi"},
-		{15, "addis"},{16, "bc"},{17, "sc"},{18, "b"},{19, "UNKNOWN SPEC BRANCH"},{20, "rlwimi"},{21, "rlwinm"},{23, "rlwnm"},{24, "ori"},{25, "oris"},{26, "xori"},
+	static const std::unordered_map<int, std::string> primary_codes({{3, "twi"},{4, "UNKNOWN PAIRED-SINGLE"},{7, "mulli"},{8, "subfic"},{10, "cmpli"},{11, "cmpi"},{12, "addic"},{13, "addic."},
+		{14, "addi"},{15, "addis"},{16, "bc"},{17, "sc"},{18, "b"},{19, "UNKNOWN SPEC BRANCH"},{20, "rlwimi"},{21, "rlwinm"},{23, "rlwnm"},{24, "ori"},{25, "oris"},{26, "xori"},
 		{27, "xoris"},{28, "andi."},{29, "andis."},{31, "UNKNOWN MATH"},{32, "lwz"},{33, "lwzu"},{34, "lbz"},{35, "lbzu"},{36, "stw"},{37, "stwu"},{38, "stb"},{39, "stbu"},
 		{40, "lhz"},{41, "lhzu"},{42, "lha"},{43, "lhau"},{44, "sth"},{45, "sthu"},{46, "lmw"},{47, "smtw"},{48, "lfs"},{49, "lfsu"},{50, "lfd"},{51, "lfdu"},{52, "stfs"},
 		{53, "stfsu"},{54, "stfd"},{55, "stfdu"},{59, "UNKNOWN FLOATING SINGLE"},{63, "UNKNOWN FLOATING DOUBLE"}
+		});
+
+	static const std::unordered_map<int, std::string> secondary_codes_ps({
+		{0, "ps_cmp"},{8, "UNKNOWN ABS/NEGATE"},{10, "ps_sum0"},{11, "ps_sum1"},{12, "ps_muls0"},{13, "ps_muls1"},{14, "ps_madds0"},{15, "ps_madds1"},{16, "ps_merge"},
+		{18, "ps_div"},{20, "ps_sub"},{21, "ps_add"},{23, "ps_sel"},{24, "ps_res"},{25, "ps_mul"},{26, "ps_rsqrte"},{28, "ps_msub"},{29, "ps_madd"},{30, "ps_nmsub"},
+		{31, "ps_nmadd"}
 		});
 
 	static const std::unordered_map<int, std::string> secondary_codes_sb({
@@ -56,6 +62,14 @@ namespace PPC {
 		{43, "r{6,10}, {X|16,31}(r{11,15})"},{44, "r{6,10}, {X|16,31}(r{11,15})"},{45, "r{6,10}, {X|16,31}(r{11,15})"},{46, "r{6,10}, {X|16,31}(r{11,15})"},{47, "r{6,10}, {X|16,31}(r{11,15})"},
 		{48, "fr{6,10}, {X|16,31}(r{11,15})"},{49, "fr{6,10}, {X|16,31}(r{11,15})"},{50, "fr{6,10}, {X|16,31}(r{11,15})"},{51, "fr{6,10}, {X|16,31}(r{11,15})"},{52, "fr{6,10}, {X|16,31}(r{11,15})"},
 		{53, "fr{6,10}, {X|16,31}(r{11,15})"},{54, "fr{6,10}, {X|16,31}(r{11,15})"},{55, "fr{6,10}, {X|16,31}(r{11,15})"},{59, "fr{6,10}, fr{11,15}, fr{21,25}, fr{16,20}"}
+		});
+
+	static const std::unordered_map<int, std::string> secondary_patterns_ps({
+		{0, "crf{6,8}, r{11,15}, r{16,20}"},{8, "r{6,10}, r{16,20}"},{10, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{11, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{12, "r{6,10}, r{11,15}, r{21,25}"},
+		{13, "r{6,10}, r{11,15}, r{21,25}"},{14, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{15, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{16, "r{6,10}, r{11,15}, r{16,20}"},
+		{18, "r{6,10}, r{11,15}, r{16,20}"},{20, "r{6,10}, r{11,15}, r{16,20}"},{21, "r{6,10}, r{11,15}, r{16,20}"},{23, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{24, "r{6,10}, r{16,20}"},
+		{25, "r{6,10}, r{11,15}, r{21,25}"},{26, "r{6,10}, r{16,20}"},{28, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{29, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},
+		{30, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{31, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"}
 		});
 
 	static const std::unordered_map<int, std::string> secondary_patterns_sb({
