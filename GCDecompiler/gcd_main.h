@@ -2,13 +2,9 @@
 
 #include <vector>
 #include <string>
-#include "section.h"
-#include "import.h"
-#include "relocation.h"
-#include "types.h"
+#include "filetypes/rel.h"
+#include "filetypes/dol.h"
 
-using std::string;
-
-void process_rel(REL *rel, string output);
-void process_rel(REL *rel, std::vector<REL> knowns, string output);
-void process_dol(DOL *dol, string output);
+void process_rel(types::REL *rel, const std::string& output);
+void process_rel(types::REL *rel, const std::vector<types::REL*>& knowns, const std::string& output);
+void process_dol(types::DOL *dol, const std::string& output);

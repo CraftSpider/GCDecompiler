@@ -7,6 +7,8 @@
 #include "section.h"
 #include "import.h"
 
+namespace types {
+
 using std::string;
 
 class REL {
@@ -39,3 +41,5 @@ public:
 	void dump_all(string filename);
 
 };
+
+}

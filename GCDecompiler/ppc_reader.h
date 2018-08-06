@@ -3,22 +3,22 @@
 #include <string>
 #include <vector>
 #include <set>
-#include "rel.h"
+#include "filetypes/rel.h"
 #include "ppc/register.h"
 #include "ppc/instruction.h"
 
 namespace PPC {
 
-	static Instruction* create_instruction(char *instruction);
+	Instruction* create_instruction(const char *instruction);
 
-	void relocate(REL *input, uint bss_pos, string file_out);
-	void relocate(REL *input, string file_out);
+	void relocate(types::REL *input, const uint& bss_pos, const string& file_out);
+	void relocate(types::REL *input, string file_out);
 
-	void disassemble(string file_in, string file_out, int start = 0, int end = -1);
+	void disassemble(const string& file_in, const string& file_out, int start = 0, int end = -1);
 	
-	void read_data(string file_in, string file_out, int start = 0, int end = -1);
-	void read_data(REL *to_read, Section *section, std::vector<REL*> knowns, string file_out);
+	void read_data(const string& file_in, const string& file_out, int start = 0, int end = -1);
+	void read_data(types::REL *to_read, Section *section, const std::vector<types::REL*>& knowns, const string& file_out);
 
-	void decompile(string file_in, string file_out, int start, int end);
+	void decompile(const string& file_in, const string& file_out, int start, int end);
 
 }

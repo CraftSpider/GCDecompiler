@@ -2,6 +2,8 @@
 #include <string>
 #include "types.h"
 
+namespace types {
+
 using std::string;
 
 class LZ {
@@ -25,3 +27,5 @@ public:
 	void write_decompressed(string file_out);
 
 };
+
+}

@@ -9,16 +9,16 @@ using std::string;
 namespace PPC {
 
     Register::Register() {
-        this->number = -1;
+        this->number = 0;
         this->type = BAD;
     }
 
-    Register::Register(uint number, RType type) {
+    Register::Register(const uchar& number, const RType& type) {
         this->number = number;
         this->type = type;
     }
 
-    Register::Register(uint number, string type) {
+    Register::Register(const uchar& number, const string& type) {
         this->number = number;
         if (type == "r") {
             this->type = REGULAR;
@@ -31,20 +31,27 @@ namespace PPC {
         }
     }
 
-    bool Register::operator ==(const Register &reg) const {
+    bool Register::operator==(const Register& reg) const {
         return this->number == reg.number && this->type == reg.type;
     }
 
-    bool Register::operator != (const Register &reg) const {
+    bool Register::operator!=(const Register& reg) const {
         return this->number != reg.number || this->type != reg.type;
     }
 
-    bool Register::operator <(const Register &reg) const {
+    bool Register::operator<(const Register& reg) const {
         if (this->type == reg.type) {
             return this->number < reg.number;
-        } else {
-            return this->type < reg.type;
         }
+        return this->type < reg.type;
     }
+
+	bool Register::operator>(const Register& reg) const {
+		if (this->type == reg.type) {
+			return this->number > reg.number;
+		}
+		return this->type > reg.type;
+	}
+
 
 }

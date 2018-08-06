@@ -22,10 +22,10 @@ namespace PPC {
 
 		Instruction();
 		Instruction(const Instruction &inst);
-		Instruction(int type, char *instruction);
-		~Instruction();
+		Instruction(const int& type, const char *instruction);
+		virtual ~Instruction();
 
-		void set_instruction(char *instruction);
+		void set_instruction(const char *instruction);
 		virtual string code_name();
 		virtual string get_variables();
 
@@ -39,7 +39,7 @@ namespace PPC {
 
 	public:
 
-		ConditionInstruction(int type, char *instruction);
+		ConditionInstruction(const int& type, const char *instruction);
 
 	};
 
@@ -47,7 +47,7 @@ namespace PPC {
 
 	public:
 
-		Ori(int type, char *instruction);
+		Ori(const int& type, const char *instruction);
 
 	};
 
@@ -55,7 +55,7 @@ namespace PPC {
 
 	public:
 
-		PairedSingleFamily(int type, char *instruction);
+		PairedSingleFamily(const int& type, const char *instruction);
 
 	};
 
@@ -63,7 +63,7 @@ namespace PPC {
 
 	public:
 
-		AddFamily(int type, char *instruction);
+		AddFamily(const int& type, const char *instruction);
 
 	};
 
@@ -71,7 +71,7 @@ namespace PPC {
 
 	public:
 
-		CmpFamily(int type, char *instruction);
+		CmpFamily(const int& type, const char *instruction);
 
 	};
 
@@ -79,7 +79,7 @@ namespace PPC {
 
 	public:
 
-		BFamily(int type, char *instruction);
+		BFamily(const int& type, const char *instruction);
 
 	};
 
@@ -87,7 +87,7 @@ namespace PPC {
 
 	public:
 
-		SpecBranchFamily(int type, char *instruction);
+		SpecBranchFamily(const int& type, const char *instruction);
 
 	};
 
@@ -95,7 +95,7 @@ namespace PPC {
 
 	public:
 
-		MathFamily(int type, char *instruction);
+		MathFamily(const int& type, const char *instruction);
 
 	};
 
@@ -103,7 +103,7 @@ namespace PPC {
 
 	public:
 
-		FloatSingleFamily(int type, char *instruction);
+		FloatSingleFamily(const int& type, const char *instruction);
 
 	};
 
@@ -111,7 +111,7 @@ namespace PPC {
 
 	public:
 
-		FloatDoubleFamily(int type, char *instruction);
+		FloatDoubleFamily(const int& type, const char *instruction);
 
 	};
 

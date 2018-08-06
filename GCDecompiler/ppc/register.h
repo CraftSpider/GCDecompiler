@@ -8,18 +8,20 @@ namespace PPC {
     class Register {
 
     public:
-
-        uint number, type;
-
+    
         enum RType { BAD, REGULAR, FLOAT, CONDITION };
+        
+        uchar number;
+        RType type;
 
         Register();
-        Register(uint number, RType type);
-        Register(uint number, std::string type);
+        Register(const uchar& number, const RType& type);
+        Register(const uchar& number, const std::string& type);
 
-        bool operator ==(const Register &reg) const;
-        bool operator != (const Register &reg) const;
-        bool operator <(const Register &reg) const;
+        bool operator==(const Register& reg) const;
+        bool operator!=(const Register& reg) const;
+        bool operator<(const Register& reg) const;
+		bool operator>(const Register& reg) const;
 
     };
 

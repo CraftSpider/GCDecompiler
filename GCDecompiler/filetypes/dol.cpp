@@ -8,35 +8,36 @@
 #include "dol.h"
 #include "utils.h"
 
+namespace types {
+
 using std::string;
 using std::vector;
 using std::ios;
 using std::endl;
 
 DOL::DOL(string filename) {
-	std::fstream file_r(filename, ios::binary | ios::in);
-	std::fstream *file = &file_r;
+	std::fstream file(filename, ios::binary | ios::in);
 	this->filename = filename;
 
 	// Read in file Header
 	uint offset, address, size;
 
 	for (int i = 0; i < 7; i++) {
-		file->seekg(0x0 + i * 4, ios::beg);
+		file.seekg(0x0 + i * 4, ios::beg);
 		offset = next_int(file);
-		file->seekg(0x48 + i * 4, ios::beg);
+		file.seekg(0x48 + i * 4, ios::beg);
 		address = next_int(file);
-		file->seekg(0x90 + i * 4, ios::beg);
+		file.seekg(0x90 + i * 4, ios::beg);
 		size = next_int(file);
 		this->sections.push_back(Section(i, offset, true, size, address));
 	}
 
 	for (int i = 0; i < 11; i++) {
-		file->seekg(0x1C + i * 4, ios::beg);
+		file.seekg(0x1C + i * 4, ios::beg);
 		offset = next_int(file);
-		file->seekg(0x64 + i * 4, ios::beg);
+		file.seekg(0x64 + i * 4, ios::beg);
 		address = next_int(file);
-		file->seekg(0xAC + i * 4, ios::beg);
+		file.seekg(0xAC + i * 4, ios::beg);
 		size = next_int(file);
 		this->sections.push_back(Section(i + 7, offset, false, size, address));
 	}
@@ -75,4 +76,6 @@ string DOL::dump_all() {
 void DOL::dump_all(string filename) {
 	std::fstream out(filename, ios::out);
 	out << this->dump_all();
+}
+
 }

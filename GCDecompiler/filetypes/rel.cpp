@@ -7,34 +7,35 @@
 #include "rel.h"
 #include "utils.h"
 
+namespace types {
+
 using std::string;
 using std::vector;
 using std::ios;
 using std::endl;
 
 REL::REL(string filename) {
-	std::fstream file_r(filename, ios::binary | ios::in | ios::ate);
-	std::fstream *file = &file_r;
+	std::fstream file(filename, ios::binary | ios::in | ios::ate);
 	this->filename = filename;
-	this->file_size = (uint)file->tellg();
+	this->file_size = (uint)file.tellg();
 
 	// Read in file Header
-	file->seekg(0, ios::beg);
+	file.seekg(0, ios::beg);
 	this->id = next_int(file);
-	file->seekg(8, ios::cur); // Skip over the next and previous module values
+	file.seekg(8, ios::cur); // Skip over the next and previous module values
 	uint num_sections = next_int(file);
 	uint section_offset = next_int(file);
 	this->name_offset = next_int(file);
 	this->name_size = next_int(file);
 	this->version = next_int(file);
 	this->bss_size = next_int(file);
-	file->seekg(4, ios::cur); // Because we don't need to know the relocation offset
+	file.seekg(4, ios::cur); // Because we don't need to know the relocation offset
 	uint import_offset = next_int(file);
 	uint num_imports = next_int(file) / 8; // Convert length of imports to number of imports
 	this->prolog_section = next_int(file, 1);
 	this->epilog_section = next_int(file, 1);
 	this->unresolved_section = next_int(file, 1);
-	file->seekg(1, ios::cur); // Skip padding
+	file.seekg(1, ios::cur); // Skip padding
 	this->prolog_offset = next_int(file);
 	this->epilog_offset = next_int(file);
 	this->unresolved_offset = next_int(file);
@@ -45,10 +46,10 @@ REL::REL(string filename) {
 	if (this->version >= 3) {
 		this->fix_size = next_int(file);
 	}
-	this->header_size = (int)file->tellg();
+	this->header_size = (uint)file.tellg();
 
 	// Read in Section table
-	file->seekg(section_offset, ios::beg);
+	file.seekg(section_offset, ios::beg);
 	for (uint i = 0; i < num_sections; i++) {
 		uint offset = next_int(file);
 		bool exec = offset & 1;
@@ -60,15 +61,15 @@ REL::REL(string filename) {
 	// Read in Section data
 	for (vector<Section>::iterator section = this->sections.begin(); section != this->sections.end(); section++) {
 		if (section->offset != 0) {
-			file->seekg(section->offset, ios::beg);
+			file.seekg(section->offset, ios::beg);
 			char *data = new char[section->length];
-			file->read(data, section->length);
+			file.read(data, section->length);
 			section->set_data(data);
 		}
 	}
 
 	// Read in Import table
-	file->seekg(import_offset, ios::beg);
+	file.seekg(import_offset, ios::beg);
 	for (uint i = 0; i < num_imports; i++) {
 		uint module_id = next_int(file);
 		uint offset = next_int(file);
@@ -77,10 +78,10 @@ REL::REL(string filename) {
 
 	// Read Relocation table into Import
 	for (vector<Import>::iterator imp = this->imports.begin(); imp != this->imports.end(); imp++) {
-		file->seekg(imp->offset, ios::beg);
+		file.seekg(imp->offset, ios::beg);
 		RelType rel_type = RelType(0);
 		while (rel_type != R_RVL_STOP) {
-			uint position = (uint)file->tellg();
+			uint position = (uint)file.tellg();
 			uint prev_offset = next_int(file, 2);
 			rel_type = RelType(next_int(file, 1));
 			Section *section = &this->sections.at(next_int(file, 1));
@@ -315,4 +316,6 @@ void REL::dump_all(string filename) {
 	out << this->dump_sections(2) << endl;
 	out << this->dump_imports(2) << endl;
 	std::cout << "REL dump complete" << endl;
+}
+
 }

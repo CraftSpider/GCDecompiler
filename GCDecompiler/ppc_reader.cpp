@@ -10,9 +10,8 @@
 #include <set>
 #include <unordered_map>
 #include "types.h"
-#include "rel.h"
+#include "filetypes/rel.h"
 #include "utils.h"
-#include "ppc/codes.h"
 #include "ppc/register.h"
 #include "ppc/instruction.h"
 #include "ppc/symbol.h"
@@ -23,8 +22,8 @@ using std::endl;
 
 namespace PPC {
 
-	static Instruction* create_instruction(char *instruction) {
-		int opcode = get_range(instruction, 0, 5);
+	Instruction* create_instruction(const char *instruction) {
+		const int opcode = get_range(instruction, 0, 5);
 
 		if (opcode == 10 || opcode == 11) return new CmpFamily(opcode, instruction);
 		else if (opcode >= 12 && opcode <= 15) return new AddFamily(opcode, instruction);
@@ -37,7 +36,7 @@ namespace PPC {
 		else return new Instruction(opcode, instruction);
 	}
 
-	void relocate(REL *rel, uint bss_pos, string file_out) {
+	void relocate(types::REL *rel, const uint& bss_pos, const string& file_out) {
 		std::cout << "Relocating file" << endl;
 
 		std::fstream file_r = std::fstream(rel->filename, ios::binary | ios::in);
@@ -81,6 +80,9 @@ namespace PPC {
 					case R_PPC_REL24:
 						write_int(output, abs_offset - reloc->get_dest_offset());
 						break;
+					default:
+						write_int(output, 0);
+						break;
 					}
 				}
 			}
@@ -89,11 +91,11 @@ namespace PPC {
 		std::cout << "Relocation Complete" << endl;
 	}
 
-	void relocate(REL *input, string file_out) {
+	void relocate(types::REL *input, string file_out) {
 		relocate(input, input->file_size, file_out);
 	}
 
-	void disassemble(string file_in, string file_out, int start, int end) {
+	void disassemble(const string& file_in, const string& file_out, int start, int end) {
 		std::cout << "Disassembling PPC" << endl;
 		std::fstream input(file_in, ios::in | ios::binary);
 		std::fstream output(file_out, ios::out);
@@ -105,13 +107,13 @@ namespace PPC {
 			input.seekg(0, ios::end);
 			end = (int)input.tellg();
 		}
-		int size = end - start;
-		int hex_length = (int)std::floor((std::log(size) / std::log(16)) + 1) + 2;
+		const int size = end - start;
+		const int hex_length = (int)std::floor((std::log(size) / std::log(16)) + 1) + 2;
 		char instruction[4];
 
 		input.seekg(start, ios::beg);
 		while (input.tellg() < end) {
-			position = (int)input.tellg() - start;
+			position = (uint)input.tellg() - start;
 			
 			if ((float)position / size > .25 && !q1) {
 				std::cout << "  25% Complete" << endl;
@@ -151,7 +153,7 @@ namespace PPC {
 		std::cout << "PPC disassembly finished" << endl;
 	}
 
-	void read_data(string file_in, string file_out, int start, int end) {
+	void read_data(const string& file_in, const string& file_out, int start, int end) {
 		std::cout << "Reading data section" << endl;
 		std::fstream input(file_in, ios::in | ios::binary);
 		std::fstream output(file_out, ios::out);
@@ -159,20 +161,20 @@ namespace PPC {
 		//TODO: Data guessing (tm)
 	}
 
-	void read_data(REL *to_read, Section *section, std::vector<REL*> knowns, string file_out) {
+	void read_data(types::REL *to_read, Section *section, const std::vector<types::REL*>& knowns, const string& file_out) {
 		// open the file, look through every import in every REL file to check if they refer to a
 		// location in the right area in this one. If they do, add it to the list. Once done, go through
 		// the list and generate output values. Anything leftover goes in a separate section clearly marked.
 		std::cout << "Reading REL data section" << endl;
 		std::fstream output(file_out, ios::out);
 		std::set<int> offsets;
-		for (std::vector<REL*>::iterator rel_r = knowns.begin(); rel_r != knowns.end(); rel_r++) {
-			REL *rel = (*rel_r);
-			for (std::vector<Import>::iterator imp = rel->imports.begin(); imp != rel->imports.end(); imp++) {
+		for (auto rel_r = knowns.begin(); rel_r != knowns.end(); ++rel_r) {
+			types::REL *rel = (*rel_r);
+			for (auto imp = rel->imports.begin(); imp != rel->imports.end(); ++imp) {
 				if (imp->module != to_read->id && rel->id != to_read->id) {
 					continue;
 				}
-				for (std::vector<Relocation>::iterator reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
+				for (auto reloc = imp->instructions.begin(); reloc != imp->instructions.end(); ++reloc) {
 					if (reloc->get_src_section().id == section->id && imp->module == rel->id) {
 						offsets.insert(reloc->get_src_offset());
 					}
@@ -187,12 +189,12 @@ namespace PPC {
 			// Need to add non ASCII stuff later
 			int lookahead = offset;
 			char dat = section->get_data()[lookahead++ - section->offset];
-			string out = "";
+			string out;
 			while (dat >= 32 && dat <= 126 && offsets.find(lookahead) == offsets.end()) {
 				out.append({ dat });
 				dat = section->get_data()[lookahead++ - section->offset];
 			}
-			if (dat == 0 && out != "") {
+			if (dat == 0 && !out.empty()) {
 				output << out << endl;
 			} else {
 				lookahead = offset;
@@ -200,7 +202,7 @@ namespace PPC {
 				while (offsets.find(lookahead) == offsets.end() && lookahead - offset < 5) {
 					out += ctoh(section->get_data()[lookahead++ - section->offset]);
 				}
-				if (out != "") {
+				if (!out.empty()) {
 					output << out << endl;
 				}
 			}
@@ -208,12 +210,12 @@ namespace PPC {
 		std::cout << "REL data section read complete" << endl;
 	}
 
-	void decompile(string file_in, string file_out, int start, int end) {
+	void decompile(const string& file_in, const string& file_out, int start, int end) {
 		std::cout << "Decompiling PPC" << endl;
 		std::fstream input(file_in, ios::in | ios::binary);
 		std::fstream output(file_out, ios::out);
 
-		uint position;
+		uint position = 0;
 		bool in_func = true, q1 = false, q2 = false, q3 = false, branch = false;
 
 		if (end == -1) {
@@ -268,11 +270,7 @@ namespace PPC {
 				in_func = false;
 			}
 
-			if (instruct->code_name() == "b") {
-				branch = true;
-			} else {
-				branch = false;
-			}
+			branch = (instruct->code_name() == "b");
 
 			delete instruct;
 		}
@@ -282,7 +280,7 @@ namespace PPC {
 		symbols.push_back(Symbol(f_start, f_end, name.str()));
 
 		// Check internal code to determine inputs/return.
-		for (std::vector<Symbol>::iterator sym = symbols.begin(); sym != symbols.end(); sym++) {
+		for (auto sym = symbols.begin(); sym != symbols.end(); sym++) {
 			//std::cout << std::hex << sym->start << " " << sym->end << std::dec << endl;
 			input.seekg(sym->start + start, ios::beg);
 
@@ -293,9 +291,9 @@ namespace PPC {
 				Instruction *instruct = create_instruction(instruction);
 
 				std::set<Register> sources = instruct->source_registers();
-				for (char i = 0; i < 10; i++) {
+				for (int i = 0; i < 10; i++) {
 					if (registers[i] == 0) {
-						Register tester = Register(i + 3, Register::REGULAR);
+						const Register tester = Register(i + 3, Register::REGULAR);
 						if (sources.find(tester) != sources.end()) {
 							registers[i] = 1;
 						} else if (instruct->destination_register() == tester) {
@@ -307,7 +305,7 @@ namespace PPC {
 				delete instruct;
 			}
 			
-			for (char i = 0; i < 10; ++i) {
+			for (int i = 0; i < 10; ++i) {
 				if (registers[i] == 1) {
 					sym->add_source(Register(i + 3, Register::REGULAR));
 				}
@@ -317,10 +315,10 @@ namespace PPC {
 		}
 
 		// Write final list to symbol table
-		for (std::vector<Symbol>::iterator sym = symbols.begin(); sym != symbols.end(); sym++) {
+		for (auto sym = symbols.begin(); sym != symbols.end(); sym++) {
 			output << "f_" << std::hex << sym->start << "_" << sym->end << std::dec << "(";
 			bool start = true;
-			for (std::set<char>::iterator num = sym->r_input.begin(); num != sym->r_input.end(); ++num) {
+			for (auto num = sym->r_input.begin(); num != sym->r_input.end(); ++num) {
 				if (!start) {
 					output << ", ";
 				} else {

@@ -22,7 +22,7 @@ Section::Section(const Section &sect) {
 	this->exec = sect.exec;
 	this->length = sect.length;
 	this->data = new char[this->length];
-	for (int i = 0; i < this->length; i++) {
+	for (uint i = 0; i < this->length; i++) {
 		this->data[i] = sect.data[i];
 	}
 	this->address = sect.address;

@@ -5,6 +5,8 @@
 #include "utils.h"
 #include "lz.h"
 
+namespace types {
+
 using std::string;
 using std::ios;
 
@@ -117,4 +119,6 @@ void LZ::write_compressed(string filename) {
 
 	std::fstream output(filename, ios::out | ios::binary);
 	output.write(this->compressed, this->compressed_size);
+}
+
 }

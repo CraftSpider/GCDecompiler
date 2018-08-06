@@ -4,14 +4,14 @@
 
 namespace PPC {
 
-	Symbol::Symbol(int start, int end, string name) {
+	Symbol::Symbol(uint start, uint end, string name) {
 		this->start = start;
 		this->end = end;
 		this->name = name;
-		this->r_input = std::set<char>();
+		this->r_input = std::set<uchar>();
 	}
 
-	void Symbol::add_source(Register reg) {
+	void Symbol::add_source(const Register& reg) {
 		if (reg.type == Register::REGULAR) {
 			r_input.insert(reg.number);
 		} else if (reg.type == Register::FLOAT) {

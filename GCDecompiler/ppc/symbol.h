@@ -15,11 +15,11 @@ namespace PPC {
 
 		uint start, end;
 		string name;
-		std::set<char> r_input, fr_input;
+		std::set<uchar> r_input, fr_input;
 
-		Symbol(int start, int end, string name);
+		Symbol(uint start, uint end, string name);
 
-		void add_source(Register reg);
+		void add_source(const Register& reg);
 
 	};
 

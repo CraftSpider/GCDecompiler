@@ -12,6 +12,7 @@ namespace PPC {
 
     Instruction::Instruction() {
         this->name = "UNKNOWN INSTRUCTION";
+		this->type = 0;
     }
 
     Instruction::Instruction(const Instruction &inst) {
@@ -27,7 +28,7 @@ namespace PPC {
         this->type = inst.type;
     }
 
-    Instruction::Instruction(int type, char *instruction) {
+    Instruction::Instruction(const int& type, const char *instruction) {
         this->type = (char)type;
         if (primary_codes.count(type) > 0) {
             this->name = primary_codes.at(type);
@@ -55,7 +56,7 @@ namespace PPC {
         delete[] this->instruction;
     }
 
-    void Instruction::set_instruction(char *instruction) {
+    void Instruction::set_instruction(const char *instruction) {
         delete[] this->instruction;
         this->instruction = new char[4]();
         for (int i = 0; i < 4; ++i) {
@@ -68,7 +69,7 @@ namespace PPC {
     }
 
     string Instruction::get_variables() {
-        if (this->pattern == "") {
+        if (this->pattern.empty()) {
             return "FIX ME";
         }
         return char_format(this->instruction, this->pattern);
@@ -82,12 +83,12 @@ namespace PPC {
 
         std::set<Register> *out = new std::set<Register>();
         string args = this->get_variables();
-        string type = "";
+        string type;
         bool in_num = false;
         bool reg_var = false;
         bool pass = false;
         std::stringstream temp;
-        for (int i = 0; i < args.length(); i++) {
+        for (uint i = 0; i < args.length(); i++) {
             if (pass) {
                 if (!is_num(args[i]) && !is_letter(args[i])) {
                     pass = false;
@@ -115,7 +116,7 @@ namespace PPC {
                 } else if (!is_num(args[i]) && !is_letter(args[i])) {
                     in_num = false;
                     reg_var = false;
-                    int num;
+                    uchar num;
                     temp >> num;
                     temp.clear();
                     temp.str("");
@@ -131,7 +132,7 @@ namespace PPC {
             }
         }
         if (reg_var && in_num && !pass) {
-            int reg;
+            uchar reg;
             temp >> reg;
             out->insert(Register(reg, type));
         }
@@ -154,9 +155,9 @@ namespace PPC {
         string args = this->get_variables();
         bool in_num = false;
         std::stringstream nums;
-        int num = 0;
-        string type = "";
-        for (int i = 0; i < args.length() && args[i] != ','; i++) {
+        uchar num = 0;
+        string type;
+        for (uint i = 0; i < args.length() && args[i] != ','; i++) {
             if (!in_num) {
                 if (is_letter(args[i])) {
                     type += args[i];
@@ -183,9 +184,8 @@ namespace PPC {
             return *this->sources;
         }
 
-        std::set<Register> *out;
-        out = new std::set<Register>(this->used_registers());
-        if (primary_missing_dest.find(this->type) == primary_missing_dest.end() && out->size() > 0) {
+        std::set<Register> *out = new std::set<Register>(this->used_registers());
+        if (primary_missing_dest.find(this->type) == primary_missing_dest.end() && !out->empty()) {
             out->erase(this->destination_register());
         }
 
@@ -193,20 +193,20 @@ namespace PPC {
         return *this->sources;
     }
 
-    ConditionInstruction::ConditionInstruction(int type, char *instruction) : Instruction(type, instruction) {
+    ConditionInstruction::ConditionInstruction(const int& type, const char *instruction) : Instruction(type, instruction) {
         if (get_bit(instruction, 31)) {
             this->name += ".";
         }
     }
 
-    Ori::Ori(int type, char *instruction) : Instruction(type, instruction) {
+    Ori::Ori(const int& type, const char *instruction) : Instruction(type, instruction) {
         if (get_range(instruction, 6, 31) == 0) {
             this->name = "nop";
             this->pattern = "{}";
         }
     }
 
-	PairedSingleFamily::PairedSingleFamily(int type, char *instruction) : Instruction(type, instruction) {
+	PairedSingleFamily::PairedSingleFamily(const int& type, const char *instruction) : Instruction(type, instruction) {
 		int stype = get_range(instruction, 26, 30);
 		if (secondary_codes_ps.count(stype) > 0) {
 			this->name = secondary_codes_ps.at(stype);
@@ -224,6 +224,11 @@ namespace PPC {
 				this->name += "1";
 			} else {
 				this->name += "0";
+			}
+		} else if (stype == 6 || stype == 7) {
+			if (get_bit(instruction, 25)) {
+				int len = (int)this->name.length();
+				this->name = this->name.substr(0, len - 1) + "u" + this->name.substr(len - 1, len);
 			}
 		} else if (stype == 8) {
 			int ttype = get_range(instruction, 21, 25);
@@ -250,7 +255,7 @@ namespace PPC {
 		}
 	}
 
-    AddFamily::AddFamily(int type, char *instruction) : Instruction(type, instruction) {
+    AddFamily::AddFamily(const int& type, const char *instruction) : Instruction(type, instruction) {
         this->pattern = "r{6,10}, r{11,15}, {sX|16,31}";
         if (get_signed_range(instruction, 16, 31) < 0) {
             this->name = "sub" + this->name.substr(3, this->name.length());
@@ -258,7 +263,7 @@ namespace PPC {
         }
     }
 
-    CmpFamily::CmpFamily(int type, char *instruction) : Instruction(type, instruction) {
+    CmpFamily::CmpFamily(const int& type, const char *instruction) : Instruction(type, instruction) {
         if (!get_bit(instruction, 10)) {
             this->name = this->name.substr(0, this->name.length() - 1) + "wi";
             this->pattern = "crf{6,8}, r{11,15}, {X|16,31}";
@@ -267,7 +272,7 @@ namespace PPC {
         }
     }
 
-    BFamily::BFamily(int type, char *instruction) : Instruction(type, instruction) {
+    BFamily::BFamily(const int& type, const char *instruction) : Instruction(type, instruction) {
         if (get_bit(instruction, 31)) {
             this->name += "l";
         }
@@ -288,8 +293,8 @@ namespace PPC {
         }
     }
 
-    SpecBranchFamily::SpecBranchFamily(int type, char *instruction) : Instruction(type, instruction) {
-        int stype = get_range(instruction, 21, 30);
+    SpecBranchFamily::SpecBranchFamily(const int& type, const char *instruction) : Instruction(type, instruction) {
+        const int stype = get_range(instruction, 21, 30);
         if (secondary_codes_sb.count(stype) > 0) {
             this->name = secondary_codes_sb.at(stype);
         }
@@ -311,14 +316,14 @@ namespace PPC {
         }
     }
 
-    MathFamily::MathFamily(int type, char *instruction) : ConditionInstruction(type, instruction) {
-        int stype = get_range(instruction, 21, 30);
+    MathFamily::MathFamily(const int& type, const char *instruction) : ConditionInstruction(type, instruction) {
+        const int stype = get_range(instruction, 21, 30);
         try {
             this->name = secondary_codes_math.at(stype);
             if (this->name.substr(this->name.length() - 1, this->name.length()) == ".") {
                 this->name += ".";
             }
-        } catch (const std::exception e) {
+        } catch (const std::exception& e) {
             std::cout << "Condition Catch" << endl;
         }
         if (secondary_patterns_math.count(stype) > 0) {
@@ -339,7 +344,7 @@ namespace PPC {
             }
         } else if (stype == 144) {
             if (get_range(instruction, 12, 19) == 0xFF) {
-                this->name == "mtcr";
+                this->name = "mtcr";
                 this->pattern = "r{6,10}";
             } else {
                 this->pattern = "{X|12,19}, r{6,10}";
@@ -390,14 +395,14 @@ namespace PPC {
 
     //TODO: Add special consideration for lswi and lswx destination register for math
 
-    FloatSingleFamily::FloatSingleFamily(int type, char *instruction) : ConditionInstruction(type, instruction) {
+    FloatSingleFamily::FloatSingleFamily(const int& type, const char *instruction) : ConditionInstruction(type, instruction) {
         int stype = get_range(instruction, 26, 30);
         try {
             this->name = secondary_codes_float.at(stype);
             if (this->name.substr(this->name.length() - 1, this->name.length()) == ".") {
                 this->name += ".";
             }
-        } catch (const std::exception e) {
+        } catch (const std::exception& e) {
             std::cout << "FloatSingle Catch" << endl;
         }
         if (secondary_patterns_float.count(stype) > 0) {
@@ -406,7 +411,7 @@ namespace PPC {
         // Set up commands with special conditions
     }
 
-    FloatDoubleFamily::FloatDoubleFamily(int type, char *instruction) : ConditionInstruction(type, instruction) {
+    FloatDoubleFamily::FloatDoubleFamily(const int& type, const char *instruction) : ConditionInstruction(type, instruction) {
         int stype;
         if (get_bit(instruction, 26)) {
             stype = get_range(instruction, 26, 30);
@@ -418,7 +423,7 @@ namespace PPC {
             if (this->name.substr(this->name.length() - 1, this->name.length()) == ".") {
                 this->name += ".";
             }
-        } catch (const std::exception e) {
+        } catch (const std::exception& e) {
             std::cout << "FloatDouble Catch" << endl;
         }
         if (secondary_patterns_double.count(stype) > 0) {

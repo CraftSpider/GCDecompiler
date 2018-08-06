@@ -7,10 +7,12 @@
 #include "utils.h"
 #include "types.h"
 
-uint btoi(char *bytes, uint len, Endian endian) {
+// Conversion functions
+
+uint btoi(const char *bytes, const uint& len, const Endian& endian) {
 	uint out = 0;
 	for (uint i = 0; i < len; i++) {
-		int multiplier;
+		int multiplier = 1;
 		if (endian == BIG) {
 			multiplier = len - i - 1;
 		} else if (endian == LITTLE) {
@@ -21,10 +23,10 @@ uint btoi(char *bytes, uint len, Endian endian) {
 	return out;
 }
 
-uint btoi(char *bytes, uint start, uint end, Endian endian) {
+uint btoi(const char *bytes, const uint& start, const uint& end, const Endian& endian) {
 	uint out = 0;
 	for (uint i = start; i < end; i++) {
-		int multiplier;
+		int multiplier = 1;
 		if (endian == BIG) {
 			multiplier = end - i - 1;
 		} else if (endian == LITTLE) {
@@ -35,7 +37,7 @@ uint btoi(char *bytes, uint start, uint end, Endian endian) {
 	return out;
 }
 
-const char* itob(uint num, uint length) {
+const char* itob(const uint& num, const uint& length) {
 	char *output = new char[length]();
 	for (uint i = 0; i < length; i++) {
 		output[i] = num >> (8 * (length - i - 1));
@@ -43,16 +45,7 @@ const char* itob(uint num, uint length) {
 	return output;
 }
 
-std::string ctoh(char num) {
-	std::stringstream out;
-	if (num < 16) {
-		out << "0";
-	}
-	out << std::hex << std::uppercase << (int)num;
-	return out.str();
-}
-
-std::string itoh(uint num) {
+std::string itoh(const uint& num) {
 	std::stringstream out;
 	out << "0x";
 	out << std::hex << std::uppercase << num;
@@ -70,12 +63,23 @@ std::string itoh(int num) {
 	return out.str();
 }
 
-bool get_bit(char *chars, char pos) {
+std::string ctoh(const char& num) {
+	std::stringstream out;
+	if (num < 16) {
+		out << "0";
+	}
+	out << std::hex << std::uppercase << (int)num;
+	return out.str();
+}
+
+// Byte Manipulation
+
+bool get_bit(const char *chars, const char& pos) {
 	int loc = (int)floor(pos / 8);
 	return chars[loc] & (int)pow(2, 7 - (pos % 8));
 }
 
-uint get_range(char *chars, char start, char end) {
+uint get_range(const char *chars, const char& start, const char& end) {
 	uint out = 0;
 	char num_bits = (end - start) + 1;
 	for (char i = start, j = 1; i <= end; i++, j++) {
@@ -84,7 +88,7 @@ uint get_range(char *chars, char start, char end) {
 	return out;
 }
 
-int get_signed_range(char *instruction, char start, char end) {
+int get_signed_range(const char *instruction, const char& start, const char& end) {
 	uint value = get_range(instruction, start, end);
 	char num_bits = end - start;
 	uint mask = 1 << num_bits;
@@ -99,12 +103,12 @@ std::string char_format(char *chars, std::string to_format) {
 	char mod_mask = 0;
 	char skip = 0;
 	int start = 0, end = 0;
-	for (int i = 0; i < to_format.length(); i++) {
+	for (uint i = 0; i < to_format.length(); i++) {
 		if (skip > 0) {
 			skip--;
-		} else if (in_code == false && to_format[i] != '{') { // Assuming it's not a format code, just push it to output
+		} else if (!in_code && to_format[i] != '{') { // Assuming it's not a format code, just push it to output
 			out << to_format[i];
-		} else if (in_code == false) { // If it's an { then we start processing a format code
+		} else if (!in_code) { // If it's an { then we start processing a format code
 			in_code = true;
 		} else {
 			if (to_format[i] == '}') { // If we find a } then we stop processing a format code, and dump the format result
@@ -115,7 +119,7 @@ std::string char_format(char *chars, std::string to_format) {
 				start = 0, end = 0;
 				mod_mask = 0;
 				continue;
-			} else if (mods == true && ((to_format[i] >= 'A' && to_format[i] <= 'Z') || (to_format[i] >= 'a' && to_format[i] <= 'z'))) { // If we're in the mod_code section, read in codes.
+			} else if (mods && ((to_format[i] >= 'A' && to_format[i] <= 'Z') || (to_format[i] >= 'a' && to_format[i] <= 'z'))) { // If we're in the mod_code section, read in codes.
 				if (to_format[i] == 's') {
 					mod_mask |= 0b10;
 				} else if (to_format[i] == 'a') {
@@ -127,12 +131,12 @@ std::string char_format(char *chars, std::string to_format) {
 				} else {
 					throw std::runtime_error("Bad Mod Code");
 				}
-			} else if (mods == true && (to_format[i] == '|' || mod_mask == 0)) { // If there aren't any mods or we hit section end, move on to next section.
+			} else if (mods && (to_format[i] == '|' || mod_mask == 0)) { // If there aren't any mods or we hit section end, move on to next section.
 				mods = false;
 			}
-			if (mods == false && to_format[i] != '|') {
+			if (!mods && to_format[i] != '|') {
 				mods = false;
-				for (int j = i; to_format[j] != '}' && to_format[j] != ','; j++) {
+				for (uint j = i; to_format[j] != '}' && to_format[j] != ','; j++) {
 					format << to_format[j];
 					skip++;
 				}
@@ -179,31 +183,101 @@ std::string char_format(char *chars, std::string to_format) {
 	return out.str();
 }
 
-bool ends_with(std::string val, std::string ending) {
+// String Manipulation
+
+bool ends_with(const std::string& val, const std::string& ending) {
 	if (ending.size() > val.size()) return false;
 	return !val.compare(val.length() - ending.length(), ending.length(), ending);
 }
 
-bool is_num(char c) {
+bool is_num(const char& c) {
 	return (c >= '0' && c <= '9');
 }
 
-bool is_letter(char c) {
+bool is_letter(const char& c) {
 	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
 }
 
-uint next_int(std::fstream *file, uint length) {
+bool is_hex(const char& c) {
+	return is_num(c) || ((c >= 'a' &&  c <= 'z') || (c >= 'A' && c <= 'Z'));
+}
+
+// File Manipulation
+
+ulong next_long(std::fstream& file, const uint& length) {
 	char *input = new char[length]();
-	file->read(input, length);
+	file.read(input, length);
 	uint out = btoi(input, length);
 	delete[] input;
 	return out;
 }
 
-void write_int(std::fstream *file, uint num, uint length) {
-	const char *to_write;
-	to_write = itob(num, length);
+uint next_int(std::fstream& file, const uint& length) {
+	return (uint)next_long(file, length);
+}
+
+ushort next_short(std::fstream& file, const uint& length) {
+	return (ushort)next_long(file, length);
+}
+
+uchar next_char(std::fstream& file, const uint& length) {
+	return (uchar)next_long(file, length);
+}
+
+float next_float(std::fstream& file) {
+	float data[1];
+	file.read(reinterpret_cast<char*>(&data), 4);
+	return data[0];
+}
+
+void write_int(std::fstream *file, const uint& num, const uint& length) {
+	const char *to_write = itob(num, length);
 	file->write(to_write, length);
 	delete[] to_write;
 }
 
+void write_string(std::fstream *file, const std::string& out) {
+	file->write(out.c_str(), out.length());
+}
+
+// Math Operations
+
+uint crc_table[256];
+const uint crc_start = 0xFFFFFFFFul;
+bool crc_invoked = false;
+
+void gen_crc32_table() {
+
+	for (uint i = 0; i < 256; i++) {
+
+		uint crc = i;
+
+		for (uint j = 0; j < 8; j++) {
+			if (crc & 1) crc = (crc >> 1) ^ 0xedb88320; // 0x4C11DB7
+			else crc = crc >> 1;
+		}
+
+		crc_table[i] = crc; 
+
+	}
+
+}
+
+uint crc32(const char *input, const int& length) {
+
+	if (!crc_invoked) {
+		gen_crc32_table();
+		crc_invoked = true;
+	}
+	
+	uint crc = crc_start;
+
+	if (input != nullptr) {
+		for (int a = 0; a < length; a++) {
+			crc = (crc >> 8) ^ crc_table[(crc ^ input[a]) & 0xFF];
+		}
+	}
+
+	return crc ^ crc_start;
+
+}
