@@ -76,8 +76,14 @@ add_executable(GCDecompiler
         zlib/adler32.c
         zlib/deflate.h
         zlib/deflate.c
+        zlib/inflate.h
+        zlib/inflate.c
+        zlib/inftrees.h
+        zlib/inftrees.c
+        zlib/inffast.h
+        zlib/inffast.c
         GCDecompiler/logging.cpp
-        GCDecompiler/logging.h)
+        GCDecompiler/logging.h GCDecompiler/argparser.cpp GCDecompiler/argparser.h)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 

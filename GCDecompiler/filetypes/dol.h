@@ -7,20 +7,18 @@
 
 namespace types {
 
-using std::string;
-
 class DOL {
 
 public:
     uint entry_offset, bss_address, bss_size;
-    string filename;
+    std::string filename;
     
     std::vector<Section> sections;
     
-    DOL(string filename);
+    DOL(const std::string& filename);
     
-    string dump_all();
-    void dump_all(string filename);
+    std::string dump_all();
+    void dump_all(const std::string& filename);
     
 };
 

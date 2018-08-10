@@ -4,8 +4,6 @@
 #include "../types.h"
 #include "register.h"
 
-using std::string;
-
 namespace PPC {
 
     Register::Register() {
@@ -18,7 +16,7 @@ namespace PPC {
         this->type = type;
     }
 
-    Register::Register(const uchar& number, const string& type) {
+    Register::Register(const uchar& number, const std::string& type) {
         this->number = number;
         if (type == "r") {
             this->type = REGULAR;

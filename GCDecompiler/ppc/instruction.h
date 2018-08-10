@@ -5,29 +5,27 @@
 
 #include "register.h"
 
-using std::string;
-
 namespace PPC {
 
 	class Instruction {
 
 	protected:
 
-		string name, pattern;
+		std::string name, pattern;
 		std::set<Register> *used = nullptr, *sources = nullptr;
 		Register *destination = nullptr;
-		char *instruction = nullptr, type;
+		uchar *instruction = nullptr, type;
 
 	public:
 
 		Instruction();
 		Instruction(const Instruction &inst);
-		Instruction(const int& type, const char *instruction);
+		Instruction(const uchar& type, const uchar *instruction);
 		virtual ~Instruction();
 
-		void set_instruction(const char *instruction);
-		virtual string code_name();
-		virtual string get_variables();
+		void set_instruction(const uchar *instruction);
+		virtual std::string code_name();
+		virtual std::string get_variables();
 
 		virtual std::set<Register> used_registers();
 		virtual Register destination_register();
@@ -39,7 +37,7 @@ namespace PPC {
 
 	public:
 
-		ConditionInstruction(const int& type, const char *instruction);
+		ConditionInstruction(const uchar& type, const uchar *instruction);
 
 	};
 
@@ -47,7 +45,7 @@ namespace PPC {
 
 	public:
 
-		Ori(const int& type, const char *instruction);
+		Ori(const uchar& type, const uchar *instruction);
 
 	};
 
@@ -55,7 +53,7 @@ namespace PPC {
 
 	public:
 
-		PairedSingleFamily(const int& type, const char *instruction);
+		PairedSingleFamily(const uchar& type, const uchar *instruction);
 
 	};
 
@@ -63,7 +61,7 @@ namespace PPC {
 
 	public:
 
-		AddFamily(const int& type, const char *instruction);
+		AddFamily(const uchar& type, const uchar *instruction);
 
 	};
 
@@ -71,7 +69,7 @@ namespace PPC {
 
 	public:
 
-		CmpFamily(const int& type, const char *instruction);
+		CmpFamily(const uchar& type, const uchar *instruction);
 
 	};
 
@@ -79,7 +77,7 @@ namespace PPC {
 
 	public:
 
-		BFamily(const int& type, const char *instruction);
+		BFamily(const uchar& type, const uchar *instruction);
 
 	};
 
@@ -87,7 +85,7 @@ namespace PPC {
 
 	public:
 
-		SpecBranchFamily(const int& type, const char *instruction);
+		SpecBranchFamily(const uchar& type, const uchar *instruction);
 
 	};
 
@@ -95,7 +93,7 @@ namespace PPC {
 
 	public:
 
-		MathFamily(const int& type, const char *instruction);
+		MathFamily(const uchar& type, const uchar *instruction);
 
 	};
 
@@ -103,7 +101,7 @@ namespace PPC {
 
 	public:
 
-		FloatSingleFamily(const int& type, const char *instruction);
+		FloatSingleFamily(const uchar& type, const uchar *instruction);
 
 	};
 
@@ -111,7 +109,7 @@ namespace PPC {
 
 	public:
 
-		FloatDoubleFamily(const int& type, const char *instruction);
+		FloatDoubleFamily(const uchar& type, const uchar *instruction);
 
 	};
 

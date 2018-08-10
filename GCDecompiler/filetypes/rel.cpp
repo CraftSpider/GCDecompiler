@@ -4,22 +4,24 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include "logging.h"
 #include "rel.h"
 #include "utils.h"
 
 namespace types {
 
-using std::string;
-using std::vector;
 using std::ios;
-using std::endl;
 
-REL::REL(string filename) {
+static logging::Logger *logger = logging::get_logger("rel");
+
+REL::REL(const std::string& filename) {
+	logger->debug("Parsing REL");
+	
 	std::fstream file(filename, ios::binary | ios::in | ios::ate);
 	this->filename = filename;
 	this->file_size = (uint)file.tellg();
 
-	// Read in file Header
+	logger->trace("Reading file header");
 	file.seekg(0, ios::beg);
 	this->id = next_int(file);
 	file.seekg(8, ios::cur); // Skip over the next and previous module values
@@ -32,9 +34,9 @@ REL::REL(string filename) {
 	file.seekg(4, ios::cur); // Because we don't need to know the relocation offset
 	uint import_offset = next_int(file);
 	uint num_imports = next_int(file) / 8; // Convert length of imports to number of imports
-	this->prolog_section = next_int(file, 1);
-	this->epilog_section = next_int(file, 1);
-	this->unresolved_section = next_int(file, 1);
+	this->prolog_section = next_char(file);
+	this->epilog_section = next_char(file);
+	this->unresolved_section = next_char(file);
 	file.seekg(1, ios::cur); // Skip padding
 	this->prolog_offset = next_int(file);
 	this->epilog_offset = next_int(file);
@@ -48,7 +50,7 @@ REL::REL(string filename) {
 	}
 	this->header_size = (uint)file.tellg();
 
-	// Read in Section table
+	logger->trace("Reading section table");
 	file.seekg(section_offset, ios::beg);
 	for (uint i = 0; i < num_sections; i++) {
 		uint offset = next_int(file);
@@ -58,8 +60,8 @@ REL::REL(string filename) {
 		this->sections.push_back(Section(i, offset, exec, length));
 	}
 
-	// Read in Section data
-	for (vector<Section>::iterator section = this->sections.begin(); section != this->sections.end(); section++) {
+	logger->trace("Reading section data");
+	for (auto section = this->sections.begin(); section != this->sections.end(); section++) {
 		if (section->offset != 0) {
 			file.seekg(section->offset, ios::beg);
 			char *data = new char[section->length];
@@ -68,27 +70,29 @@ REL::REL(string filename) {
 		}
 	}
 
-	// Read in Import table
+	logger->trace("Reading import table");
 	file.seekg(import_offset, ios::beg);
 	for (uint i = 0; i < num_imports; i++) {
 		uint module_id = next_int(file);
 		uint offset = next_int(file);
 		this->imports.push_back(Import(module_id, offset));
 	}
-
-	// Read Relocation table into Import
-	for (vector<Import>::iterator imp = this->imports.begin(); imp != this->imports.end(); imp++) {
+	
+	logger->trace("Reading relocation table");
+	for (auto imp = this->imports.begin(); imp != this->imports.end(); imp++) {
 		file.seekg(imp->offset, ios::beg);
 		RelType rel_type = RelType(0);
 		while (rel_type != R_RVL_STOP) {
 			uint position = (uint)file.tellg();
-			uint prev_offset = next_int(file, 2);
-			rel_type = RelType(next_int(file, 1));
-			Section *section = &this->sections.at(next_int(file, 1));
+			ushort prev_offset = next_short(file);
+			rel_type = RelType(next_char(file));
+			Section *section = &this->sections.at(next_char(file));
 			uint rel_offset = next_int(file);
 			imp->add_relocation(rel_type, position, rel_offset, prev_offset, section);
 		}
 	}
+	
+	logger->debug("Finished parsing REL");
 }
 
 uint REL::num_sections() {
@@ -101,7 +105,7 @@ uint REL::num_imports() {
 
 uint REL::num_relocations() {
 	uint out = 0;
-	for (vector<Import>::iterator imp = this->imports.begin(); imp != imports.end(); imp++) {
+	for (auto imp = this->imports.begin(); imp != imports.end(); imp++) {
 		out += (uint)imp->instructions.size();
 	}
 	return out;
@@ -112,18 +116,18 @@ uint REL::section_offset() {
 }
 
 uint REL::import_offset() {
-	int out = this->relocation_offset();
-	for (vector<Import>::iterator imp = this->imports.begin(); imp != imports.end(); imp++) {
+	uint out = this->relocation_offset();
+	for (auto imp = this->imports.begin(); imp != imports.end(); imp++) {
 		out += (uint)imp->instructions.size() * 8;
 	}
 	return out;
 }
 
 uint REL::relocation_offset() {
-	int out = 0;
+	uint out = 0;
 	out += this->header_size;
 	out += this->num_sections() * 8;
-	for (vector<Section>::iterator section = this->sections.begin(); section != this->sections.end(); section++) {
+	for (auto section = this->sections.begin(); section != this->sections.end(); section++) {
 		if (section->offset != 0) {
 			out += section->length;
 		}
@@ -132,14 +136,13 @@ uint REL::relocation_offset() {
 	return out;
 }
 
-void REL::compile(string filename) {
-	std::cout << "Compiling REL file " << this->id << endl;
-	std::fstream out_r(filename, ios::out | ios::binary);
-	std::fstream *out = &out_r;
+void REL::compile(const std::string& filename) {
+	logger->info("Compiling REL file " + this->id);
+	std::fstream out(filename, ios::out | ios::binary);
 	// Recalculate any necessary numbers for offsets
 
 	// Write Header to the file
-	std::cout << "  Writing header" << endl;
+	logger->debug("Writing header");
 	write_int(out, this->id);
 	write_int(out, 0, 8); // Padding for Prev and Next module addresses.
 	write_int(out, this->num_sections());
@@ -167,8 +170,8 @@ void REL::compile(string filename) {
 	}
 
 	// Write Section Table to the file
-	std::cout << "  Writing section table" << endl;
-	out->seekp(this->section_offset(), ios::beg);
+	logger->debug("Writing section table");
+	out.seekp(this->section_offset(), ios::beg);
 	for (uint i = 0; i < this->num_sections(); i++) {
 		Section section = this->sections.at(i);
 		write_int(out, section.offset | (int)section.exec); // Add exec bit back in
@@ -176,17 +179,17 @@ void REL::compile(string filename) {
 	}
 
 	// Write actual sections to the file
-	std::cout << "  Writing section data" << endl;
-	for (vector<Section>::iterator section = this->sections.begin(); section != this->sections.end(); section++) {
+	logger->debug("Writing section data");
+	for (auto section = this->sections.begin(); section != this->sections.end(); section++) {
 		if (section->offset != 0) {
-			out->seekp(section->offset, ios::beg);
-			out->write(section->get_data(), section->length);
+			out.seekp(section->offset, ios::beg);
+			out.write(section->get_data(), section->length);
 		}
 	}
 
 	// Write the Import Table
-	std::cout << "  Writing import table" << endl;
-	out->seekp(this->import_offset(), ios::beg);
+	logger->debug("Writing import table");
+	out.seekp(this->import_offset(), ios::beg);
 	for (uint i = 0; i < this->num_imports(); i++) {
 		Import imp = this->imports.at(i);
 		write_int(out, imp.module);
@@ -194,128 +197,137 @@ void REL::compile(string filename) {
 	}
 
 	// Write the Relocation Instructions
-	std::cout << "  Writing relocation instructions" << endl;
-	for (vector<Import>::iterator imp = this->imports.begin(); imp != this->imports.end(); imp++) {
-		out->seekp(imp->offset, ios::beg);
-		for (vector<Relocation>::iterator reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
+	logger->debug("Writing relocation instructions");
+	for (auto imp = this->imports.begin(); imp != this->imports.end(); imp++) {
+		out.seekp(imp->offset, ios::beg);
+		for (auto reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
 			write_int(out, reloc->prev_offset, 2);
 			write_int(out, reloc->type, 1);
 			write_int(out, reloc->get_src_section().id, 1);
 			write_int(out, reloc->relative_offset);
 		}
 	}
-	std::cout << "REL compile complete" << endl;
+	
+	logger->info("REL compile complete");
 }
 
-string REL::dump_header(int pad_len) {
-	string padding(pad_len, ' ');
-	std::cout << padding << "Dumping REL Header" << endl;
+std::string REL::dump_header(uint pad_len) {
+	logger->trace("Generating REL header dump string");
+	std::string padding(pad_len, ' ');
 	std::stringstream out;
-	out << "REL Header:" << endl;
-	out << "  ID: " << this->id << endl;
-	out << "  Version: " << this->version << endl;
-	out << "  Name Offset: " << itoh(this->name_offset) << endl;
-	out << "  Name Size: " << itoh(this->name_size) << endl;
-	out << "  .bss Size: " << itoh(this->bss_size) << endl;
-	out << "  Sections Start: " << itoh(this->section_offset()) << endl;
-	out << "  Num Sections: " << this->num_sections() << endl;
-	out << "  Import Start: " << itoh(this->import_offset()) << endl;
-	out << "  Num Imports: " << this->num_imports() << endl;
-	out << "  Relocation Start: " << itoh(this->relocation_offset()) << endl;
-	out << "  Num Relocations: " << this->num_relocations() << endl;
-	out << "  Prolog Index: " << this->prolog_section << endl;
-	out << "  Prolog Offset: " << itoh(this->prolog_offset) << endl;
-	out << "  Epilog Index: " << this->epilog_section << endl;
-	out << "  Epilog Offset: " << itoh(this->epilog_offset) << endl;
-	out << "  Unresolved Index: " << this->unresolved_section << endl;
-	out << "  Unresolved Offset: " << itoh(this->unresolved_offset) << endl;
+	out << "REL Header:" << '\n';
+	out << "  ID: " << this->id << '\n';
+	out << "  Version: " << this->version << '\n';
+	out << "  Name Offset: " << itoh(this->name_offset) << '\n';
+	out << "  Name Size: " << itoh(this->name_size) << '\n';
+	out << "  .bss Size: " << itoh(this->bss_size) << '\n';
+	out << "  Sections Start: " << itoh(this->section_offset()) << '\n';
+	out << "  Num Sections: " << this->num_sections() << '\n';
+	out << "  Import Start: " << itoh(this->import_offset()) << '\n';
+	out << "  Num Imports: " << this->num_imports() << '\n';
+	out << "  Relocation Start: " << itoh(this->relocation_offset()) << '\n';
+	out << "  Num Relocations: " << this->num_relocations() << '\n';
+	out << "  Prolog Index: " << this->prolog_section << '\n';
+	out << "  Prolog Offset: " << itoh(this->prolog_offset) << '\n';
+	out << "  Epilog Index: " << this->epilog_section << '\n';
+	out << "  Epilog Offset: " << itoh(this->epilog_offset) << '\n';
+	out << "  Unresolved Index: " << this->unresolved_section << '\n';
+	out << "  Unresolved Offset: " << itoh(this->unresolved_offset) << '\n';
 	if (this->version >= 2) {
-		out << "  Align: " << this->align << endl;
-		out << "  .bss Align: " << this->bss_align << endl;
+		out << "  Align: " << this->align << '\n';
+		out << "  .bss Align: " << this->bss_align << '\n';
 	}
 	if (this->version >= 3) {
-		out << "  Fix Size: " << this->fix_size << endl;
+		out << "  Fix Size: " << this->fix_size << '\n';
 	}
 	return out.str();
 }
 
-void REL::dump_header(string filename) {
+void REL::dump_header(const std::string& filename) {
+	logger->debug("Dumping REL header to " + filename);
 	std::fstream out(filename, ios::out);
 	out << this->dump_header();
+	logger->debug("REL header dump complete");
 }
 
-string REL::dump_sections(int pad_len) {
-	string padding(pad_len, ' ');
-	std::cout << padding << "Dumping REL Sections" << endl;
+std::string REL::dump_sections(uint pad_len) {
+	logger->trace("Generating REL section dump string");
+	std::string padding(pad_len, ' ');
+	std::cout << padding << "Dumping REL Sections" << '\n';
 	std::stringstream out;
-	out << "Section Table:" << endl;
-	for (vector<Section>::iterator section = this->sections.begin(); section != sections.end(); section++) {
-		out << "  Section " << section->id << ":" << endl;
-		out << "    Offset: " << itoh(section->offset) << endl;
-		out << "    Length: " << itoh(section->length) << endl;
+	out << "Section Table:" << '\n';
+	for (auto section = this->sections.begin(); section != sections.end(); section++) {
+		out << "  Section " << section->id << ":" << '\n';
+		out << "    Offset: " << itoh(section->offset) << '\n';
+		out << "    Length: " << itoh(section->length) << '\n';
 		if (section->offset > 0) {
-			out << "    Range: " << itoh(section->offset) << " - " << itoh(section->offset + section->length) << endl;
+			out << "    Range: " << itoh(section->offset) << " - " << itoh(section->offset + section->length) << '\n';
 		}
-		out << "    Executable: " << section->exec << endl;
+		out << "    Executable: " << section->exec << '\n';
 	}
 	return out.str();
 }
 
-void REL::dump_sections(string filename) {
+void REL::dump_sections(const std::string& filename) {
+	logger->debug("Dumping REL sections to " + filename);
 	std::fstream out(filename, ios::out);
 	out << this->dump_sections();
+	logger->debug("REL section dump complete");
 }
 
-string REL::dump_imports(int pad_len) {
-	string padding(pad_len, ' ');
-	std::cout << padding << "Dumping REL Imports" << endl;
+std::string REL::dump_imports(uint pad_len) {
+	logger->trace("Generating REL import dump string");
+	std::string padding(pad_len, ' ');
 	std::stringstream out;
-	out << "Import Table:" << endl;
-	for (vector<Import>::iterator imp = this->imports.begin(); imp != this->imports.end(); imp++) {
-		std::cout << padding << "  Dumping Import " << imp->module << endl;
-		out << "  Import:" << endl;
-		out << "    Module: " << imp->module << endl;
-		out << "    Offset: " << itoh(imp->offset) << endl;
-		out << "    Relocation Table:" << endl;
-		for (vector<Relocation>::iterator reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
-			out << "      Relocation:" << endl;
-			out << "        Position: " << itoh(reloc->position) << endl;
-			out << "        Type: " << RelNames.at(reloc->type) << endl;
+	out << "Import Table:" << '\n';
+	for (auto imp = this->imports.begin(); imp != this->imports.end(); imp++) {
+		std::cout << padding << "  Dumping Import " << imp->module << '\n';
+		out << "  Import:" << '\n';
+		out << "    Module: " << imp->module << '\n';
+		out << "    Offset: " << itoh(imp->offset) << '\n';
+		out << "    Relocation Table:" << '\n';
+		for (auto reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
+			out << "      Relocation:" << '\n';
+			out << "        Position: " << itoh(reloc->position) << '\n';
+			out << "        Type: " << RelNames.at(reloc->type) << '\n';
 			if (reloc->type == R_RVL_STOP) {
 				continue;
 			}
 			if (reloc->type == R_RVL_SECT) {
-				out << "        Destination Section: " << reloc->get_dest_section().id << endl;
+				out << "        Destination Section: " << reloc->get_dest_section().id << '\n';
 				continue;
 			}
-			out << "        Offset from Prev: " << itoh(reloc->prev_offset) << endl;
-			out << "        Source: " << reloc->get_src_section().id << " " << itoh(reloc->get_src_offset()) << endl;
-			out << "        Destination: " << reloc->get_dest_section().id << " " << itoh(reloc->get_dest_offset()) << endl;
+			out << "        Offset from Prev: " << itoh(reloc->prev_offset) << '\n';
+			out << "        Source: " << reloc->get_src_section().id << " " << itoh(reloc->get_src_offset()) << '\n';
+			out << "        Destination: " << reloc->get_dest_section().id << " " << itoh(reloc->get_dest_offset()) << '\n';
 		}
 	}
 	return out.str();
 }
 
-void REL::dump_imports(string filename) {
+void REL::dump_imports(const std::string& filename) {
+	logger->debug("Dumping REL imports to " + filename);
 	std::fstream out(filename, ios::out);
 	out << this->dump_imports();
+	logger->debug("REL imports dump complete");
 }
 
-string REL::dump_all() {
+std::string REL::dump_all() {
+	logger->trace("Generating REL complete dump string");
 	std::stringstream out;
-	out << this->dump_header() << endl;
-	out << this->dump_sections() << endl;
-	out << this->dump_imports() << endl;
+	out << dump_header() << '\n';
+	out << dump_sections() << '\n';
+	out << dump_imports() << '\n';
 	return out.str();
 }
 
-void REL::dump_all(string filename) {
-	std::cout << "Dumping REL" << endl;
+void REL::dump_all(const std::string& filename) {
+	logger->debug("Dumping complete REL to " + filename);
 	std::fstream out(filename, ios::out);
-	out << this->dump_header(2) << endl;
-	out << this->dump_sections(2) << endl;
-	out << this->dump_imports(2) << endl;
-	std::cout << "REL dump complete" << endl;
+	out << dump_header(2) << '\n';
+	out << dump_sections(2) << '\n';
+	out << dump_imports(2) << '\n';
+	logger->debug("Complete REL dump complete");
 }
 
 }

@@ -6,11 +6,12 @@
 #include <map>
 #include "logging.h"
 
+#define DEFAULT_LOGGER_LEVEL (INFO)
+
 namespace logging {
 
 static std::map<std::string, Logger*> loggers = std::map<std::string, Logger*>();
 static ConsoleHandler *ch = new ConsoleHandler();
-static Level default_level;
 
 Level::Level() {
     this->name = "NULL";
@@ -22,11 +23,19 @@ Level::Level(const int &priority, const std::string &name) {
     this->priority = priority;
 }
 
+std::string Level::get_name() {
+    return name;
+}
+
+bool Level::operator==(const Level& level) const {
+    return priority == level.priority && name == level.name;
+}
+
 bool Level::operator <=(const Level& level) const {
     return priority <= level.priority;
 }
 
-bool Level::operator>=(const Level &level) const {
+bool Level::operator>=(const Level& level) const {
     return priority >= level.priority;
 }
 
@@ -50,7 +59,7 @@ void ConsoleHandler::log(const std::string &message, const Level &level) {
 
 Logger::Logger() {
     this->name = "NULL";
-    level = default_level;
+    level = NO_LEVEL;
     handlers = std::vector<Handler*>();
 }
 
@@ -58,12 +67,26 @@ Logger::Logger(const std::string &name) : Logger() {
     this->name = name;
 }
 
+Level Logger::get_effective_level() {
+    if (level == NO_LEVEL) {
+        return parent->get_effective_level();
+    }
+    return level;
+}
+
 void Logger::set_level(const Level &level) {
+    if (name == "root" && level == NO_LEVEL) {
+        throw std::runtime_error("Root logger cannot have NO_LEVEL");
+    }
     this->level = level;
 }
 
+void Logger::set_parent(Logger* parent) {
+    this->parent = parent;
+}
+
 void Logger::log(const std::string &message, const Level &level) {
-    if (level >= this->level) {
+    if (level >= get_effective_level()) {
         for (auto handler : handlers) {
             handler->log(message, level);
         }
@@ -72,6 +95,10 @@ void Logger::log(const std::string &message, const Level &level) {
 
 void Logger::trace(const std::string &message) {
     log(message, TRACE);
+}
+
+void Logger::debug(const std::string &message) {
+    log(message, DEBUG);
 }
 
 void Logger::info(const std::string &message) {
@@ -105,13 +132,18 @@ bool Logger::remove_handler(Handler *handler) {
 }
 
 void set_default_level(const Level& level) {
-    default_level = level;
+    get_root_logger()->set_level(level);
 }
 
 Logger* get_root_logger() {
-    Logger *root = get_logger("root");
-    root->set_level(INFO);
-    return root;
+    if (loggers.count("root")) {
+        return loggers["root"];
+    }
+    Logger *log = new Logger("root");
+    log->set_level(DEFAULT_LOGGER_LEVEL);
+    loggers.emplace("root", log);
+    log->add_handler(ch);
+    return log;
 }
 
 Logger* get_logger(const std::string& name) {
@@ -119,6 +151,7 @@ Logger* get_logger(const std::string& name) {
         return loggers[name];
     }
     Logger *log = new Logger(name);
+    log->set_parent(get_root_logger());
     loggers.emplace(name, log);
     log->add_handler(ch);
     return log;

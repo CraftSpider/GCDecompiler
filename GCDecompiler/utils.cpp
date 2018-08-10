@@ -9,7 +9,7 @@
 
 // Conversion functions
 
-uint btoi(const char *bytes, const uint& len, const Endian& endian) {
+uint btoi(const uchar *bytes, const uint& len, const Endian& endian) {
 	uint out = 0;
 	for (uint i = 0; i < len; i++) {
 		int multiplier = 1;
@@ -23,7 +23,7 @@ uint btoi(const char *bytes, const uint& len, const Endian& endian) {
 	return out;
 }
 
-uint btoi(const char *bytes, const uint& start, const uint& end, const Endian& endian) {
+uint btoi(const uchar *bytes, const uint& start, const uint& end, const Endian& endian) {
 	uint out = 0;
 	for (uint i = start; i < end; i++) {
 		int multiplier = 1;
@@ -37,8 +37,8 @@ uint btoi(const char *bytes, const uint& start, const uint& end, const Endian& e
 	return out;
 }
 
-const char* itob(const uint& num, const uint& length) {
-	char *output = new char[length]();
+const uchar* itob(const uint& num, const uint& length) {
+	uchar *output = new uchar[length]();
 	for (uint i = 0; i < length; i++) {
 		output[i] = num >> (8 * (length - i - 1));
 	}
@@ -52,14 +52,13 @@ std::string itoh(const uint& num) {
 	return out.str();
 }
 
-std::string itoh(int num) {
+std::string itoh(const int& num) {
 	std::stringstream out;
 	if (num < 0) {
 		out << "-";
-		num = -num;
 	}
 	out << "0x";
-	out << std::hex << std::uppercase << num;
+	out << std::hex << std::uppercase << (num >= 0 ? num : -num);
 	return out.str();
 }
 
@@ -74,12 +73,15 @@ std::string ctoh(const char& num) {
 
 // Byte Manipulation
 
-bool get_bit(const char *chars, const char& pos) {
+bool get_bit(const uchar *chars, const uchar& pos) {
 	int loc = (int)floor(pos / 8);
 	return chars[loc] & (int)pow(2, 7 - (pos % 8));
 }
 
-uint get_range(const char *chars, const char& start, const char& end) {
+/**
+ * Gets the sum of bits between start and stop, [start, stop]
+ */
+uint get_range(const uchar *chars, const uchar& start, const uchar& end) {
 	uint out = 0;
 	char num_bits = (end - start) + 1;
 	for (char i = start, j = 1; i <= end; i++, j++) {
@@ -88,14 +90,14 @@ uint get_range(const char *chars, const char& start, const char& end) {
 	return out;
 }
 
-int get_signed_range(const char *instruction, const char& start, const char& end) {
+int get_signed_range(const uchar *instruction, const uchar& start, const uchar& end) {
 	uint value = get_range(instruction, start, end);
 	char num_bits = end - start;
-	uint mask = 1 << num_bits;
+	uint mask = 1U << num_bits;
 	return -((int)(value & mask)) + (int)(value & (mask - 1));
 }
 
-std::string char_format(char *chars, std::string to_format) {
+std::string char_format(const uchar *chars, const std::string& to_format) {
 	std::stringstream out;
 	std::stringstream format;
 	bool in_code = false;
@@ -204,24 +206,24 @@ bool is_hex(const char& c) {
 
 // File Manipulation
 
-ulong next_long(std::fstream& file, const uint& length) {
-	char *input = new char[length]();
-	file.read(input, length);
-	uint out = btoi(input, length);
+ulong next_long(std::fstream& file, const Endian& endian, const uint& length) {
+	uchar *input = new uchar[length]();
+	file.read((char*)input, length);
+	uint out = btoi(input, length, endian);
 	delete[] input;
 	return out;
 }
 
-uint next_int(std::fstream& file, const uint& length) {
-	return (uint)next_long(file, length);
+uint next_int(std::fstream& file, const Endian& endian, const uint& length) {
+	return (uint)next_long(file, endian, length);
 }
 
-ushort next_short(std::fstream& file, const uint& length) {
-	return (ushort)next_long(file, length);
+ushort next_short(std::fstream& file, const Endian& endian, const uint& length) {
+	return (ushort)next_long(file, endian, length);
 }
 
-uchar next_char(std::fstream& file, const uint& length) {
-	return (uchar)next_long(file, length);
+uchar next_char(std::fstream& file, const Endian& endian, const uint& length) {
+	return (uchar)next_long(file, endian, length);
 }
 
 float next_float(std::fstream& file) {
@@ -230,14 +232,14 @@ float next_float(std::fstream& file) {
 	return data[0];
 }
 
-void write_int(std::fstream *file, const uint& num, const uint& length) {
-	const char *to_write = itob(num, length);
-	file->write(to_write, length);
+void write_int(std::fstream& file, const uint& num, const uint& length) {
+	const uchar *to_write = itob(num, length);
+	file.write((char*)to_write, length);
 	delete[] to_write;
 }
 
-void write_string(std::fstream *file, const std::string& out) {
-	file->write(out.c_str(), out.length());
+void write_string(std::fstream& file, const std::string& out) {
+	file.write(out.c_str(), out.length());
 }
 
 // Math Operations
@@ -263,7 +265,7 @@ void gen_crc32_table() {
 
 }
 
-uint crc32(const char *input, const int& length) {
+uint crc32(const uchar *input, const ulong& length) {
 
 	if (!crc_invoked) {
 		gen_crc32_table();
@@ -273,8 +275,8 @@ uint crc32(const char *input, const int& length) {
 	uint crc = crc_start;
 
 	if (input != nullptr) {
-		for (int a = 0; a < length; a++) {
-			crc = (crc >> 8) ^ crc_table[(crc ^ input[a]) & 0xFF];
+		for (ulong a = 0; a < length; a++) {
+			crc = (crc >> 8u) ^ crc_table[(crc ^ input[a]) & 0xFFu];
 		}
 	}
 

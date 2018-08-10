@@ -5,22 +5,20 @@
 #include "../types.h"
 #include "register.h"
 
-using std::string;
-
 namespace PPC {
 
-	class Symbol {
+class Symbol {
 
-	public:
+public:
 
-		uint start, end;
-		string name;
-		std::set<uchar> r_input, fr_input;
+	uint start, end;
+	std::string name;
+	std::set<uchar> r_input, fr_input;
 
-		Symbol(uint start, uint end, string name);
+	Symbol(uint start, uint end, std::string name);
 
-		void add_source(const Register& reg);
+	void add_source(const Register& reg);
 
-	};
+};
 
 }

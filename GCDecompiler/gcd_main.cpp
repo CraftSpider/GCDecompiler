@@ -1,5 +1,4 @@
 
-#include <limits.h>
 #include <vector>
 #include <string>
 #include <cstring>
@@ -13,13 +12,11 @@
 #include "logging.h"
 #include "filetypes/lz.h"
 #include "filetypes/tpl.h"
+#include "argparser.h"
 
 namespace fs = std::experimental::filesystem;
-using std::string;
-using std::vector;
-using std::endl;
 
-void process_rel(types::REL *rel, const string& output) {
+void process_rel(types::REL *rel, const std::string& output) {
 	fs::create_directory(fs::path(output));
 	rel->dump_header(output + "/header.txt");
 	rel->dump_sections(output + "/sections.txt");
@@ -33,7 +30,7 @@ void process_rel(types::REL *rel, const string& output) {
 	}
 }
 
-void process_rel(types::REL *rel, const vector<types::REL*>& knowns, const string& output) {
+void process_rel(types::REL *rel, const std::vector<types::REL*>& knowns, const std::string& output) {
 	process_rel(rel, output);
 	for (auto sect = rel->sections.begin(); sect != rel->sections.end(); ++sect) {
 		if (!sect->exec && sect->offset != 0 && sect->length > 4 && rel->id == 1) {
@@ -44,7 +41,7 @@ void process_rel(types::REL *rel, const vector<types::REL*>& knowns, const strin
 	}
 }
 
-void process_dol(types::DOL *dol, const string& output) {
+void process_dol(types::DOL *dol, const std::string& output) {
 	fs::create_directory(fs::path(output));
 	dol->dump_all(output + "/dol.txt");
 	for (auto sect = dol->sections.begin(); sect != dol->sections.end(); ++sect) {
@@ -56,7 +53,7 @@ void process_dol(types::DOL *dol, const string& output) {
 	}
 }
 
-void decomp_game(types::DOL *dol, const std::vector<types::REL*>& rels, const string& output) {
+void decomp_game(types::DOL *dol, const std::vector<types::REL*>& rels, const std::string& output) {
 	for (auto sect = dol->sections.begin(); sect != dol->sections.end(); ++sect) {
 		if (sect->exec && sect->offset) {
 			std::stringstream name;
@@ -66,49 +63,23 @@ void decomp_game(types::DOL *dol, const std::vector<types::REL*>& rels, const st
 	}
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     
     logging::set_default_level(logging::TRACE);
     logging::Logger *log = logging::get_logger("main");
 
-	/*string output = "decomp_dump";
-	fs::create_directory(output);
-	std::vector<REL*> knowns;
-	DOL *main = nullptr;
-	// Form list of files to process. Mostly RELs and DOL file.
-	for (auto dir : fs::recursive_directory_iterator("./root/")) {
-		if (ends_with(dir.path().string(), ".rel")) {
-			string filename = dir.path().filename().string();
-			REL *rel = new REL(dir.path().string());
-			knowns.push_back(rel);
-		} else if (ends_with(dir.path().string(), ".dol")) {
-			string filename = dir.path().filename().string();
-			main = new DOL(dir.path().string());
-		}
-	}
-	// Process list of files.
-	decomp_game(main, knowns, output);
-
-	return 0;//*/
-
-	//string temp = "C:/ProgrammingFiles/GCDecompiler/GCDecompiler/root/mkb2.main_loop.rel";
-	//REL rel(temp);
-	//process_rel(&rel, "C:/ProgrammingFiles/GCDecompiler/Debug/root_dump");
-
-	/*LZ lz = LZ("C:/ProgrammingFiles/GCDecompiler/Debug/STAGE001.lz");
-	lz.write_decompressed("C:/ProgrammingFiles/GCDecompiler/Debug/STAGE001.dz");
-	return 0;*/
+	ArgParser parser = ArgParser(argc, argv);
 
 	if (argc == 1) {
-		std::cout << "Usage:" << endl;
-		std::cout << "gcd decomp <path to root> [directory out]" << endl;
-		std::cout << "gcd dump <path to root> [directory out]" << endl;
-		std::cout << "gcd rel <file in> [directory out]" << endl;
-		std::cout << "gcd dol <file in> [directory out]" << endl;
+		std::cout << "Usage:" << '\n';
+		std::cout << "gcd decomp <path to root> [directory out]" << '\n';
+		std::cout << "gcd dump <path to root> [directory out]" << '\n';
+		std::cout << "gcd rel <file in> [directory out]" << '\n';
+		std::cout << "gcd dol <file in> [directory out]" << std::endl;
 	} else if (argc == 2) {
-		std::cout << "Missing file input parameter" << endl;
+		std::cout << "Missing file input parameter" << std::endl;
 	} else {
-		string output = "out.txt";
+		std::string output = "out.txt";
 		if (argc > 3) {
 			output = argv[3];
 		} else {
@@ -127,44 +98,43 @@ int main(int argc, char *argv[]) {
 		
 		if (!std::strcmp(argv[1], "decomp")) {
 		    log->info("Beginning root decompile. This will take a while.");
-//			std::cout << "Beginning root decompile. This will take a while." << endl;
 			fs::create_directory(output);
 			std::vector<types::REL*> knowns;
 			types::DOL *main = nullptr;
 			// Form list of files to process. Mostly RELs and DOL file.
 			for (auto dir : fs::recursive_directory_iterator(argv[2])) {
 				if (ends_with(dir.path().string(), ".rel")) {
-					string filename = dir.path().filename().string();
+					std::string filename = dir.path().filename().string();
 					types::REL *rel = new types::REL(dir.path().string());
 					knowns.push_back(rel);
 				} else if (ends_with(dir.path().string(), ".dol")) {
-					string filename = dir.path().filename().string();
+					std::string filename = dir.path().filename().string();
 					main = new types::DOL(dir.path().string());
 				}
 			}
 			// Process list of files.
 			decomp_game(main, knowns, output);
-			std::cout << "Root decompile complete." << endl;
+			log->info("Root decompile complete");
 		} else if (!std::strcmp(argv[1], "dump")) {
-			std::cout << "Beginnning Root Dump. This may take a while." << endl;
+			log->info("Beginnning Root Dump. This may take a while.");
 			fs::create_directory(output);
 			std::vector<types::REL*> knowns;
 			types::DOL *main = nullptr;
 			// Form list of files to process. Mostly RELs and DOL file.
 			for (auto dir : fs::recursive_directory_iterator(argv[2])) {
 				if (ends_with(dir.path().string(), ".rel")) {
-					string filename = dir.path().filename().string();
+					std::string filename = dir.path().filename().string();
 					types::REL *rel = new types::REL(dir.path().string());
 					knowns.push_back(rel); 
 				} else if (ends_with(dir.path().string(), ".dol")) {
-					string filename = dir.path().filename().string();
+					std::string filename = dir.path().filename().string();
 					main = new types::DOL(dir.path().string());
 				}
 			}
             
             // Process list of files. Disassemble, Form data lists, dump info.
 			if (main == nullptr) {
-			    std::cout << "No DOL file found" << endl;
+			    log->warn("No DOL file found");
 			} else {
                 fs::path path(main->filename.c_str());
                 process_dol(main,
@@ -172,7 +142,7 @@ int main(int argc, char *argv[]) {
             }
 			for (auto rel : knowns) {
 				fs::path path(rel->filename.c_str());
-				string filename = path.filename().string();
+				std::string filename = path.filename().string();
 				process_rel(rel, knowns, output + "/" + filename.substr(0, filename.length() - 4));
 			}
 			
@@ -181,7 +151,7 @@ int main(int argc, char *argv[]) {
 				delete rel;
 			}
 			delete main;
-			std::cout << "Root Dump complete." << endl;
+			log->info("Root Dump complete");
 		} else if (!std::strcmp(argv[1], "recompile")) {
 			types::REL rel(argv[2]);
 			rel.compile(output);
@@ -194,11 +164,11 @@ int main(int argc, char *argv[]) {
         } else if (!std::strcmp(argv[1], "tpl")) {
 		    if (!std::strcmp(argv[2], "e")) {
 		        log->info("Extracting TPL " + std::string(argv[3]));
-		        types::TPL *tpl = new types::GCTPL(argv[3]);
-		        fs::create_directory(fs::path("out"));
+		        types::TPL *tpl = types::tpl_factory(argv[3]);
+		        fs::create_directory(fs::path(argv[4]));
 		        for (uint i = 0; i < tpl->get_num_images(); ++i) {
 		            std::stringstream outname = std::stringstream();
-		            outname << "out/" << i << ".png";
+		            outname << std::string(argv[4]) + "/" << i << ".png";
 		            tpl->to_png(i, outname.str());
 		        }
 		        log->info("Completed TPL extraction");
@@ -206,7 +176,7 @@ int main(int argc, char *argv[]) {
 		    
 		    }
 		} else {
-			std::cout << "Unrecognized Operation" << endl;
+			std::cout << "Unrecognized Operation" << std::endl;
 		}
 	}
 

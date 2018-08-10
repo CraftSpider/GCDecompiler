@@ -37,18 +37,35 @@ struct WiiPaletteHeader {
 };
 
 struct WiiImageHeader {
-	char edge_lod_enable, min_lod, max_lod, unpacked;
-	uint height, width, format, offset, wrap_s, wrap_t, min_filter, max_filter;
+	uchar edge_lod_enable, min_lod, max_lod, unpacked;
+    ushort height, width;
+	uint format, offset, wrap_s, wrap_t, min_filter, max_filter;
 	float lod_bias;
+};
+
+//XBox TPL, for SMB deluxe etc.
+struct XboxImageTableEntry {
+    uint format, offset;
+    ushort width, height, mipmaps;
+};
+
+struct XboxImageHeader {
+    ushort width, height;
+    uint format, mipmaps, compression, uncompressed_size, unknown_length;
 };
 
 // GC TPL stuff. SMB2 etc
 struct GCImageTableEntry {
-	uint format, offset, width, height, level_count;
+	uint format, offset;
+    ushort width, height, mipmaps;
 };
 
 struct Color {
 	uchar R, G, B, A;
+	
+	uint to_int();
+	
+	static Color lerp_colors(const Color& a, const Color& b, const float& factor);
 };
 
 class Image {
@@ -58,35 +75,13 @@ public:
 	uint height, width;
 	Color **image_data;
 
-	Image() {
-		this->image_data = nullptr;
-	}
+	Image();
 
-	Image(uint height, uint width, Color **image_data) {
-		this->height = height;
-		this->width = width;
-		this->image_data = image_data;
-	}
+	Image(uint height, uint width, Color **image_data);
 
-	Image(const Image &image) {
-		this->height = image.height;
-		this->width = image.width;
-		this->image_data = new Color* [this->height];
-		for (uint i = 0; i < this->height; i++) {
-			this->image_data[i] = new Color[this->width];
-		}
-		for (uint i = 0; i < this->height; i++) {
-			for (uint j = 0; j < this->width; j++) {
-				this->image_data[i][j] = image.image_data[i][j];
-			}
-		}
-	}
+	Image(const Image &image);
 
-	~Image() {
-		for (uint i = 0; i < this->height; i++)
-			delete[] this->image_data[i];
-		delete[] this->image_data;
-	}
+	~Image();
 };
 
 class WiiImage : public Image {
@@ -96,16 +91,23 @@ public:
 	WiiPaletteHeader palette;
 	WiiImageHeader image;
 
-	WiiImage(WiiPaletteHeader palette, WiiImageHeader image, Color **image_data) : Image(image.height, image.width, image_data) {
-		this->palette = palette;
-		this->image = image;
-	}
+	WiiImage(WiiPaletteHeader palette, WiiImageHeader image, Color **image_data);
 
-	WiiImage(const WiiImage &image) : Image(image) {
-		this->palette = image.palette;
-		this->image = image.image;
-	}
+	WiiImage(const WiiImage &image);
 
+};
+
+class XboxImage : public Image {
+
+public:
+    
+    XboxImageTableEntry image;
+    XboxImageHeader head;
+    
+    XboxImage(XboxImageTableEntry image, XboxImageHeader head, Color **image_data);
+    
+    XboxImage(const XboxImage& image);
+    
 };
 
 class GCImage : public Image {
@@ -114,9 +116,9 @@ public:
 
 	GCImageTableEntry image;
 
-	GCImage(GCImageTableEntry image, Color **image_data) : Image(image.height, image.width, image_data){
-		this->image = image;
-	}
+	GCImage(GCImageTableEntry image, Color **image_data);
+	
+	GCImage(const GCImage& image);
 
 };
 
@@ -140,14 +142,30 @@ public:
 class WiiTPL : public TPL {
 
 	std::vector<WiiImageTableEntry> image_table;
-	uint identifier, table_offset;
+	uint table_offset;
 
 public:
+    
+    const static uint IDENTIFIER = 0x0020AF30;
 
-	explicit WiiTPL(string filename);
+	explicit WiiTPL(std::fstream& input);
 	
 	Image get_image(const uint& index) const override;
 
+};
+
+class XboxTPL : public TPL {
+    
+    std::vector<XboxImageTableEntry> image_table;
+    
+public:
+    
+    const static uint IDENTIFIER = 0x5854504C;
+    
+    explicit XboxTPL(std::fstream& input);
+    
+    Image get_image(const uint& index) const override;
+    
 };
 
 class GCTPL : public TPL {
@@ -156,10 +174,12 @@ class GCTPL : public TPL {
 
 public:
 
-	explicit GCTPL(const string& filename);
+	explicit GCTPL(std::fstream& input);
 
 	Image get_image(const uint& index) const override;
 
 };
+
+TPL* tpl_factory(const std::string& filename);
 
 }

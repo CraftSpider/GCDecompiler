@@ -1,16 +1,18 @@
 
 #include <string>
 #include <fstream>
-#include <iostream>
 #include "utils.h"
 #include "lz.h"
+#include "logging.h"
 
 namespace types {
 
-using std::string;
 using std::ios;
 
-LZ::LZ(string filename) {
+static logging::Logger *logger = logging::get_logger("lz");
+
+LZ::LZ(const std::string& filename) {
+	logger->debug("Parsing LZ");
 
 	this->filename = filename;
 	this->compressed = nullptr;
@@ -21,8 +23,8 @@ LZ::LZ(string filename) {
 	std::fstream input(filename, ios::in | ios::binary | ios::ate);
 	uint size = (uint)input.tellg();
 	input.seekg(0, ios::beg);
-	char *data = new char[size];
-	input.read(data, size);
+	uchar *data = new uchar[size];
+	input.read((char*)data, size);
 	if (ends_with(filename, ".lz")) {
 		// Compressed file. Fill compressed.
 		this->compressed_size = size;
@@ -32,9 +34,12 @@ LZ::LZ(string filename) {
 		this->decompressed_size = size;
 		this->decompressed = data;
 	}
+	
+	logger->debug("Finished parsing LZ");
 }
 
 void LZ::decompress() {
+	logger->info("Decompressing LZ" + filename);
 
 	uint datapos = 0;
 
@@ -45,7 +50,7 @@ void LZ::decompress() {
 
 	uint mempos = 0;
 
-	char *data = new char[data_size]();
+	uchar *data = new uchar[data_size]();
 
 	while (mempos < data_size) {
 
@@ -87,38 +92,40 @@ void LZ::decompress() {
 
 	this->decompressed_size = data_size;
 	this->decompressed = data;
+	
+	logger->info("Finished decompressing LZ");
 }
 
 void LZ::compress() {
 	// TODO: Compression algorithm
 }
 
-void LZ::decompress(string file_in, string file_out) {
+void LZ::decompress(const std::string& file_in, const std::string& file_out) {
 	LZ lz = LZ(file_in);
 	lz.write_decompressed(file_out);
 }
 
-void LZ::compress(string file_in, string file_out) {
+void LZ::compress(const std::string& file_in, const std::string& file_out) {
 	LZ lz = LZ(file_in);
 	lz.write_compressed(file_out);
 }
 
-void LZ::write_decompressed(string filename) {
+void LZ::write_decompressed(const std::string& filename) {
 	if (this->decompressed == nullptr && this->decompressed_size == 0) {
 		this->decompress();
 	}
 
 	std::fstream output(filename, ios::out | ios::binary);
-	output.write(this->decompressed, this->decompressed_size);
+	output.write((char*)this->decompressed, this->decompressed_size);
 }
 
-void LZ::write_compressed(string filename) {
+void LZ::write_compressed(const std::string& filename) {
 	if (this->compressed == nullptr && this->compressed_size == 0) {
 		this->compress();
 	}
 
 	std::fstream output(filename, ios::out | ios::binary);
-	output.write(this->compressed, this->compressed_size);
+	output.write((char*)this->compressed, this->compressed_size);
 }
 
 }
