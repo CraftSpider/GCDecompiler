@@ -18,7 +18,7 @@ static logging::Logger *logger = logging::get_logger("tpl");
 Color parse_i4(const uchar *block, const uchar& pixel) {
     uchar tone = (uchar)block[pixel / 2];
     bool which = !(pixel % 2);
-    tone = ((tone >> 4*which) & 0xF) * 0x11;
+    tone = (uchar)(((tone >> 4*which) & 0xF) * 0x11);
     return {tone, tone, tone, 0xFF};
 }
 
@@ -28,19 +28,30 @@ Color parse_i8(const uchar *block, const uchar& pixel) {
 }
 
 Color parse_rgb565(const uchar *block, const uchar& pixel) {
-    uchar start = pixel * 2;
+    uchar start = (uchar)(pixel * 2);
     uchar rgb[2];
     rgb[0] = block[start];
     rgb[1] = block[start + 1];
-    uchar red = 0x8 * get_range(rgb, 0, 4);
-    uchar green = 0x4 * get_range(rgb, 5, 10);
-    uchar blue = 0x8 * get_range(rgb, 11, 15);
+    uchar red = (uchar)(0x8 * get_range(rgb, 0, 4));
+    uchar green = (uchar)(0x4 * get_range(rgb, 5, 10));
+    uchar blue = (uchar)(0x8 * get_range(rgb, 11, 15));
     return {red, green, blue, 0xFF};
 }
 
 Color parse_rgb5A3(const uchar *block, const uchar& pixel) {
-    // TODO
-    return Color {};
+    uchar red, green, blue, alpha = 0xFF;
+    if (!get_bit(block, 0)) {
+        red = (uchar)(0x11 * get_range(block, 4, 7));
+        green = (uchar)(0x11 * get_range(block, 8, 11));
+        blue = (uchar)(0x11 * get_range(block, 12, 15));
+        alpha = (uchar)(0x20 * get_range(block, 1, 3));
+        return Color {red, green, blue, alpha};
+    } else {
+        red = (uchar)(0x8 * get_range(block, 1, 5));
+        green = (uchar)(0x8 * get_range(block, 6, 10));
+        blue = (uchar)(0x8 * get_range(block, 11, 15));
+        return Color {red, green, blue, alpha};
+    }
 }
 
 // Note: this isn't super efficient as it stands, it recalculates the pallete for every pixel.

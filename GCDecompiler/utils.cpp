@@ -37,12 +37,16 @@ uint btoi(const uchar *bytes, const uint& start, const uint& end, const Endian& 
 	return out;
 }
 
+const uchar* ltob(const ulong& num, const uint& length) {
+    uchar *output = new uchar[length]();
+    for (uint i = 0; i < length; i++) {
+        output[i] = num >> (8 * (length - i - 1));
+    }
+    return output;
+}
+
 const uchar* itob(const uint& num, const uint& length) {
-	uchar *output = new uchar[length]();
-	for (uint i = 0; i < length; i++) {
-		output[i] = num >> (8 * (length - i - 1));
-	}
-	return output;
+	return ltob(num, length);
 }
 
 std::string itoh(const uint& num) {
@@ -226,16 +230,32 @@ uchar next_char(std::fstream& file, const Endian& endian, const uint& length) {
 	return (uchar)next_long(file, endian, length);
 }
 
-float next_float(std::fstream& file) {
+float next_float(std::fstream& file, const Endian& endian) {
 	float data[1];
-	file.read(reinterpret_cast<char*>(&data), 4);
+    file.read(reinterpret_cast<char*>(&data), 4);
+    if (endian == BIG) {
+        reverse(reinterpret_cast<char*>(&data), 4);
+    }
 	return data[0];
 }
 
+void write_long(std::fstream& file, const ulong& num, const uint& length) {
+    const uchar *to_write = ltob(num, length);
+    file.write((char*)to_write, length);
+    delete[] to_write;
+    
+}
+
 void write_int(std::fstream& file, const uint& num, const uint& length) {
-	const uchar *to_write = itob(num, length);
-	file.write((char*)to_write, length);
-	delete[] to_write;
+	write_long(file, num, length);
+}
+
+void write_short(std::fstream& file, const ushort& num, const uint& length) {
+    write_long(file, num, length);
+}
+
+void write_char(std::fstream& file, const uchar& num, const uint& length) {
+    write_long(file, num, length);
 }
 
 void write_string(std::fstream& file, const std::string& out) {

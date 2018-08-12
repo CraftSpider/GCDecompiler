@@ -71,19 +71,6 @@ static std::map<std::string, std::string> default_outs = {
 
 int main(int argc, char **argv) {
     ArgParser parser = ArgParser(argc, argv);
-    
-    if (parser.flag_count("v") == 1) {
-        logging::set_default_level(logging::DEBUG);
-    } else if (parser.flag_count("v") == 2) {
-        logging::set_default_level(logging::TRACE);
-    } else if (parser.flag_count("q") == 1) {
-        logging::set_default_level(logging::WARN);
-    } else if (parser.flag_count("q") == 2) {
-        logging::set_default_level(logging::ERROR);
-    } else {
-        logging::set_default_level(logging::INFO);
-    }
-    logging::Logger *log = logging::get_logger("main");
 
 	if (parser.num_arguments() == 0 && parser.has_flag("help")) {
 		std::cout << "Usage:\n";
@@ -122,6 +109,20 @@ int main(int argc, char **argv) {
         // TODO: descriptions
         // TODO: flags
 	}
+    
+    if (parser.flag_count("v") == 1) {
+        logging::set_default_level(logging::DEBUG);
+    } else if (parser.flag_count("v") == 2) {
+        logging::set_default_level(logging::TRACE);
+    } else if (parser.flag_count("q") == 1) {
+        logging::set_default_level(logging::WARN);
+    } else if (parser.flag_count("q") == 2) {
+        logging::set_default_level(logging::ERROR);
+    } else {
+        logging::set_default_level(logging::INFO);
+    }
+    logging::Logger *log = logging::get_logger("main");
+	
     std::string input, output = "out";
     if (parser.num_arguments() >= 2) {
         input = parser.get_argument(1);

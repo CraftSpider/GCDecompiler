@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "types.h"
 
 enum Endian {
@@ -31,6 +32,7 @@ T* endian_convert(T* array, ulong length) {
 
 uint btoi(const uchar* bytes, const uint& len, const Endian& endian = BIG);
 uint btoi(const uchar* bytes, const uint& start, const uint& end, const Endian& endian = BIG);
+const uchar* ltob(const ulong& num, const uint& length = 8);
 const uchar* itob(const uint& num, const uint& length = 4);
 std::string itoh(const uint& num);
 std::string itoh(const int& num);
@@ -56,8 +58,12 @@ ulong next_long(std::fstream& file, const Endian& endian = BIG, const uint& leng
 uint next_int(std::fstream& file, const Endian& endian = BIG, const uint& length = 4);
 ushort next_short(std::fstream& file, const Endian& endian = BIG, const uint& length = 2);
 uchar next_char(std::fstream& file, const Endian& endian = BIG, const uint& length = 1);
-float next_float(std::fstream& file);
+float next_float(std::fstream& file, const Endian& endian = BIG);
+
+void write_long(std::fstream& file, const ulong& num, const uint& length = 8);
 void write_int(std::fstream& file, const uint& num, const uint& length = 4);
+void write_short(std::fstream& file, const ushort& num, const uint& length = 2);
+void write_char(std::fstream& file, const uchar& num, const uint& length = 1);
 void write_string(std::fstream& file, const std::string& out);
 
 // Math Operations
