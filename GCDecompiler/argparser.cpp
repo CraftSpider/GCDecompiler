@@ -34,6 +34,7 @@ ArgParser::ArgParser(const int &argc, char **argv) {
                 variables.emplace(name.str(), option.str());
             } else if (arg[1] == '-') {
                 // read the whole thing for flags.
+                arg = arg.substr(1, arg.size());
                 std::stringstream name;
                 for (auto c : arg) {
                     name << c;
