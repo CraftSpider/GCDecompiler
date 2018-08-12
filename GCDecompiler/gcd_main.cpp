@@ -76,21 +76,47 @@ int main(int argc, char **argv) {
         logging::set_default_level(logging::DEBUG);
     } else if (parser.flag_count("v") == 2) {
         logging::set_default_level(logging::TRACE);
-    } else if (parser.has_flag("q")) {
+    } else if (parser.flag_count("q") == 1) {
         logging::set_default_level(logging::WARN);
+    } else if (parser.flag_count("q") == 2) {
+        logging::set_default_level(logging::ERROR);
     } else {
         logging::set_default_level(logging::INFO);
     }
     logging::Logger *log = logging::get_logger("main");
 
-	if (parser.num_arguments() == 0) {
-		std::cout << "Usage:" << '\n';
-		std::cout << "gcd decomp <path to root> [directory out]" << '\n';
-		std::cout << "gcd dump <path to root> [directory out]" << '\n';
-		std::cout << "gcd rel <file in> [directory out]" << '\n';
-		std::cout << "gcd dol <file in> [directory out]" << '\n';
-		std::cout << "gcd tpl <--<extract|build>|-<e|b>> <path in> <path out>" << std::endl;
+	if (parser.num_arguments() == 0 && parser.has_flag("help")) {
+		std::cout << "Usage:\n";
+		std::cout << "  gcd <decomp|dump|rel|dol|tpl> [args]...\n";
+		std::cout << "Description:\n";
+		std::cout << "  The GameCube Decompiler is a tool designed to assist in working with GameCube hacking, especially ";
+		std::cout << "monkey ball. Still in alpha; send any inquiries, bug reports, or feature requests to CraftSpider.\n";
+		std::cout << "Flags:\n";
+		std::cout << "  -in=<path>: equivalent to an input argument\n";
+		std::cout << "  -out=<path>: equivalent to an output argument\n";
+		std::cout << "  -v: verbose logging\n";
+		std::cout << "  -vv: super verbose logging\n";
+		std::cout << "  -q: quiet logging\n";
+		std::cout << "  -qq: super quiet logging\n";
+		std::cout.flush();
 		return 0;
+	} else if (parser.has_flag("help")) {
+	    std::string subcom = parser.get_argument(0);
+        std::cout << "Usage:\n";
+	    if (subcom == "decomp") {
+	        std::cout << "  gcd decomp <root in> [path out]\n";
+	        std::cout << "Description:\n";
+	    } else if (subcom == "dump") {
+	        std::cout << "  gcd dump <root in> [path out]\n";
+	    } else if (subcom == "rel") {
+	        std::cout << "  gcd rel <file in> [directory out]\n";
+	    } else if (subcom == "dol") {
+	        std::cout << "  gcd dol <file in> [directory out]\n";
+	    } else if (subcom == "tpl") {
+	        std::cout << "  gcd tpl <-e|-b|--extract|--build> <path in> [path out]\n";
+	    }
+        // TODO: descriptions
+        // TODO: flags
 	}
     std::string input, output = "out";
     if (parser.num_arguments() >= 2) {
