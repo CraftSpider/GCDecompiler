@@ -102,19 +102,23 @@ int main(int argc, char **argv) {
 		return 0;
 	} else if (parser.has_flag("help")) {
 	    std::string subcom = parser.get_argument(0);
-        std::cout << "Usage:\n";
+	    std::stringstream usage;
+        usage << "Usage:\n";
 	    if (subcom == "decomp") {
-	        std::cout << "  gcd decomp <root in> [path out]\n";
-	        std::cout << "Description:\n";
+            usage << "  gcd decomp <root in> [path out]\n";
+            usage << "Description:\n";
 	    } else if (subcom == "dump") {
-	        std::cout << "  gcd dump <root in> [path out]\n";
+            usage << "  gcd dump <root in> [path out]\n";
 	    } else if (subcom == "rel") {
-	        std::cout << "  gcd rel <file in> [directory out]\n";
+            usage << "  gcd rel <file in> [directory out]\n";
 	    } else if (subcom == "dol") {
-	        std::cout << "  gcd dol <file in> [directory out]\n";
+            usage << "  gcd dol <file in> [directory out]\n";
 	    } else if (subcom == "tpl") {
-	        std::cout << "  gcd tpl <-e|-b|--extract|--build> <path in> [path out]\n";
+            usage << "  gcd tpl <-e|-b|--extract|--build> <path in> [path out]\n";
+	    } else {
+	        std::cout << "Unknown subcommand, no help available. do `gcd --help` to see all subcommands.";
 	    }
+	    std::cout << usage.str();
         // TODO: descriptions
         // TODO: flags
 	}
