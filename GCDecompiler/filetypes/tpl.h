@@ -4,10 +4,14 @@
 #include <vector>
 #include <map>
 #include "types.h"
+#include "image.h"
 
 namespace types {
 
 using std::string;
+
+// Forward reference
+class PNG;
 
 static std::map<int, string> format_names = {
         {0, "I4"}, {1, "I8"}, {2, "IA4"}, {3, "IA8"}, {4, "RGB565"}, {5, "RGB5A3"}, {6, "RGBA32"}, {8, "C4"}, {9, "C8"},
@@ -60,30 +64,6 @@ struct GCImageTableEntry {
     ushort width, height, mipmaps;
 };
 
-struct Color {
-	uchar R, G, B, A;
-	
-	uint to_int();
-	
-	static Color lerp_colors(const Color& a, const Color& b, const float& factor);
-};
-
-class Image {
-
-public:
-
-	uint height, width;
-	Color **image_data;
-
-	Image();
-
-	Image(uint height, uint width, Color **image_data);
-
-	Image(const Image &image);
-
-	~Image();
-};
-
 class WiiImage : public Image {
 
 public:
@@ -134,7 +114,7 @@ public:
 	TPL();
  
 	virtual Image get_image(const uint& index) const = 0;
-	virtual void to_png(const int& index, const string& filename);
+	virtual PNG* to_png(const int& index);
 	uint get_num_images() const;
 
 };
@@ -149,6 +129,7 @@ public:
     const static uint IDENTIFIER = 0x0020AF30;
 
 	explicit WiiTPL(std::fstream& input);
+	WiiTPL(std::vector<Image> images);
 	
 	Image get_image(const uint& index) const override;
 
@@ -163,6 +144,7 @@ public:
     const static uint IDENTIFIER = 0x5854504C;
     
     explicit XboxTPL(std::fstream& input);
+    XboxTPL(std::vector<Image> images);
     
     Image get_image(const uint& index) const override;
     
@@ -175,6 +157,7 @@ class GCTPL : public TPL {
 public:
 
 	explicit GCTPL(std::fstream& input);
+	GCTPL(std::vector<Image> images);
 
 	Image get_image(const uint& index) const override;
 

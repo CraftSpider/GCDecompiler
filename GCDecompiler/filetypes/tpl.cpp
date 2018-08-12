@@ -7,6 +7,7 @@
 #include "tpl.h"
 #include "utils.h"
 #include "zlib.h"
+#include "png.h"
 
 namespace types {
 
@@ -151,72 +152,6 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
     logger->debug("Parsed " + format_names[format]);
 }
 
-void write_png_chunk(std::fstream &output, ulong len, string type, const uchar *data) {
-    write_int(output, len);
-    write_string(output, type);
-    output.write((const char*)data, len);
-    
-    uchar *crc_data = new uchar[4 + len];
-    for (int i = 0; i < 4; i++) {
-        crc_data[i] = (uchar)type[i];
-    }
-    for (ulong i = 0; i < len; i++) {
-        crc_data[i + 4] = data[i];
-    }
-    uint crc = crc32(crc_data, len + 4);
-    delete[] crc_data;
-    
-    write_int(output, crc);
-}
-
-uint Color::to_int() {
-    uint out = 0;
-    out += R << 24U;
-    out += G << 16U;
-    out += B << 8U;
-    out += A;
-    return out;
-}
-
-Color Color::lerp_colors(const types::Color &a, const types::Color &b, const float &factor) {
-    return Color {
-        (uchar)(a.R + (b.R - a.R) * factor),
-        (uchar)(a.G + (b.G - a.G) * factor),
-        (uchar)(a.B + (b.B - a.B) * factor),
-        (uchar)(a.A + (b.A - a.A) * factor)
-    };
-}
-
-Image::Image() {
-	this->image_data = nullptr;
-}
-
-Image::Image(uint height, uint width, types::Color **image_data) {
-	this->height = height;
-	this->width = width;
-	this->image_data = image_data;
-}
-
-Image::Image(const types::Image &image) {
-	this->height = image.height;
-	this->width = image.width;
-	this->image_data = new Color* [this->height];
-	for (uint i = 0; i < this->height; i++) {
-		this->image_data[i] = new Color[this->width];
-	}
-	for (uint i = 0; i < this->height; i++) {
-		for (uint j = 0; j < this->width; j++) {
-			this->image_data[i][j] = image.image_data[i][j];
-		}
-	}
-}
-
-Image::~Image() {
-	for (uint i = 0; i < this->height; i++)
-		delete[] this->image_data[i];
-	delete[] this->image_data;
-}
-
 WiiImage::WiiImage(types::WiiPaletteHeader palette, types::WiiImageHeader image, types::Color **image_data) : Image(image.height, image.width, image_data) {
 	this->palette = palette;
 	this->image = image;
@@ -249,111 +184,18 @@ TPL::TPL() {
 	this->images = std::vector<Image>();
 }
 
-void TPL::to_png(const int& index, const string& filename) {
-    logger->info("Writing PNG to " + filename);
-    
+PNG* TPL::to_png(const int& index) {
+    logger->trace("Converting TPL to PNG");
 	Image image = this->images[index];
-
-	std::fstream output(filename, ios::out | ios::binary);
- 
-	// Write out magic header data
-	const char magic[8] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
-	output.write(magic, 8);
-	
-	// Write out IHDR chunk
-	const uchar *width = itob(image.width);
-	const uchar *height = itob(image.height);
-	uchar depth = '\x08';
-	uchar type = '\x06';
-	uchar compression = '\x00';
-	uchar filter = '\x00';
-	uchar interlace = '\x00';
-
-	uchar ihdr[13];
-	for (int i = 0; i < 4; i++) {
-		ihdr[i] = width[i];
-	}
-	delete[] width;
-	for (int i = 0; i < 4; i++) {
-		ihdr[i + 4] = height[i];
-	}
-	delete[] height;
-	ihdr[8] = depth;
-	ihdr[9] = type;
-	ihdr[10] = compression;
-	ihdr[11] = filter;
-	ihdr[12] = interlace;
-    
-    write_png_chunk(output, 13, "IHDR", ihdr);
- 
-	// Write out IDAT chunk
-	uint line_width = image.width * 4 + 1;
-	uint in_size = image.height * line_width;
-	uchar *data = new uchar[in_size];
-	
-	for (uint i = 0; i < image.height; ++i) {
-	    data[i * line_width] = 0;
-	    for (uint j = 0; j < image.width; ++j) {
-	        Color col = image.image_data[i][j];
-	        int pos = (j * 4 + i * line_width) + 1;
-	        data[pos] = col.R;
-	        data[pos + 1] = col.G;
-	        data[pos + 2] = col.B;
-	        data[pos + 3] = col.A;
-	    }
-	}
-	
-	z_stream strm = {};
-	strm.next_in = data;
-	strm.avail_in = in_size;
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	deflateInit(&strm, Z_DEFAULT_COMPRESSION);
-	ulong out_size = deflateBound(&strm, strm.avail_in);
-	uchar *idat = new uchar[out_size];
-	strm.next_out = idat;
-	strm.avail_out = (uint)out_size;
-	deflate(&strm, Z_FINISH);
-	uint len = (uint)strm.total_out;
-    write_png_chunk(output, len, "IDAT", idat);
-	delete[] data;
-	delete[] idat;
-	
-	// Write out tIME chunk
-	uchar *time = new uchar[7];
-	std::chrono::time_point now_d = std::chrono::system_clock::now();
-	std::time_t now = std::chrono::system_clock::to_time_t(now_d);
-	std::tm local = *std::localtime(&now);
-	uint year = (uint)local.tm_year + 1900;
-	time[0] = year >> 8;
-	time[1] = year & 0xFF;
-	time[2] = local.tm_mon + 1;
-	time[3] = local.tm_mday;
-	time[4] = local.tm_hour;
-	time[5] = local.tm_min;
-	time[6] = local.tm_sec;
-    write_png_chunk(output, 7, "tIME", time);
-	delete[] time;
- 
-	// Write out tEXt chunks
-    {
-        using namespace std::string_literals;
-        std::stringstream s_title;
-        s_title << "Title\0TPL Extract "s << index;
-        std::string title = s_title.str();
-        write_png_chunk(output, title.size(), "tEXt", (uchar *) title.c_str());
-        std::string author = "Author\0CraftSpider"s;
-        write_png_chunk(output, author.size(), "tEXt", (uchar *) author.c_str());
-        std::string software = "Software\0GameCube Decompiler"s;
-        write_png_chunk(output, software.size(), "tEXt", (uchar *) software.c_str());
-    }
-	
-	// Write out IEND chunk
-    write_png_chunk(output, 0, "IEND", nullptr);
-	
-	output.close();
-    
-    logger->info("PNG " + filename + " written successfully");
+	PNG* out = new PNG(image);
+	out->update_time();
+    std::stringstream title;
+    title << "TPL Extract " << index;
+    out->add_text("Title", title.str());
+    out->add_text("Author", "CraftSpider");
+    out->add_text("Software", "GameCube Decompiler");
+    logger->trace("PNG converted to TPL successfully");
+    return out;
 }
 
 uint TPL::get_num_images() const {

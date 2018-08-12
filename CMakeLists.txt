@@ -82,8 +82,16 @@ add_executable(GCDecompiler
         zlib/inftrees.c
         zlib/inffast.h
         zlib/inffast.c
+        GCDecompiler/argparser.cpp
+        GCDecompiler/argparser.h
+        GCDecompiler/filetypes/png.cpp
+        GCDecompiler/filetypes/png.h
+        GCDecompiler/filetypes/image.h
+        GCDecompiler/filetypes/image.cpp
         GCDecompiler/logging.cpp
-        GCDecompiler/logging.h GCDecompiler/argparser.cpp GCDecompiler/argparser.h)
+        GCDecompiler/logging.h)
+
+# Logging.[h/cpp] should be last in the list. Because... reasons.
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 

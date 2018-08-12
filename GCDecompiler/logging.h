@@ -29,7 +29,7 @@ public:
     
 };
 
-static const Level NO_LEVEL = Level();
+static const Level NO_LEVEL;
 static const Level TRACE = Level(0, "TRACE");
 static const Level DEBUG = Level(10, "DEBUG");
 static const Level INFO = Level(20, "INFO");
