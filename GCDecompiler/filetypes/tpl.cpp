@@ -90,20 +90,16 @@ Color parse_cmpr(const uchar *block, const uchar& pixel) {
 void parse_image_data(std::fstream& input, ushort height, ushort width, uint offset, uint format, Color **image_data, const Endian& endian = BIG) {
     logger->debug("Parsing " + format_names[format]);
     input.seekg(offset);
-    uchar fheight = format_heights[format];
-    uchar fwidth = format_widths[format];
-    for (ushort i = 0; i < height; i += fheight) {
-        for (ushort j = 0; j < width; j += fwidth) {
-            ushort block_height = height - i;
-            if (block_height > fheight)
-                block_height = fheight;
-            ushort block_width = width - j;
-            if (block_width > fwidth)
-                block_width = fwidth;
+
+    ushort block_height = format_heights[format];
+    ushort block_width = format_widths[format];
+    uchar num_pixels = block_height * block_width;
+    uchar block_size = (uchar)(num_pixels * bits_per_pixel[format] / 8);
+    uchar *block = new uchar[block_size];
+
+    for (ushort i = 0; i < height; i += block_height) {
+        for (ushort j = 0; j < width; j += block_width) {
             
-            uchar num_pixels = block_height * block_width;
-            uchar block_size = (uchar)(num_pixels * bits_per_pixel[format] / 8);
-            uchar *block = new uchar[block_size];
             if (endian == BIG) {
                 input.read((char*)block, block_size);
             } else if (endian == LITTLE && format == 14) { // This is a mess of weird math. Hate the xbox CMPR format.
@@ -154,7 +150,7 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
                         logger->warn("No pixel parser available");
                         return;
                 }
-                image_data[i + (k / fwidth)][j + (k % fwidth)] = col;
+                image_data[i + (k / block_width)][j + (k % block_width)] = col;
             }
             
             delete[] block;
