@@ -16,6 +16,14 @@ class Level {
     
 public:
     
+    static const Level NO_LEVEL;
+    static const Level TRACE;
+    static const Level DEBUG;
+    static const Level INFO;
+    static const Level WARN;
+    static const Level ERROR;
+    static const Level FATAL;
+    
     Level();
     Level(const int& priority, const std::string& name);
     
@@ -28,14 +36,6 @@ public:
     operator std::string() const;
     
 };
-
-static const Level NO_LEVEL;
-static const Level TRACE = Level(0, "TRACE");
-static const Level DEBUG = Level(10, "DEBUG");
-static const Level INFO = Level(20, "INFO");
-static const Level WARN = Level(30, "WARN");
-static const Level ERROR = Level(40, "ERROR");
-static const Level FATAL = Level(50, "FATAL");
 
 class Handler {
 

@@ -111,15 +111,15 @@ int main(int argc, char **argv) {
 	}
     
     if (parser.flag_count("v") == 1) {
-        logging::set_default_level(logging::DEBUG);
+        logging::set_default_level(logging::Level::DEBUG);
     } else if (parser.flag_count("v") == 2) {
-        logging::set_default_level(logging::TRACE);
+        logging::set_default_level(logging::Level::TRACE);
     } else if (parser.flag_count("q") == 1) {
-        logging::set_default_level(logging::WARN);
+        logging::set_default_level(logging::Level::WARN);
     } else if (parser.flag_count("q") == 2) {
-        logging::set_default_level(logging::ERROR);
+        logging::set_default_level(logging::Level::ERROR);
     } else {
-        logging::set_default_level(logging::INFO);
+        logging::set_default_level(logging::Level::INFO);
     }
     logging::Logger *log = logging::get_logger("main");
 	

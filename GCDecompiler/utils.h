@@ -11,16 +11,22 @@ enum Endian {
 // General utility
 
 template<typename T>
-T* reverse(T* array, ulong length) {
-	T* out = new T[length];
-	for (int i = 0; i < length; ++i) {
-		out[length - i - 1] = array[i];
+void reverse(T* array, ulong length) {
+	T* temp = new T[length];
+	for (uint i = 0; i < length; ++i) {
+		temp[length - i - 1] = array[i];
 	}
-	return out;
+	for (uint i = 0; i < length; ++i) {
+		array[i] = temp[i];
+	}
+	delete[] temp;
 }
+
+void reverse(std::string& str);
 
 template<typename T>
 T* endian_convert(T* array, ulong length) {
+	// TODO: this is a memory leak
     T* out = new T[length];
     for (uint i = 0; i < length; ++i) {
         out[(i + 1) - ((i % 2) * 2)] = array[i];
@@ -50,6 +56,8 @@ std::string char_format(const uchar *chars, const std::string& to_format);
 bool ends_with(const std::string& val, const std::string& ending);
 bool is_num(const char& c);
 bool is_letter(const char& c);
+bool is_lower(const char& c);
+bool is_upper(const char& c);
 bool is_hex(const char& c);
 
 // File Manipulation
@@ -59,6 +67,8 @@ uint next_int(std::fstream& file, const Endian& endian = BIG, const uint& length
 ushort next_short(std::fstream& file, const Endian& endian = BIG, const uint& length = 2);
 uchar next_char(std::fstream& file, const Endian& endian = BIG, const uint& length = 1);
 float next_float(std::fstream& file, const Endian& endian = BIG);
+std::string next_string(std::fstream& file, const Endian& endian = BIG, const uint& length = 0);
+std::string next_string(std::fstream& file, const uint& length = 0);
 
 void write_long(std::fstream& file, const ulong& num, const uint& length = 8);
 void write_int(std::fstream& file, const uint& num, const uint& length = 4);

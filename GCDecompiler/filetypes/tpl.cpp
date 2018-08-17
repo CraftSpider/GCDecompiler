@@ -199,6 +199,12 @@ PNG* TPL::to_png(const int& index) {
     logger->trace("Converting TPL to PNG");
 	Image image = this->images[index];
 	PNG* out = new PNG(image);
+    out->bit_depth = 8;
+    out->color_type = ColorType::truealpha;
+    out->compression = 0;
+    out->filter = 0;
+    out->interlace = 0;
+	
 	out->update_time();
     std::stringstream title;
     title << "TPL Extract " << index;

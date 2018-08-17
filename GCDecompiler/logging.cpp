@@ -6,12 +6,20 @@
 #include <map>
 #include "logging.h"
 
-#define DEFAULT_LOGGER_LEVEL (INFO)
+#define DEFAULT_LOGGER_LEVEL (Level::INFO)
 
 namespace logging {
 
 static std::map<std::string, Logger*> loggers = std::map<std::string, Logger*>();
 static ConsoleHandler *ch = new ConsoleHandler();
+
+const Level Level::NO_LEVEL = Level();
+const Level Level::TRACE = Level(0, "TRACE");
+const Level Level::DEBUG = Level(10, "DEBUG");
+const Level Level::INFO = Level(20, "INFO");
+const Level Level::WARN = Level(30, "WARN");
+const Level Level::ERROR = Level(40, "ERROR");
+const Level Level::FATAL = Level(50, "FATAL");
 
 Level::Level() {
     this->name = "NULL";
@@ -44,7 +52,7 @@ Level::operator std::string() const {
 }
 
 Handler::Handler() {
-    this->level = TRACE;
+    this->level = Level::TRACE;
 }
 
 void Handler::set_level(const Level &level) {
@@ -59,7 +67,7 @@ void ConsoleHandler::log(const std::string &message, const Level &level) {
 
 Logger::Logger() {
     this->name = "NULL";
-    level = NO_LEVEL;
+    level = Level::NO_LEVEL;
     handlers = std::vector<Handler*>();
 }
 
@@ -68,14 +76,14 @@ Logger::Logger(const std::string &name) : Logger() {
 }
 
 Level Logger::get_effective_level() {
-    if (level == NO_LEVEL) {
+    if (level == Level::NO_LEVEL) {
         return parent->get_effective_level();
     }
     return level;
 }
 
 void Logger::set_level(const Level &level) {
-    if (name == "root" && level == NO_LEVEL) {
+    if (name == "root" && level == Level::NO_LEVEL) {
         throw std::runtime_error("Root logger cannot have NO_LEVEL");
     }
     this->level = level;
@@ -94,27 +102,27 @@ void Logger::log(const std::string &message, const Level &level) {
 }
 
 void Logger::trace(const std::string &message) {
-    log(message, TRACE);
+    log(message, Level::TRACE);
 }
 
 void Logger::debug(const std::string &message) {
-    log(message, DEBUG);
+    log(message, Level::DEBUG);
 }
 
 void Logger::info(const std::string &message) {
-    log(message, INFO);
+    log(message, Level::INFO);
 }
 
 void Logger::warn(const std::string &message) {
-    log(message, WARN);
+    log(message, Level::WARN);
 }
 
 void Logger::error(const std::string &message) {
-    log(message, ERROR);
+    log(message, Level::ERROR);
 }
 
 void Logger::fatal(const std::string &message) {
-    log(message, FATAL);
+    log(message, Level::FATAL);
 }
 
 void Logger::add_handler(Handler *handler) {

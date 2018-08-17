@@ -7,6 +7,16 @@
 #include "utils.h"
 #include "types.h"
 
+// Generic utility
+
+void reverse(std::string& str) {
+    std::string temp = str;
+    str.clear();
+    for (ulong i = temp.size(); i >= 0; --i) {
+        str.push_back(temp[i]);
+    }
+}
+
 // Conversion functions
 
 uint btoi(const uchar *bytes, const uint& len, const Endian& endian) {
@@ -196,6 +206,10 @@ bool ends_with(const std::string& val, const std::string& ending) {
 	return !val.compare(val.length() - ending.length(), ending.length(), ending);
 }
 
+bool is_ascii(const char& c) {
+	return (c == '\n' || c == '\r' || c == '\t' || (c >= ' ' && c <= '~'));
+}
+
 bool is_num(const char& c) {
 	return (c >= '0' && c <= '9');
 }
@@ -204,8 +218,16 @@ bool is_letter(const char& c) {
 	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
 }
 
+bool is_lower(const char& c) {
+	return (c >= 'a' && c <= 'z');
+}
+
+bool is_upper(const char& c) {
+	return (c >= 'A' && c <= 'Z');
+}
+
 bool is_hex(const char& c) {
-	return is_num(c) || ((c >= 'a' &&  c <= 'z') || (c >= 'A' && c <= 'Z'));
+	return is_num(c) || ((c >= 'a' &&  c <= 'f') || (c >= 'A' && c <= 'F'));
 }
 
 // File Manipulation
@@ -237,6 +259,34 @@ float next_float(std::fstream& file, const Endian& endian) {
         reverse(reinterpret_cast<char*>(&data), 4);
     }
 	return data[0];
+}
+
+std::string next_string(std::fstream& file, const Endian& endian, const uint& length) {
+	if (length == 0) {
+		std::string out;
+		char c[1];
+		do {
+			file.read(c, 1);
+			out += c;
+		} while (c[0] != '\0');
+		if (endian == LITTLE) {
+			reverse(out);
+		}
+		return out;
+	} else {
+		char *cstr = new char[length];
+		file.read(cstr, length);
+		if (endian == LITTLE) {
+			reverse(cstr, length);
+		}
+		std::string out = std::string(cstr, length);
+		delete[] cstr;
+		return out;
+	}
+}
+
+std::string next_string(std::fstream& file, const uint& length) {
+	return next_string(file, BIG, length);
 }
 
 void write_long(std::fstream& file, const ulong& num, const uint& length) {

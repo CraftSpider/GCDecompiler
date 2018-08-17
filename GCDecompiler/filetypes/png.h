@@ -13,6 +13,23 @@ namespace types {
 
 class TPL;
 
+struct ColorType {
+    
+    static const ColorType greyscale;
+    static const ColorType truecolor;
+    static const ColorType indexed;
+    static const ColorType greyalpha;
+    static const ColorType truealpha;
+    
+    uchar num;
+    std::string name;
+    
+    bool operator==(const ColorType& color_type);
+    
+    static ColorType from_depth(uchar depth);
+    
+};
+
 struct Chunk {
     uint length;
     std::string type;
@@ -40,6 +57,9 @@ public:
     
     constexpr static uint magic_len = 8;
     constexpr static char magic[magic_len] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+    
+    ColorType color_type;
+    uchar bit_depth, compression, filter, interlace;
     
     PNG(const std::string& filename);
     PNG(const Image& image);

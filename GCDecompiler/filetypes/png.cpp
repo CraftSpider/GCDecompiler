@@ -16,6 +16,34 @@ using std::ios;
 
 static logging::Logger *logger = logging::get_logger("png");
 
+const ColorType ColorType::greyscale = ColorType {0, "Greyscale"};
+const ColorType ColorType::truecolor = ColorType {2, "Truecolor"};
+const ColorType ColorType::indexed = ColorType {3, "Indexed-color"};
+const ColorType ColorType::greyalpha = ColorType {4, "Greyscale w/ Alpha"};
+const ColorType ColorType::truealpha = ColorType {6, "Truecolor w/ Alpha"};
+
+bool ColorType::operator==(const types::ColorType &color_type) {
+    return this->num == color_type.num;
+}
+
+ColorType ColorType::from_depth(uchar depth) {
+    switch (depth) {
+    case 0:
+        return greyscale;
+    case 2:
+        return truecolor;
+    case 3:
+        return indexed;
+    case 4:
+        return greyalpha;
+    case 6:
+        return truealpha;
+    default:
+        logger->error("Invalid depth for ColorType");
+        return truealpha;
+    }
+}
+
 Chunk::Chunk(const uint& length, const std::string& type, uchar *data) {
     this->length = length;
     this->type = type;
@@ -62,38 +90,99 @@ void PNG::add_chunk(uint length, std::string name, uchar *data) {
 
 void PNG::replace_chunk(uint length, std::string name, uchar *data) {
     Chunk chunk {length, name, data};
+    for (ulong i = 0; i < chunks.size(); ++i) {
+        if (chunks[i].type == name) {
+            chunks[i] = chunk;
+            break;
+        }
+    }
 }
 
 PNG::PNG(const std::string &filename) {
-    // TODO: Read from file
+    std::fstream input = std::fstream(filename, ios::binary | ios::in);
+    
+    uint height = 0, width = 0;
+    Color **image_data = nullptr;
+    
+    if (next_long(input) != 0x89504E470D0A1A0AL) {
+        logger->warn("PNG magic doesn't match expected, file is likely corrupted or wrong type.");
+    }
+    
+    bool first = true;
+    while (true) {
+        uint length = next_int(input);
+        std::string header = next_string(input, 4);
+        if (first && header != "IHDR") {
+            logger->error("First chunk not header chunk, expected IHDR but got " + header);
+            break;
+        }
+        if (header == "IHDR") {
+            first = false;
+            if (length != 17) {
+                logger->error("Incorrect header length");
+                break;
+            }
+            width = next_int(input);
+            height = next_int(input);
+            image_data = new Color*[height];
+            for (uint i = 0; i < height; ++i)
+                image_data[i] = new Color[width];
+            bit_depth = next_char(input);
+            color_type = ColorType::from_depth(next_char(input));
+            compression = next_char(input);
+            filter = next_char(input);
+            interlace = next_char(input);
+        } else if (header == "PLTE") {
+            // TODO
+        } else if (header == "IDAT") {
+            uchar *data = new uchar[length];
+    
+            z_stream strm = {};
+            strm.next_in = data;
+            strm.avail_in = length;
+            strm.zalloc = Z_NULL;
+            strm.zfree = Z_NULL;
+            inflateInit(&strm);
+            
+            ulong out_size = width*height*4;
+            uchar *out_data = new uchar[out_size];
+            strm.next_out = out_data;
+            strm.avail_out = (uint)out_size;
+            int result = inflate(&strm, Z_FINISH);
+            if (result != Z_STREAM_END) {
+                logger->error("Inflate operation not allocated a large enough array. Please send a bug report to the developers.");
+            }
+            uint len = (uint)strm.total_out;
+            if (color_type == ColorType::truealpha) {
+                for (uint i = 0; i < len; i += 4) {
+                    image_data[i / width][i % width] = Color {out_data[i], out_data[i + 1], out_data[i + 2], out_data[i + 3]};
+                }
+            } else {
+                logger->error("Unsupported color type for image. Please send a bug report to the developers.");
+            }
+        } else if (header == "IEND") {
+            break;
+        } else {
+            if (is_lower(header[0])) {
+                logger->warn("Unknown ancillary chunk encountered");
+            } else if (is_upper(header[0])) {
+                logger->error("PNG encountered unknown critical chunk");
+                break;
+            } else {
+                logger->error("PNG encountered corrupted chunk");
+                break;
+            }
+        }
+    }
 }
 
 PNG::PNG(const types::Image& image) {
     this->image = image;
-    
-    const uchar *width = itob(image.width);
-    const uchar *height = itob(image.height);
-    uchar depth = '\x08';
-    uchar type = '\x06';
-    uchar compression = '\x00';
-    uchar filter = '\x00';
-    uchar interlace = '\x00';
-    
-    uchar *ihdr = new uchar[13];
-    for (int i = 0; i < 4; i++) {
-        ihdr[i] = width[i];
-    }
-    delete[] width;
-    for (int i = 0; i < 4; i++) {
-        ihdr[i + 4] = height[i];
-    }
-    delete[] height;
-    ihdr[8] = depth;
-    ihdr[9] = type;
-    ihdr[10] = compression;
-    ihdr[11] = filter;
-    ihdr[12] = interlace;
-    add_chunk(13, "IHDR", ihdr);
+    bit_depth = 0;
+    color_type = ColorType::truealpha;
+    compression = 0;
+    filter = 0;
+    interlace = 0;
 }
 
 Image PNG::get_image() {
@@ -112,7 +201,7 @@ void PNG::add_text(std::string key, std::string content) {
 void PNG::update_time(std::time_t timet) {
     
     if (timet == 0) {
-        std::chrono::time_point now_d = std::chrono::system_clock::now();
+        std::chrono::time_point<std::chrono::system_clock> now_d = std::chrono::system_clock::now();
         timet = std::chrono::system_clock::to_time_t(now_d);
     }
     std::tm local = *std::localtime(&timet);
@@ -140,7 +229,29 @@ void PNG::save(const std::string &filename) {
     
     output.write(magic, magic_len);
     
-    // Write out chunks
+    // Write out header
+    uchar *ihdr = new uchar[13];
+    
+    const uchar *width = itob(image.width);
+    const uchar *height = itob(image.height);
+    
+    for (int i = 0; i < 4; i++) {
+        ihdr[i] = width[i];
+    }
+    delete[] width;
+    for (int i = 0; i < 4; i++) {
+        ihdr[i + 4] = height[i];
+    }
+    delete[] height;
+    ihdr[8] = bit_depth;
+    ihdr[9] = color_type.num;
+    ihdr[10] = compression;
+    ihdr[11] = filter;
+    ihdr[12] = interlace;
+    
+    Chunk {13, "IHDR", ihdr}.write_chunk(output);
+    
+    // Write out ancillary chunkks
     for (auto chunk : chunks) {
         chunk.write_chunk(output);
     }
