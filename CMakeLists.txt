@@ -47,7 +47,7 @@ set(ZLIB
         zlib/inffast.c)
 
 add_executable(GCDecompiler
-        ZLIB
+        ${ZLIB}
         GCDecompiler/filetypes/dol.cpp
         GCDecompiler/filetypes/dol.h
         GCDecompiler/filetypes/lz.cpp
