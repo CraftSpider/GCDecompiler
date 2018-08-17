@@ -127,7 +127,6 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
                         new_block[k] = left + right;
                     }
                 }
-                delete[] block;
                 block = new_block;
             }
             
@@ -152,10 +151,9 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
                 }
                 image_data[i + (k / block_width)][j + (k % block_width)] = col;
             }
-            
-            delete[] block;
         }
     }
+    delete[] block;
     logger->debug("Parsed " + format_names[format]);
 }
 
