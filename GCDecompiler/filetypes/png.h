@@ -9,6 +9,8 @@
 #include <chrono>
 #include "image.h"
 
+#define PNG_MAGIC_LEN (8)
+
 namespace types {
 
 class TPL;
@@ -55,8 +57,7 @@ class PNG {
 
 public:
     
-    constexpr static uint magic_len = 8;
-    constexpr static char magic[magic_len] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+    constexpr static char magic[PNG_MAGIC_LEN] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
     
     ColorType color_type;
     uchar bit_depth, compression, filter, interlace;

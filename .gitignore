@@ -4,6 +4,9 @@
 *.sln
 *.vcxproj*
 
+# CLion
+.idea/
+
 # Build Folders
 *x64/
 *Debug/
