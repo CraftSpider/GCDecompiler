@@ -222,12 +222,14 @@ TPL* PNG::to_tpl() {
     // TODO
 }
 
+constexpr char PNG::magic[];
+
 void PNG::save(const std::string &filename) {
     logger->info("Writing PNG to " + filename);
     
     std::fstream output = std::fstream(filename, ios::out | ios::binary);
     
-    output.write(magic, PNG_MAGIC_LEN);
+    output.write(magic, magic_len);
     
     // Write out header
     uchar *ihdr = new uchar[13];
