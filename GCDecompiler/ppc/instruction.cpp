@@ -2,7 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include "logging.h"
-#include "../utils.h"
+#include "utils.h"
 #include "codes.h"
 #include "instruction.h"
 #include "register.h"
@@ -13,6 +13,7 @@ logging::Logger* logger = logging::get_logger("ppc.instruction");
 
 Instruction::Instruction() {
     this->name = "UNKNOWN INSTRUCTION";
+    this->pattern = "FIX ME";
     this->type = 0;
 }
 
@@ -29,17 +30,29 @@ Instruction::Instruction(const Instruction &inst) {
     this->type = inst.type;
 }
 
-Instruction::Instruction(const uchar& type, const uchar *instruction) {
+Instruction::Instruction(PPC::Instruction &&inst) noexcept {
+    this->name = inst.name;
+    this->pattern = inst.pattern;
+    this->used = inst.used;
+    this->sources = inst.sources;
+    this->destination = inst.destination;
+    this->instruction = inst.instruction;
+    this->type = inst.type;
+    
+    inst.used = nullptr;
+    inst.sources = nullptr;
+    inst.destination = nullptr;
+    inst.instruction = nullptr;
+}
+
+Instruction::Instruction(const uchar& type, const uchar *instruction) : Instruction() {
     this->type = type;
+    
     if (primary_codes.count(type) > 0) {
         this->name = primary_codes.at(type);
-    } else {
-        this->name = "UNKNOWN INSTRUCTION";
     }
     if (primary_patterns.count(type) > 0) {
         this->pattern = primary_patterns.at(type);
-    } else {
-        this->pattern = "FIX ME";
     }
 
     if (type == 0 && get_range(instruction, 6, 31) == 0) {
@@ -146,9 +159,7 @@ Register Instruction::destination_register() {
     // Which variable is the destination? It's the first one, unless we don't have a destination.
     if (this->destination != nullptr) {
         return *this->destination;
-    }
-
-    if (primary_missing_dest.find(this->type) != primary_missing_dest.end()) {
+    } else if (primary_missing_dest.count(this->type)) {
         this->destination = new Register();
         return *this->destination;
     }
@@ -186,7 +197,7 @@ std::set<Register> Instruction::source_registers() {
     }
 
     std::set<Register> *out = new std::set<Register>(this->used_registers());
-    if (primary_missing_dest.find(this->type) == primary_missing_dest.end() && !out->empty()) {
+    if (!primary_missing_dest.count(this->type) && !out->empty()) {
         out->erase(this->destination_register());
     }
 
@@ -392,6 +403,17 @@ MathFamily::MathFamily(const uchar& type, const uchar *instruction) : ConditionI
     }
 }
 
+Register MathFamily::destination_register() {
+    if (this->destination != nullptr) {
+        return *this->destination;
+    } else if(secondary_missing_dest_math.count(type)) {
+        this->destination = new Register();
+        return *this->destination;
+    } else {
+        return ConditionInstruction::destination_register();
+    }
+}
+
 //TODO: Add special consideration for stswi and stswx source registers for math
 
 //TODO: Add special consideration for lswi and lswx destination register for math
@@ -431,6 +453,17 @@ FloatDoubleFamily::FloatDoubleFamily(const uchar& type, const uchar *instruction
         this->pattern = secondary_patterns_double.at(stype);
     }
     // Set up commands with special conditions
+}
+
+Register FloatDoubleFamily::destination_register() {
+    if (this->destination != nullptr) {
+        return *this->destination;
+    } else if(secondary_missing_dest_double.count(type)) {
+        this->destination = new Register();
+        return *this->destination;
+    } else {
+        return ConditionInstruction::destination_register();
+    }
 }
 
 }

@@ -24,13 +24,9 @@ public:
     Color **image_data;
     
     Image();
-    
     Image(uint height, uint width, Color **image_data);
-    
     Image(const Image& image);
-    
-    Image(Image &&image);
-    
+    Image(Image &&image) noexcept;
     ~Image();
     
     void operator=(const Image& image);

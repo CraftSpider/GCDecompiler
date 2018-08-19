@@ -59,6 +59,7 @@ void decomp_game(types::DOL *dol, const std::vector<types::REL*>& rels, const st
 		if (sect->exec && sect->offset) {
 			std::stringstream name;
 			name << output << "/Section" << sect->id << ".c";
+			// TODO: do relocations on each REL
 			PPC::decompile(dol->filename, name.str(), sect->offset, sect->offset + sect->length);
 		}
 	}
@@ -146,7 +147,7 @@ int main(int argc, char **argv) {
         std::vector<types::REL*> knowns;
         types::DOL *main = nullptr;
         // Form list of files to process. Mostly RELs and DOL file.
-        for (auto dir : fs::recursive_directory_iterator(parser.get_argument(1))) {
+        for (auto dir : fs::recursive_directory_iterator(input)) {
             if (ends_with(dir.path().string(), ".rel")) {
                 std::string filename = dir.path().filename().string();
                 types::REL *rel = new types::REL(dir.path().string());
@@ -165,7 +166,7 @@ int main(int argc, char **argv) {
         std::vector<types::REL*> knowns;
         types::DOL *main = nullptr;
         // Form list of files to process. Mostly RELs and DOL file.
-        for (auto dir : fs::recursive_directory_iterator(parser.get_argument(1))) {
+        for (auto dir : fs::recursive_directory_iterator(input)) {
             if (ends_with(dir.path().string(), ".rel")) {
                 std::string filename = dir.path().filename().string();
                 types::REL *rel = new types::REL(dir.path().string());
@@ -220,6 +221,17 @@ int main(int argc, char **argv) {
             log->info("Completed TPL extraction");
         } else if (parser.has_flag("b") || parser.has_flag("build")) {
             // TODO: build image/images into TPL
+            log->info("Building TPL from " + std::string(input));
+            log->warn("This feature is not yet complete");
+            std::vector<types::Image> images = std::vector<types::Image>();
+            for (auto file : fs::directory_iterator(input)) {
+                if (ends_with(file.path().filename(), ".png")) {
+                    types::PNG png = types::PNG(file.path().filename());
+                    images.push_back(png.get_image());
+                }
+            }
+            types::TPL* tpl = new types::GCTPL(images);
+            tpl->save(output);
         }
     } else {
         std::cout << "Unrecognized Operation" << std::endl;

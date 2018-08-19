@@ -40,16 +40,18 @@ Color parse_rgb565(const uchar *block, const uchar& pixel) {
 
 Color parse_rgb5A3(const uchar *block, const uchar& pixel) {
     uchar red, green, blue, alpha = 0xFF;
+    const uchar *data = new uchar[2];
+    data = block + pixel*2;
     if (!get_bit(block, 0)) {
-        red = (uchar)(0x11 * get_range(block, 4, 7));
-        green = (uchar)(0x11 * get_range(block, 8, 11));
-        blue = (uchar)(0x11 * get_range(block, 12, 15));
-        alpha = (uchar)(0x20 * get_range(block, 1, 3));
+        red = (uchar)(0x11 * get_range(data, 4, 7));
+        green = (uchar)(0x11 * get_range(data, 8, 11));
+        blue = (uchar)(0x11 * get_range(data, 12, 15));
+        alpha = (uchar)(0x20 * get_range(data, 1, 3));
         return Color {red, green, blue, alpha};
     } else {
-        red = (uchar)(0x8 * get_range(block, 1, 5));
-        green = (uchar)(0x8 * get_range(block, 6, 10));
-        blue = (uchar)(0x8 * get_range(block, 11, 15));
+        red = (uchar)(0x8 * get_range(data, 1, 5));
+        green = (uchar)(0x8 * get_range(data, 6, 10));
+        blue = (uchar)(0x8 * get_range(data, 11, 15));
         return Color {red, green, blue, alpha};
     }
 }
@@ -127,6 +129,7 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
                         new_block[k] = left + right;
                     }
                 }
+                delete[] block;
                 block = new_block;
             }
             
@@ -141,6 +144,9 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
                         break;
                     case 4:
                         col = parse_rgb565(block, k);
+                        break;
+                    case 5:
+                        col = parse_rgb5A3(block, k);
                         break;
                     case 14:
                         col = parse_cmpr(block, k);
@@ -157,36 +163,18 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
     logger->debug("Parsed " + format_names[format]);
 }
 
-WiiImage::WiiImage(types::WiiPaletteHeader palette, types::WiiImageHeader image, types::Color **image_data) : Image(image.height, image.width, image_data) {
-	this->palette = palette;
-	this->image = image;
-}
-
-WiiImage::WiiImage(const types::WiiImage &image) : Image(image) {
-	this->palette = image.palette;
-	this->image = image.image;
-}
-
-XboxImage::XboxImage(XboxImageTableEntry image, XboxImageHeader head, Color **image_data) : Image(image.height, image.width, image_data) {
-    this->image = image;
-    this->head = head;
-}
-
-XboxImage::XboxImage(const types::XboxImage &image) : Image(image) {
-    this->image = image.image;
-}
-
-GCImage::GCImage(types::GCImageTableEntry image, types::Color **image_data) : Image(image.height, image.width, image_data) {
-	this->image = image;
-}
-
-GCImage::GCImage(const types::GCImage &image) : Image(image) {
-    this->image = image.image;
-}
-
 TPL::TPL() {
 	this->num_images = 0;
 	this->images = std::vector<Image>();
+}
+
+Image TPL::get_image(const uint &index) const {
+    return images.at(index);
+}
+
+void TPL::add_image(const types::Image& image) {
+    images.push_back(image);
+    generate_table_entries();
 }
 
 PNG* TPL::to_png(const int& index) {
@@ -232,6 +220,8 @@ WiiTPL::WiiTPL(std::fstream& input) {
 
 	// Build images from image table data
 	logger->trace("Reading images");
+	palette_heads = std::vector<WiiPaletteHeader>();
+	image_heads = std::vector<WiiImageHeader>();
 	for (auto entry : this->image_table) {
 		
 		// Build Palette Header
@@ -243,6 +233,7 @@ WiiTPL::WiiTPL(std::fstream& input) {
 		uint offset = next_int(input);
 
 		WiiPaletteHeader palette = {unpacked, entry_count, format, offset};
+		palette_heads.push_back(palette);
 
 		// Build Image Header
 		input.seekg(entry.image_header);
@@ -261,6 +252,7 @@ WiiTPL::WiiTPL(std::fstream& input) {
 		image_head.min_lod = next_char(input);
 		image_head.max_lod = next_char(input);
 		image_head.unpacked = next_char(input);
+		image_heads.push_back(image_head);
 
 		// Now, based on image type, pass the file, header, and palette into the right parser
 		Color **image_data = new Color* [image_head.height];
@@ -269,14 +261,18 @@ WiiTPL::WiiTPL(std::fstream& input) {
 		parse_image_data(input, image_head.height, image_head.width, image_head.offset, image_head.format, image_data);
 
 		// Now create an image from that data
-		WiiImage image(palette, image_head, image_data);
+		Image image(image_head.height, image_head.width, image_data);
 		this->images.push_back(image);
 	}
     logger->debug("Finished reading TPL");
 }
 
-Image WiiTPL::get_image(const uint& index) const {
-    return images.at(index);
+void WiiTPL::generate_table_entries() {
+    // TODO
+}
+
+void WiiTPL::save(const std::string &filename) const {
+    // TODO
 }
 
 XboxTPL::XboxTPL(std::fstream &input) {
@@ -300,6 +296,7 @@ XboxTPL::XboxTPL(std::fstream &input) {
     }
     
     logger->trace("Reading images");
+    image_heads = std::vector<XboxImageHeader>();
     uint j = 0;
     for (auto entry : image_table) {
         input.seekg(entry.offset);
@@ -322,20 +319,25 @@ XboxTPL::XboxTPL(std::fstream &input) {
             logger->error(error.str());
         }
         ++j;
+        image_heads.push_back(head);
         
         Color** image_data = new Color*[entry.height];
         for (ushort i = 0; i < entry.height; ++i)
             image_data[i] = new Color[entry.width];
         parse_image_data(input, entry.height, entry.width, entry.offset + 32, entry.format, image_data, LITTLE);
         
-        XboxImage image(entry, head, image_data);
+        Image image(entry.height, entry.width, image_data);
         images.push_back(image);
     }
     logger->debug("Finished reading TPL");
 }
 
-Image XboxTPL::get_image(const uint &index) const {
-    return images.at(index);
+void XboxTPL::generate_table_entries() {
+    // TODO
+}
+
+void XboxTPL::save(const std::string &filename) const {
+    // TODO
 }
 
 GCTPL::GCTPL(std::fstream& input) {
@@ -366,14 +368,49 @@ GCTPL::GCTPL(std::fstream& input) {
 			image_data[i] = new Color[entry.width];
 		parse_image_data(input, entry.height, entry.width, entry.offset, entry.format, image_data);
 
-		GCImage image(entry, image_data);
+		Image image(entry.height, entry.width, image_data);
 		images.push_back(image);
 	}
     logger->debug("Finished reading TPL");
 }
 
-Image GCTPL::get_image(const uint& index) const {
-	return images.at(index);
+GCTPL::GCTPL(std::vector<types::Image> images) {
+    for (auto const &image : images) {
+        add_image(image);
+    }
+}
+
+void GCTPL::generate_table_entries() {
+    image_table = std::vector<GCImageTableEntry>();
+    for (Image image : images) {
+        GCImageTableEntry entry {};
+        entry.width = image.width;
+        entry.height = image.height;
+        entry.offset = 0;
+        entry.format = 0;
+        entry.mipmaps = 1; // TODO: correct values for these 3
+        image_table.push_back(entry);
+    }
+}
+
+void GCTPL::save(const std::string &filename) const {
+    
+    std::fstream output(filename, ios::binary | ios::out);
+    
+    write_int(output, num_images);
+    for (uint i = 0; i < num_images; ++i) {
+        GCImageTableEntry header = image_table[i];
+        write_int(output, header.format);
+        write_int(output, header.offset);
+        write_short(output, header.width);
+        write_short(output, header.height);
+        write_short(output, header.mipmaps);
+        write_short(output, 0x1234);
+    }
+    
+    for (Image image : images) {
+        // TODO: convert image to charstream
+    }
 }
 
 TPL* tpl_factory(const std::string& filename) {

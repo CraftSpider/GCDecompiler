@@ -12,8 +12,8 @@
 void reverse(std::string& str) {
     std::string temp = str;
     str.clear();
-    for (ulong i = temp.size(); i >= 0; --i) {
-        str.push_back(temp[i]);
+    for (ulong i = temp.size(); i > 0; --i) {
+        str.push_back(temp[i-1]);
     }
 }
 

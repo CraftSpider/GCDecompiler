@@ -64,56 +64,21 @@ struct GCImageTableEntry {
     ushort width, height, mipmaps;
 };
 
-class WiiImage : public Image {
-
-public:
-
-	WiiPaletteHeader palette;
-	WiiImageHeader image;
-
-	WiiImage(WiiPaletteHeader palette, WiiImageHeader image, Color **image_data);
-
-	WiiImage(const WiiImage &image);
-
-};
-
-class XboxImage : public Image {
-
-public:
-    
-    XboxImageTableEntry image;
-    XboxImageHeader head;
-    
-    XboxImage(XboxImageTableEntry image, XboxImageHeader head, Color **image_data);
-    
-    XboxImage(const XboxImage& image);
-    
-};
-
-class GCImage : public Image {
-
-public:
-
-	GCImageTableEntry image;
-
-	GCImage(GCImageTableEntry image, Color **image_data);
-	
-	GCImage(const GCImage& image);
-
-};
-
 class TPL {
 
 protected:
 
 	uint num_images;
 	std::vector<Image> images;
+	
+	virtual void generate_table_entries() = 0;
 
 public:
 
 	TPL();
- 
-	virtual Image get_image(const uint& index) const = 0;
+	virtual void save(const std::string& filename) const = 0;
+	virtual Image get_image(const uint& index) const;
+	virtual void add_image(const Image& image);
 	virtual PNG* to_png(const int& index);
 	uint get_num_images() const;
 
@@ -121,46 +86,55 @@ public:
 
 class WiiTPL : public TPL {
 
+protected:
+
 	std::vector<WiiImageTableEntry> image_table;
+	std::vector<WiiPaletteHeader> palette_heads;
+	std::vector<WiiImageHeader> image_heads;
 	uint table_offset;
+    
+    void generate_table_entries() override;
 
 public:
     
-    const static uint IDENTIFIER = 0x0020AF30;
+    constexpr static uint IDENTIFIER = 0x0020AF30;
 
 	explicit WiiTPL(std::fstream& input);
 	WiiTPL(std::vector<Image> images);
-	
-	Image get_image(const uint& index) const override;
-
+	void save(const std::string& filename) const override;
 };
 
 class XboxTPL : public TPL {
+
+protected:
     
     std::vector<XboxImageTableEntry> image_table;
+    std::vector<XboxImageHeader> image_heads;
+    
+    void generate_table_entries() override;
     
 public:
     
-    const static uint IDENTIFIER = 0x5854504C;
+    constexpr static uint IDENTIFIER = 0x5854504C;
     
     explicit XboxTPL(std::fstream& input);
     XboxTPL(std::vector<Image> images);
-    
-    Image get_image(const uint& index) const override;
-    
+	void save(const std::string& filename) const override;
 };
 
 class GCTPL : public TPL {
 
+protected:
+
 	std::vector<GCImageTableEntry> image_table;
+	
+	void generate_table_entries() override;
 
 public:
 
 	explicit GCTPL(std::fstream& input);
 	GCTPL(std::vector<Image> images);
-
-	Image get_image(const uint& index) const override;
-
+	void save(const std::string& filename) const override;
 };
 
 TPL* tpl_factory(const std::string& filename);

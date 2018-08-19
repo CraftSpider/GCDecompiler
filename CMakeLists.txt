@@ -68,8 +68,8 @@ add_executable(GCDecompiler
         GCDecompiler/gcd_main.h
         GCDecompiler/import.cpp
         GCDecompiler/import.h
-        GCDecompiler/ppc_reader.cpp
-        GCDecompiler/ppc_reader.h
+        GCDecompiler/ppc/ppc_reader.cpp
+        GCDecompiler/ppc/ppc_reader.h
         GCDecompiler/relocation.cpp
         GCDecompiler/relocation.h
         GCDecompiler/section.cpp

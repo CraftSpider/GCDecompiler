@@ -30,6 +30,7 @@ Instruction* create_instruction(const uchar *instruction) {
     else if (opcode == 16 || opcode == 18) return new BFamily(opcode, instruction);
     else if (opcode == 19) return new SpecBranchFamily(opcode, instruction);
     else if (opcode == 23) return new ConditionInstruction(opcode, instruction);
+    else if (opcode == 24) return new Ori(opcode, instruction);
     else if (opcode == 31) return new MathFamily(opcode, instruction);
     else if (opcode == 59) return new FloatSingleFamily(opcode, instruction);
     else if (opcode == 63) return new FloatDoubleFamily(opcode, instruction);
@@ -46,17 +47,17 @@ void relocate(types::REL *rel, const uint& bss_pos, const std::string& file_out)
     input.read(data, rel->file_size);
     output.write(data, rel->file_size);
 
-    for (auto imp = rel->imports.begin(); imp != rel->imports.end(); imp++) {
-        if (imp->module == rel->id) {
-            for (auto reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
-                uint abs_offset = reloc->get_src_offset();
-                if (reloc->get_src_section().address == 0) {
+    for (auto imp : rel->imports) {
+        if (imp.module == rel->id) {
+            for (auto reloc : imp.instructions) {
+                uint abs_offset = reloc.get_src_offset();
+                if (reloc.get_src_section().address == 0) {
                     abs_offset += bss_pos;
                 }
 
                 // Reloc in the output file
-                output.seekg(reloc->get_dest_offset());
-                switch (reloc->type) {
+                output.seekg(reloc.get_dest_offset());
+                switch (reloc.type) {
                 case R_PPC_ADDR32:
                     write_int(output, abs_offset, 4);
                     break;
@@ -76,7 +77,7 @@ void relocate(types::REL *rel, const uint& bss_pos, const std::string& file_out)
                     write_int(output, (abs_offset << 16u) + 0x10000, 2);
                     break;
                 case R_PPC_REL24:
-                    write_int(output, abs_offset - reloc->get_dest_offset());
+                    write_int(output, abs_offset - reloc.get_dest_offset());
                     break;
                 default:
                     write_int(output, 0);
@@ -248,7 +249,7 @@ void decompile(const std::string& file_in, const std::string& file_out, int star
     uint f_start = 0, f_end = 0;
     while (input.tellg() < end) {
         
-        position = (ulong)input.tellg() - start;
+        position = (uint)input.tellg() - start;
 
         if ((float)position / size > .25 && !q1) {
             logger->info("  25% Complete");
@@ -331,12 +332,12 @@ void decompile(const std::string& file_in, const std::string& file_out, int star
     // Write final list to symbol table
     for (auto sym = symbols.begin(); sym != symbols.end(); sym++) {
         output << "f_" << std::hex << sym->start << "_" << sym->end << std::dec << "(";
-        bool start = true;
+        bool first = true;
         for (auto num = sym->r_input.begin(); num != sym->r_input.end(); ++num) {
-            if (!start) {
+            if (!first) {
                 output << ", ";
             } else {
-                start = false;
+                first = false;
             }
             output << "r" << ((int)*num);
         }

@@ -7,111 +7,116 @@
 
 namespace PPC {
 
-	class Instruction {
+class Instruction {
 
-	protected:
+protected:
 
-		std::string name, pattern;
-		std::set<Register> *used = nullptr, *sources = nullptr;
-		Register *destination = nullptr;
-		uchar *instruction = nullptr, type;
+    std::string name, pattern;
+    std::set<Register> *used = nullptr, *sources = nullptr;
+    Register *destination = nullptr;
+    uchar *instruction = nullptr, type;
 
-	public:
+public:
 
-		Instruction();
-		Instruction(const Instruction &inst);
-		Instruction(const uchar& type, const uchar *instruction);
-		virtual ~Instruction();
+    Instruction();
+    Instruction(const Instruction &inst);
+    Instruction(Instruction &&inst) noexcept;
+    Instruction(const uchar& type, const uchar *instruction);
+    virtual ~Instruction();
 
-		void set_instruction(const uchar *instruction);
-		virtual std::string code_name();
-		virtual std::string get_variables();
+    void set_instruction(const uchar *instruction);
+    virtual std::string code_name();
+    virtual std::string get_variables();
 
-		virtual std::set<Register> used_registers();
-		virtual Register destination_register();
-		virtual std::set<Register> source_registers();
+    virtual std::set<Register> used_registers();
+    virtual Register destination_register();
+    virtual std::set<Register> source_registers();
 
-	};
+};
 
-	class ConditionInstruction : public Instruction {
+class ConditionInstruction : public Instruction {
 
-	public:
+public:
 
-		ConditionInstruction(const uchar& type, const uchar *instruction);
+    ConditionInstruction(const uchar& type, const uchar *instruction);
 
-	};
+};
 
-	class Ori : public Instruction {
+class Ori : public Instruction {
 
-	public:
+public:
 
-		Ori(const uchar& type, const uchar *instruction);
+    Ori(const uchar& type, const uchar *instruction);
 
-	};
+};
 
-	class PairedSingleFamily : public Instruction {
+class PairedSingleFamily : public Instruction {
 
-	public:
+public:
 
-		PairedSingleFamily(const uchar& type, const uchar *instruction);
+    PairedSingleFamily(const uchar& type, const uchar *instruction);
 
-	};
+};
 
-	class AddFamily : public Instruction {
+class AddFamily : public Instruction {
 
-	public:
+public:
 
-		AddFamily(const uchar& type, const uchar *instruction);
+    AddFamily(const uchar& type, const uchar *instruction);
 
-	};
+};
 
-	class CmpFamily : public Instruction {
+class CmpFamily : public Instruction {
 
-	public:
+public:
 
-		CmpFamily(const uchar& type, const uchar *instruction);
+    CmpFamily(const uchar& type, const uchar *instruction);
 
-	};
+};
 
-	class BFamily : public Instruction {
+class BFamily : public Instruction {
 
-	public:
+public:
 
-		BFamily(const uchar& type, const uchar *instruction);
+    BFamily(const uchar& type, const uchar *instruction);
 
-	};
+};
 
-	class SpecBranchFamily : public Instruction {
+class SpecBranchFamily : public Instruction {
 
-	public:
+public:
 
-		SpecBranchFamily(const uchar& type, const uchar *instruction);
+    SpecBranchFamily(const uchar& type, const uchar *instruction);
 
-	};
+};
 
-	class MathFamily : public ConditionInstruction {
+class MathFamily : public ConditionInstruction {
 
-	public:
+public:
 
-		MathFamily(const uchar& type, const uchar *instruction);
+    MathFamily(const uchar& type, const uchar *instruction);
+    
+    virtual Register destination_register() override;
+    
+};
 
-	};
+class FloatSingleFamily : public ConditionInstruction {
 
-	class FloatSingleFamily : public ConditionInstruction {
+public:
 
-	public:
+    FloatSingleFamily(const uchar& type, const uchar *instruction);
 
-		FloatSingleFamily(const uchar& type, const uchar *instruction);
+};
 
-	};
+class FloatDoubleFamily : public ConditionInstruction {
 
-	class FloatDoubleFamily : public ConditionInstruction {
+public:
 
-	public:
+    FloatDoubleFamily(const uchar& type, const uchar *instruction);
+    
+    virtual Register destination_register() override;
 
-		FloatDoubleFamily(const uchar& type, const uchar *instruction);
-
-	};
+};
 
 }
 

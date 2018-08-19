@@ -5,24 +5,24 @@
 
 namespace PPC {
 
-    class Register {
+class Register {
 
-    public:
+public:
+
+    enum RType { BAD, REGULAR, FLOAT, CONDITION };
     
-        enum RType { BAD, REGULAR, FLOAT, CONDITION };
-        
-        uchar number;
-        RType type;
+    uchar number;
+    RType type;
 
-        Register();
-        Register(const uchar& number, const RType& type);
-        Register(const uchar& number, const std::string& type);
+    Register();
+    Register(const uchar& number, const RType& type);
+    Register(const uchar& number, const std::string& type);
 
-        bool operator==(const Register& reg) const;
-        bool operator!=(const Register& reg) const;
-        bool operator<(const Register& reg) const;
-		bool operator>(const Register& reg) const;
+    bool operator==(const Register& reg) const;
+    bool operator!=(const Register& reg) const;
+    bool operator<(const Register& reg) const;
+    bool operator>(const Register& reg) const;
 
-    };
+};
 
 }

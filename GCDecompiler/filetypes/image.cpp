@@ -48,7 +48,7 @@ Image::Image(const types::Image &image) {
     }
 }
 
-Image::Image(types::Image &&image) {
+Image::Image(types::Image &&image) noexcept {
     this->height = image.height;
     this->width = image.width;
     this->image_data = image.image_data;
