@@ -46,49 +46,50 @@ set(ZLIB
         zlib/inffast.h
         zlib/inffast.c)
 
-add_executable(GCDecompiler
-        ${ZLIB}
-        GCDecompiler/filetypes/dol.cpp
+set(HEADER_FILES
         GCDecompiler/filetypes/dol.h
-        GCDecompiler/filetypes/lz.cpp
         GCDecompiler/filetypes/lz.h
-        GCDecompiler/filetypes/rel.cpp
         GCDecompiler/filetypes/rel.h
-        GCDecompiler/filetypes/tpl.cpp
         GCDecompiler/filetypes/tpl.h
-        GCDecompiler/ppc/codes.h
-        GCDecompiler/ppc/instruction.cpp
-        GCDecompiler/ppc/instruction.h
-        GCDecompiler/ppc/register.cpp
-        GCDecompiler/ppc/register.h
-        GCDecompiler/ppc/symbol.cpp
-        GCDecompiler/ppc/symbol.h
-        GCDecompiler/enums.h
-        GCDecompiler/gcd_main.cpp
-        GCDecompiler/gcd_main.h
-        GCDecompiler/import.cpp
-        GCDecompiler/import.h
-        GCDecompiler/ppc/ppc_reader.cpp
-        GCDecompiler/ppc/ppc_reader.h
-        GCDecompiler/relocation.cpp
-        GCDecompiler/relocation.h
-        GCDecompiler/section.cpp
-        GCDecompiler/section.h
-        GCDecompiler/types.h
-        GCDecompiler/utils.cpp
-        GCDecompiler/utils.h
-        GCDecompiler/argparser.cpp
-        GCDecompiler/argparser.h
-        GCDecompiler/filetypes/png.cpp
         GCDecompiler/filetypes/png.h
         GCDecompiler/filetypes/image.h
-        GCDecompiler/filetypes/image.cpp
-        GCDecompiler/filetypes/stagedef.cpp
         GCDecompiler/filetypes/stagedef.h
-        GCDecompiler/logging.cpp
+        GCDecompiler/ppc/ppc_reader.h
+        GCDecompiler/ppc/codes.h
+        GCDecompiler/ppc/instruction.h
+        GCDecompiler/ppc/register.h
+        GCDecompiler/ppc/symbol.h
+        GCDecompiler/gcd_main.h
+        GCDecompiler/types.h
+        GCDecompiler/enums.h
+        GCDecompiler/utils.h
+        GCDecompiler/argparser.h
+        GCDecompiler/import.h
+        GCDecompiler/relocation.h
+        GCDecompiler/section.h
         GCDecompiler/logging.h)
 
-# Logging.[h/cpp] should be last in the list. Because... reasons.
+set(SOURCE_FILES
+        GCDecompiler/filetypes/dol.cpp
+        GCDecompiler/filetypes/lz.cpp
+        GCDecompiler/filetypes/rel.cpp
+        GCDecompiler/filetypes/tpl.cpp
+        GCDecompiler/filetypes/png.cpp
+        GCDecompiler/filetypes/image.cpp
+        GCDecompiler/filetypes/stagedef.cpp
+        GCDecompiler/ppc/ppc_reader.cpp
+        GCDecompiler/ppc/instruction.cpp
+        GCDecompiler/ppc/register.cpp
+        GCDecompiler/ppc/symbol.cpp
+        GCDecompiler/gcd_main.cpp
+        GCDecompiler/utils.cpp
+        GCDecompiler/argparser.cpp
+        GCDecompiler/import.cpp
+        GCDecompiler/relocation.cpp
+        GCDecompiler/section.cpp
+        GCDecompiler/logging.cpp)
+
+add_executable(${PROJECT_NAME} ${ZLIB} ${HEADER_FILES} ${SOURCE_FILES})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 

@@ -11,8 +11,11 @@
 *x64/
 *Debug/
 *Release/
+*-build-*/
 
 # ISO Files and Output
 *root/
 *dump/
 *.rel
+*.ppc
+*.ppd
