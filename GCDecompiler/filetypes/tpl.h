@@ -69,7 +69,8 @@ class TPL {
 protected:
 
 	uint num_images;
-	std::vector<Image> images;
+	std::vector<Image*> images;
+	std::vector<uint> mipmaps;
 	
 	virtual void generate_table_entries() = 0;
 
@@ -77,10 +78,11 @@ public:
 
 	TPL();
 	virtual void save(const std::string& filename) const = 0;
-	virtual Image get_image(const uint& index) const;
-	virtual void add_image(const Image& image);
-	virtual PNG* to_png(const int& index);
+	virtual Image get_image(const uint& index, const uint& mipmap = 0) const;
+	virtual void add_image(Image* image, const uint& mipmaps = 1);
+	virtual PNG* to_png(const int& index, const int& mipmap = 0);
 	uint get_num_images() const;
+	uint get_num_mipmaps(const uint& index) const;
 
 };
 
@@ -100,7 +102,7 @@ public:
     constexpr static uint IDENTIFIER = 0x0020AF30;
 
 	explicit WiiTPL(std::fstream& input);
-	WiiTPL(std::vector<Image> images);
+	WiiTPL(std::vector<Image*> images);
 	void save(const std::string& filename) const override;
 };
 
@@ -118,7 +120,7 @@ public:
     constexpr static uint IDENTIFIER = 0x5854504C;
     
     explicit XboxTPL(std::fstream& input);
-    XboxTPL(std::vector<Image> images);
+    XboxTPL(std::vector<Image*> images);
 	void save(const std::string& filename) const override;
 };
 
@@ -133,7 +135,7 @@ protected:
 public:
 
 	explicit GCTPL(std::fstream& input);
-	GCTPL(std::vector<Image> images);
+	GCTPL(std::vector<Image*> images);
 	void save(const std::string& filename) const override;
 };
 

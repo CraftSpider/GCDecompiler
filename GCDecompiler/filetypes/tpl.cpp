@@ -165,29 +165,31 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
 
 TPL::TPL() {
 	this->num_images = 0;
-	this->images = std::vector<Image>();
+	this->images = std::vector<Image*>();
+	this->mipmaps = std::vector<uint>();
 }
 
-Image TPL::get_image(const uint &index) const {
-    return images.at(index);
+Image TPL::get_image(const uint &index, const uint &mipmap) const {
+    return images.at(index)[mipmap];
 }
 
-void TPL::add_image(const types::Image& image) {
+void TPL::add_image(types::Image* image, const uint& mipmaps) {
     images.push_back(image);
+    this->mipmaps.push_back(mipmaps);
     generate_table_entries();
 }
 
-PNG* TPL::to_png(const int& index) {
+PNG* TPL::to_png(const int& index, const int& mipmap) {
     logger->trace("Converting TPL to PNG");
-	Image image = this->images[index];
-	PNG* out = new PNG(image);
+	Image *image = this->images[index];
+    PNG *out = new PNG(image[mipmap]);
     out->bit_depth = 8;
     out->color_type = ColorType::truealpha;
     out->compression = 0;
     out->filter = 0;
     out->interlace = 0;
-	
-	out->update_time();
+    
+    out->update_time();
     std::stringstream title;
     title << "TPL Extract " << index;
     out->add_text("Title", title.str());
@@ -199,6 +201,10 @@ PNG* TPL::to_png(const int& index) {
 
 uint TPL::get_num_images() const {
     return num_images;
+}
+
+uint TPL::get_num_mipmaps(const uint &index) const {
+    return mipmaps[index];
 }
 
 WiiTPL::WiiTPL(std::fstream& input) {
@@ -261,7 +267,7 @@ WiiTPL::WiiTPL(std::fstream& input) {
 		parse_image_data(input, image_head.height, image_head.width, image_head.offset, image_head.format, image_data);
 
 		// Now create an image from that data
-		Image image(image_head.height, image_head.width, image_data);
+		Image *image = new Image(image_head.height, image_head.width, image_data);
 		this->images.push_back(image);
 	}
     logger->debug("Finished reading TPL");
@@ -326,7 +332,7 @@ XboxTPL::XboxTPL(std::fstream &input) {
             image_data[i] = new Color[entry.width];
         parse_image_data(input, entry.height, entry.width, entry.offset + 32, entry.format, image_data, LITTLE);
         
-        Image image(entry.height, entry.width, image_data);
+        Image *image = new Image(entry.height, entry.width, image_data);
         images.push_back(image);
     }
     logger->debug("Finished reading TPL");
@@ -358,23 +364,30 @@ GCTPL::GCTPL(std::fstream& input) {
 		}
 		GCImageTableEntry entry = {format, offset, width, height, mipmaps};
 		image_table.push_back(entry);
+		this->mipmaps.push_back(mipmaps);
 	}
     
     logger->trace("Reading images");
 	for (auto entry : image_table) {
-	    
-		Color **image_data = new Color*[entry.height];
-		for (ushort i = 0; i < entry.height; i++)
-			image_data[i] = new Color[entry.width];
-		parse_image_data(input, entry.height, entry.width, entry.offset, entry.format, image_data);
-
-		Image image(entry.height, entry.width, image_data);
-		images.push_back(image);
+	    Image *imagelist = new Image[entry.mipmaps];
+	    for (uint i = 0; i < entry.mipmaps; ++i) {
+	        
+	        ushort height = entry.height / (uint)std::pow(2, i);
+	        ushort width = entry.width / (uint)std::pow(2, i);
+	        
+            Color **image_data = new Color *[height];
+            for (ushort j = 0; j < height; ++j)
+                image_data[j] = new Color[width];
+            parse_image_data(input, height, width, entry.offset, entry.format, image_data);
+        
+            imagelist[i] = Image(height, width, image_data);
+        }
+        images.push_back(imagelist);
 	}
     logger->debug("Finished reading TPL");
 }
 
-GCTPL::GCTPL(std::vector<types::Image> images) {
+GCTPL::GCTPL(std::vector<Image*> images) {
     for (auto const &image : images) {
         add_image(image);
     }
@@ -382,13 +395,14 @@ GCTPL::GCTPL(std::vector<types::Image> images) {
 
 void GCTPL::generate_table_entries() {
     image_table = std::vector<GCImageTableEntry>();
-    for (Image image : images) {
+    for (uint i = 0; i < images.size(); ++i) {
+        Image *image = images[i];
         GCImageTableEntry entry {};
-        entry.width = image.width;
-        entry.height = image.height;
+        entry.width = image->width;
+        entry.height = image->height;
         entry.offset = 0;
-        entry.format = 0;
-        entry.mipmaps = 1; // TODO: correct values for these 3
+        entry.format = 0;  // TODO: correct values for these 2
+        entry.mipmaps = mipmaps[i];
         image_table.push_back(entry);
     }
 }
@@ -408,7 +422,7 @@ void GCTPL::save(const std::string &filename) const {
         write_short(output, 0x1234);
     }
     
-    for (Image image : images) {
+    for (Image *image : images) {
         // TODO: convert image to charstream
     }
 }
@@ -417,6 +431,7 @@ TPL* tpl_factory(const std::string& filename) {
     std::fstream input = std::fstream(filename, ios::in | ios::binary);
     if (input.fail()) {
         logger->error("Failed to open TPL file");
+        return nullptr;
     }
     
     logger->debug("Parsing TPL");
