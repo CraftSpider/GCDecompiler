@@ -134,6 +134,9 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
             }
             
             for (uchar k = 0; k < num_pixels; ++k) {
+                if (i + (k / block_width) >= height || j + (k % block_width) >= width) {
+                    continue;
+                }
                 Color col {};
                 switch (format) {
                     case 0:
@@ -370,6 +373,7 @@ GCTPL::GCTPL(std::fstream& input) {
     logger->trace("Reading images");
 	for (auto entry : image_table) {
 	    Image *imagelist = new Image[entry.mipmaps];
+	    ulong offset = entry.offset;
 	    for (uint i = 0; i < entry.mipmaps; ++i) {
 	        
 	        ushort height = entry.height / (uint)std::pow(2, i);
@@ -378,8 +382,10 @@ GCTPL::GCTPL(std::fstream& input) {
             Color **image_data = new Color *[height];
             for (ushort j = 0; j < height; ++j)
                 image_data[j] = new Color[width];
-            parse_image_data(input, height, width, entry.offset, entry.format, image_data);
-        
+            parse_image_data(input, height, width, offset, entry.format, image_data);
+            
+            offset = (ulong)input.tellg();
+            
             imagelist[i] = Image(height, width, image_data);
         }
         images.push_back(imagelist);
