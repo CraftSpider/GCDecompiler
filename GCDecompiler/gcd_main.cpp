@@ -212,22 +212,25 @@ int main(int argc, char **argv) {
             types::TPL *tpl = types::tpl_factory(input);
             fs::create_directory(fs::path(output));
             for (uint i = 0; i < tpl->get_num_images(); ++i) {
-                std::stringstream outname = std::stringstream();
-                outname << output + "/" << i << ".png";
-                types::PNG* png = tpl->to_png(i);
-                png->save(outname.str());
-                delete png;
+                for (uint j = 0; j < tpl->get_num_mipmaps(i); ++j) {
+                    std::stringstream outname = std::stringstream();
+                    outname << output + "/" << i << "_" << j << ".png";
+                    types::PNG *png = tpl->to_png(i, j);
+                    png->save(outname.str());
+                    delete png;
+                }
             }
             log->info("Completed TPL extraction");
         } else if (parser.has_flag("b") || parser.has_flag("build")) {
             // TODO: build image/images into TPL
             log->info("Building TPL from " + std::string(input));
             log->warn("This feature is not yet complete");
-            std::vector<types::Image> images = std::vector<types::Image>();
+            std::vector<types::Image*> images = std::vector<types::Image*>();
             for (auto file : fs::directory_iterator(input)) {
                 if (ends_with(file.path().filename(), ".png")) {
                     types::PNG png = types::PNG(file.path().filename());
-                    images.push_back(png.get_image());
+                    types::Image *image = new types::Image(png.get_image());
+                    images.push_back(image);
                 }
             }
             types::TPL* tpl = new types::GCTPL(images);
