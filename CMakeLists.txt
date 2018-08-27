@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(GCDecompiler)
+project(src)
 
 #Add uninstall target
 configure_file("cmake/uninstall.cmake" "cmake/uninstall.cmake" COPYONLY)
@@ -22,9 +22,9 @@ if(UNIX)
     endif(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 endif(UNIX)
 
-include_directories(GCDecompiler)
-include_directories(GCDecompiler/filetypes)
-include_directories(GCDecompiler/ppc)
+include_directories(src)
+include_directories(src/filetypes)
+include_directories(src/ppc)
 include_directories(zlib)
 include_directories(libs/include)
 
@@ -48,40 +48,40 @@ set(ZLIB
         zlib/inffast.c)
 
 set(HEADER_FILES
-        GCDecompiler/gcd_main.h
-        GCDecompiler/enums.h
-        GCDecompiler/import.h
-        GCDecompiler/relocation.h
-        GCDecompiler/section.h
-        GCDecompiler/filetypes/dol.h
-        GCDecompiler/filetypes/lz.h
-        GCDecompiler/filetypes/rel.h
-        GCDecompiler/filetypes/tpl.h
-        GCDecompiler/filetypes/png.h
-        GCDecompiler/filetypes/image.h
-        GCDecompiler/filetypes/stagedef.h
-        GCDecompiler/ppc/ppc_reader.h
-        GCDecompiler/ppc/codes.h
-        GCDecompiler/ppc/instruction.h
-        GCDecompiler/ppc/register.h
-        GCDecompiler/ppc/symbol.h)
+        src/gcd_main.h
+        src/enums.h
+        src/import.h
+        src/relocation.h
+        src/section.h
+        src/filetypes/dol.h
+        src/filetypes/lz.h
+        src/filetypes/rel.h
+        src/filetypes/tpl.h
+        src/filetypes/png.h
+        src/filetypes/image.h
+        src/filetypes/stagedef.h
+        src/ppc/ppc_reader.h
+        src/ppc/codes.h
+        src/ppc/instruction.h
+        src/ppc/register.h
+        src/ppc/symbol.h)
 
 set(SOURCE_FILES
-        GCDecompiler/gcd_main.cpp
-        GCDecompiler/import.cpp
-        GCDecompiler/relocation.cpp
-        GCDecompiler/section.cpp
-        GCDecompiler/filetypes/dol.cpp
-        GCDecompiler/filetypes/lz.cpp
-        GCDecompiler/filetypes/rel.cpp
-        GCDecompiler/filetypes/tpl.cpp
-        GCDecompiler/filetypes/png.cpp
-        GCDecompiler/filetypes/image.cpp
-        GCDecompiler/filetypes/stagedef.cpp
-        GCDecompiler/ppc/ppc_reader.cpp
-        GCDecompiler/ppc/instruction.cpp
-        GCDecompiler/ppc/register.cpp
-        GCDecompiler/ppc/symbol.cpp)
+        src/gcd_main.cpp
+        src/import.cpp
+        src/relocation.cpp
+        src/section.cpp
+        src/filetypes/dol.cpp
+        src/filetypes/lz.cpp
+        src/filetypes/rel.cpp
+        src/filetypes/tpl.cpp
+        src/filetypes/png.cpp
+        src/filetypes/image.cpp
+        src/filetypes/stagedef.cpp
+        src/ppc/ppc_reader.cpp
+        src/ppc/instruction.cpp
+        src/ppc/register.cpp
+        src/ppc/symbol.cpp)
 
 add_executable(${PROJECT_NAME} ${ZLIB} ${HEADER_FILES} ${SOURCE_FILES})
 
