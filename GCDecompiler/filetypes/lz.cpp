@@ -1,9 +1,9 @@
 
 #include <string>
 #include <fstream>
-#include "utils.h"
+#include "at_logging"
+#include "at_utils"
 #include "lz.h"
-#include "a_logging"
 
 namespace types {
 
@@ -25,7 +25,7 @@ LZ::LZ(const std::string& filename) {
 	input.seekg(0, ios::beg);
 	uchar *data = new uchar[size];
 	input.read((char*)data, size);
-	if (ends_with(filename, ".lz")) {
+	if (util::ends_with(filename, ".lz")) {
 		// Compressed file. Fill compressed.
 		this->compressed_size = size;
 		this->compressed = data;
@@ -45,7 +45,7 @@ void LZ::decompress() {
 
 //	uint file_size = btoi(compressed, datapos, datapos + 4, LITTLE);
 	datapos += 4;
-	uint data_size = btoi(compressed, datapos, datapos + 4, LITTLE);
+	uint data_size = util::btoi<LITTLE>(compressed, datapos, datapos + 4);
 	datapos += 4;
 
 	uint mempos = 0;
@@ -54,15 +54,15 @@ void LZ::decompress() {
 
 	while (mempos < data_size) {
 
-		char block = btoi(this->compressed, datapos, datapos + 1);
+		char block = util::btoi(this->compressed, datapos, datapos + 1);
 		datapos += 1;
 
 		for (int i = 0; i < 8 && mempos < data_size; ++i) {
 			if (block & 0x01) { // Copy data raw
-				data[mempos++] = btoi(this->compressed, datapos, datapos + 1);
+				data[mempos++] = util::btoi(this->compressed, datapos, datapos + 1);
 				datapos += 1;
 			} else { // Unpack reference
-				uint reference = btoi(this->compressed, datapos, datapos + 2, BIG);
+				uint reference = util::btoi(this->compressed, datapos, datapos + 2);
 				datapos += 2;
 
 				int length = (reference & 0x000F) + 3;

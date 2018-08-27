@@ -1,7 +1,7 @@
 
 #include <string>
 
-#include "../types.h"
+#include "types.h"
 #include "register.h"
 
 namespace PPC {

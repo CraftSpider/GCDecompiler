@@ -1,8 +1,8 @@
 
 #include <sstream>
 #include <iostream>
-#include "a_logging"
-#include "utils.h"
+#include "at_logging"
+#include "at_utils"
 #include "codes.h"
 #include "instruction.h"
 #include "register.h"
@@ -55,7 +55,7 @@ Instruction::Instruction(const uchar& type, const uchar *instruction) : Instruct
         this->pattern = primary_patterns.at(type);
     }
 
-    if (type == 0 && get_range(instruction, 6, 31) == 0) {
+    if (type == 0 && util::get_range(instruction, 6, 31) == 0) {
         this->name = "PADDING";
         this->pattern = "{}";
     }
@@ -86,7 +86,7 @@ std::string Instruction::get_variables() {
     if (this->pattern.empty()) {
         return "FIX ME";
     }
-    return char_format(this->instruction, this->pattern);
+    return util::char_format(this->pattern, this->instruction);
 }
 
 std::set<Register> Instruction::used_registers() {
@@ -104,19 +104,19 @@ std::set<Register> Instruction::used_registers() {
     std::stringstream temp;
     for (uint i = 0; i < args.length(); i++) {
         if (pass) {
-            if (!is_num(args[i]) && !is_letter(args[i])) {
+            if (std::isdigit(args[i]) && !std::isalpha(args[i])) {
                 pass = false;
                 temp.clear();
                 temp.str("");
             }
         } else if (!in_num) {
-            if (is_letter(args[i])) {
+            if (std::isalpha(args[i])) {
                 reg_var = true;
                 type += args[i];
-            } else if (is_num(args[i]) && reg_var) {
+            } else if (std::isdigit(args[i]) && reg_var) {
                 in_num = true;
                 temp << args[i];
-            } else if (is_num(args[i])) {
+            } else if (std::isdigit(args[i])) {
                 pass = true;
             } else if (reg_var) {
                 reg_var = false;
@@ -125,9 +125,9 @@ std::set<Register> Instruction::used_registers() {
                 temp.str("");
             }
         } else {
-            if (is_num(args[i])) {
+            if (std::isdigit(args[i])) {
                 temp << args[i];
-            } else if (!is_num(args[i]) && !is_letter(args[i])) {
+            } else if (!std::isalnum(args[i])) {
                 in_num = false;
                 reg_var = false;
                 uchar num;
@@ -171,14 +171,14 @@ Register Instruction::destination_register() {
     std::string type;
     for (uint i = 0; i < args.length() && args[i] != ','; i++) {
         if (!in_num) {
-            if (is_letter(args[i])) {
+            if (std::isalpha(args[i])) {
                 type += args[i];
-            } else if (is_num(args[i])) {
+            } else if (std::isdigit(args[i])) {
                 in_num = true;
                 nums << args[i];
             }
         } else {
-            if (is_num(args[i])) {
+            if (std::isdigit(args[i])) {
                 nums << args[i];
             } else {
                 nums >> num;
@@ -206,20 +206,20 @@ std::set<Register> Instruction::source_registers() {
 }
 
 ConditionInstruction::ConditionInstruction(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
-    if (get_bit(instruction, 31)) {
+    if (util::get_bit(instruction, 31)) {
         this->name += ".";
     }
 }
 
 Ori::Ori(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
-    if (get_range(instruction, 6, 31) == 0) {
+    if (util::get_range(instruction, 6, 31) == 0) {
         this->name = "nop";
         this->pattern = "{}";
     }
 }
 
 PairedSingleFamily::PairedSingleFamily(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
-    int stype = get_range(instruction, 26, 30);
+    ulong stype = util::get_range(instruction, 26, 30);
     if (secondary_codes_ps.count(stype) > 0) {
         this->name = secondary_codes_ps.at(stype);
     }
@@ -227,23 +227,23 @@ PairedSingleFamily::PairedSingleFamily(const uchar& type, const uchar *instructi
         this->pattern = secondary_patterns_ps.at(stype);
     }
     if (stype == 0) {
-        if (get_bit(instruction, 25)) {
+        if (util::get_bit(instruction, 25)) {
             this->name += "o";
         } else {
             this->name += "u";
         }
-        if (get_bit(instruction, 24)) {
+        if (util::get_bit(instruction, 24)) {
             this->name += "1";
         } else {
             this->name += "0";
         }
     } else if (stype == 6 || stype == 7) {
-        if (get_bit(instruction, 25)) {
+        if (util::get_bit(instruction, 25)) {
             ulong len = this->name.length();
             this->name = this->name.substr(0, len - 1) + "u" + this->name.substr(len - 1, len);
         }
     } else if (stype == 8) {
-        int ttype = get_range(instruction, 21, 25);
+        ulong ttype = util::get_range(instruction, 21, 25);
         if (ttype == 1) {
             this->name = "ps_neg";
         } else if (ttype == 2) {
@@ -254,12 +254,12 @@ PairedSingleFamily::PairedSingleFamily(const uchar& type, const uchar *instructi
             this->name = "ps_abs";
         }
     } else if (stype == 16) {
-        if (get_bit(instruction, 24)) {
+        if (util::get_bit(instruction, 24)) {
             this->name += "1";
         } else {
             this->name += "0";
         }
-        if (get_bit(instruction, 25)) {
+        if (util::get_bit(instruction, 25)) {
             this->name += "1";
         } else {
             this->name += "0";
@@ -269,14 +269,14 @@ PairedSingleFamily::PairedSingleFamily(const uchar& type, const uchar *instructi
 
 AddFamily::AddFamily(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
     this->pattern = "r{6,10}, r{11,15}, {sX|16,31}";
-    if (get_signed_range(instruction, 16, 31) < 0) {
+    if (util::get_signed_range(instruction, 16, 31) < 0) {
         this->name = "sub" + this->name.substr(3, this->name.length());
         this->pattern = "r{6,10}, r{11,15}, {aX|16,31}";
     }
 }
 
 CmpFamily::CmpFamily(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
-    if (!get_bit(instruction, 10)) {
+    if (!util::get_bit(instruction, 10)) {
         this->name = this->name.substr(0, this->name.length() - 1) + "wi";
         this->pattern = "crf{6,8}, r{11,15}, {X|16,31}";
     } else {
@@ -285,16 +285,16 @@ CmpFamily::CmpFamily(const uchar& type, const uchar *instruction) : Instruction(
 }
 
 BFamily::BFamily(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
-    if (get_bit(instruction, 31)) {
+    if (util::get_bit(instruction, 31)) {
         this->name += "l";
     }
-    if (get_bit(instruction, 30)) {
+    if (util::get_bit(instruction, 30)) {
         this->name += "a";
     }
 
     if (type == 16) {
-        int BO = get_range(instruction, 6, 10);
-        int BI = get_range(instruction, 11, 15);
+        ulong BO = util::get_range(instruction, 6, 10);
+        ulong BI = util::get_range(instruction, 11, 15);
         if (BO == 12 && BI == 0) {
             this->name = "blt";
             this->pattern = "{X|16,29}";
@@ -306,7 +306,7 @@ BFamily::BFamily(const uchar& type, const uchar *instruction) : Instruction(type
 }
 
 SpecBranchFamily::SpecBranchFamily(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
-    const int stype = get_range(instruction, 21, 30);
+    const ulong stype = util::get_range(instruction, 21, 30);
     if (secondary_codes_sb.count(stype) > 0) {
         this->name = secondary_codes_sb.at(stype);
     }
@@ -315,10 +315,10 @@ SpecBranchFamily::SpecBranchFamily(const uchar& type, const uchar *instruction) 
     }
     // Set up commands with special conditions
     if (stype == 16 || stype == 528) { // If it's a branch command, set up that
-        int BO = get_range(instruction, 6, 10);
-        int BI = get_range(instruction, 11, 15);
+        ulong BO = util::get_range(instruction, 6, 10);
+        ulong BI = util::get_range(instruction, 11, 15);
         this->pattern = "{6,10}, {11,15}";
-        if (get_bit(instruction, 31)) {
+        if (util::get_bit(instruction, 31)) {
             this->name += "l";
         }
         if (BO == 20) {
@@ -329,7 +329,7 @@ SpecBranchFamily::SpecBranchFamily(const uchar& type, const uchar *instruction) 
 }
 
 MathFamily::MathFamily(const uchar& type, const uchar *instruction) : ConditionInstruction(type, instruction) {
-    const int stype = get_range(instruction, 21, 30);
+    const ulong stype = util::get_range(instruction, 21, 30);
     try {
         this->name = secondary_codes_math.at(stype);
         if (this->name.substr(this->name.length() - 1, this->name.length()) == ".") {
@@ -343,26 +343,26 @@ MathFamily::MathFamily(const uchar& type, const uchar *instruction) : ConditionI
     }
     // Set up commands with special conditions.
     if (stype == 0 || stype == 32) {
-        if (!get_bit(instruction, 10)) {
+        if (!util::get_bit(instruction, 10)) {
             this->name += "w";
             this->pattern = "crf{6,8}, r{11,15}, r{16,20}";
         } else {
             this->pattern = "crf{6,8}, {10,10}, r{11,15}, r{16,20}";
         }
     } else if (stype == 124) {
-        if (get_range(instruction, 6, 10) == get_range(instruction, 16, 20)) {
+        if (util::get_range(instruction, 6, 10) == util::get_range(instruction, 16, 20)) {
             this->name = "not";
             this->pattern = "r{11,15}, r{6,10}";
         }
     } else if (stype == 144) {
-        if (get_range(instruction, 12, 19) == 0xFF) {
+        if (util::get_range(instruction, 12, 19) == 0xFF) {
             this->name = "mtcr";
             this->pattern = "r{6,10}";
         } else {
             this->pattern = "{X|12,19}, r{6,10}";
         }
     } else if (stype == 339 || stype == 467) {
-        int reg = get_range(instruction, 11, 15) + (get_range(instruction, 16, 20) << 5);
+        ulong reg = util::get_range(instruction, 11, 15) + (util::get_range(instruction, 16, 20) << 5);
         if (reg == 0b1) {
             this->name = this->name.substr(0, 2) + "xer";
             this->pattern = "r{6,10}";
@@ -383,7 +383,7 @@ MathFamily::MathFamily(const uchar& type, const uchar *instruction) : ConditionI
             }
         }
     } else if (stype == 371) {
-        int reg = get_range(instruction, 11, 15) + (get_range(instruction, 16, 20) << 5);
+        ulong reg = util::get_range(instruction, 11, 15) + (util::get_range(instruction, 16, 20) << 5);
         if (reg == 0b0100001100) {
             this->name = "mftb";
             this->pattern = "r{6,10}";
@@ -396,7 +396,7 @@ MathFamily::MathFamily(const uchar& type, const uchar *instruction) : ConditionI
             this->pattern = out.str();
         }
     } else if (stype == 444) {
-        if (get_range(instruction, 6, 10) == get_range(instruction, 16, 20)) {
+        if (util::get_range(instruction, 6, 10) == util::get_range(instruction, 16, 20)) {
             this->name = "mr";
             this->pattern = "r{11,15}, r{6,10}";
         }
@@ -419,7 +419,7 @@ Register MathFamily::destination_register() {
 //TODO: Add special consideration for lswi and lswx destination register for math
 
 FloatSingleFamily::FloatSingleFamily(const uchar& type, const uchar *instruction) : ConditionInstruction(type, instruction) {
-    int stype = get_range(instruction, 26, 30);
+    ulong stype = util::get_range(instruction, 26, 30);
     try {
         this->name = secondary_codes_float.at(stype);
         if (this->name.substr(this->name.length() - 1, this->name.length()) == ".") {
@@ -435,11 +435,11 @@ FloatSingleFamily::FloatSingleFamily(const uchar& type, const uchar *instruction
 }
 
 FloatDoubleFamily::FloatDoubleFamily(const uchar& type, const uchar *instruction) : ConditionInstruction(type, instruction) {
-    int stype;
-    if (get_bit(instruction, 26)) {
-        stype = get_range(instruction, 26, 30);
+    ulong stype;
+    if (util::get_bit(instruction, 26)) {
+        stype = util::get_range(instruction, 26, 30);
     } else {
-        stype = get_range(instruction, 21, 30);
+        stype = util::get_range(instruction, 21, 30);
     }
     try {
         this->name = secondary_codes_double.at(stype);

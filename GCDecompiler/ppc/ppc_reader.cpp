@@ -7,10 +7,10 @@
 #include <cmath>
 #include <set>
 #include <unordered_map>
-#include "a_logging"
+#include "at_logging"
+#include "at_utils"
 #include "types.h"
 #include "filetypes/rel.h"
-#include "utils.h"
 #include "ppc/register.h"
 #include "ppc/instruction.h"
 #include "ppc/symbol.h"
@@ -22,7 +22,7 @@ using std::ios;
 static logging::Logger *logger = logging::get_logger("ppc");
 
 Instruction* create_instruction(const uchar *instruction) {
-    const uchar opcode = (uchar)get_range(instruction, 0, 5);
+    const uchar opcode = (uchar)util::get_range(instruction, 0, 5);
 
     if (opcode == 4) return new PairedSingleFamily(opcode, instruction);
     else if (opcode == 10 || opcode == 11) return new CmpFamily(opcode, instruction);
@@ -59,28 +59,28 @@ void relocate(types::REL *rel, const uint& bss_pos, const std::string& file_out)
                 output.seekg(reloc.get_dest_offset());
                 switch (reloc.type) {
                 case R_PPC_ADDR32:
-                    write_int(output, abs_offset, 4);
+                    util::write_uint(output, abs_offset, 4);
                     break;
                 case R_PPC_ADDR24:
-                    write_int(output, abs_offset, 3);
+                    util::write_uint(output, abs_offset, 3);
                     break;
                 case R_PPC_ADDR16:
-                    write_int(output, abs_offset, 2);
+                    util::write_uint(output, abs_offset, 2);
                     break;
                 case R_PPC_ADDR16_LO:
-                    write_int(output, abs_offset & ((uint)pow(2, 16) - 1), 2);
+                    util::write_uint(output, abs_offset & ((uint)pow(2, 16) - 1), 2);
                     break;
                 case R_PPC_ADDR16_HI:
-                    write_int(output, abs_offset << 16u, 2);
+                    util::write_uint(output, abs_offset << 16u, 2);
                     break;
                 case R_PPC_ADDR16_HA:
-                    write_int(output, (abs_offset << 16u) + 0x10000, 2);
+                    util::write_uint(output, (abs_offset << 16u) + 0x10000, 2);
                     break;
                 case R_PPC_REL24:
-                    write_int(output, abs_offset - reloc.get_dest_offset());
+                    util::write_uint(output, abs_offset - reloc.get_dest_offset());
                     break;
                 default:
-                    write_int(output, 0);
+                    util::write_uint(output, 0);
                     break;
                 }
             }
@@ -135,14 +135,14 @@ void disassemble(const std::string& file_in, const std::string& file_out, int st
         }
 
         if (func_end && instruct->code_name() != "blr" && instruct->code_name() != "rfi" && instruct->code_name() != "PADDING") {
-            output << "; function: f_" << std::hex << position << std::dec << " at " << itoh(position) << '\n';
+            output << "; function: f_" << std::hex << position << std::dec << " at " << util::itoh(position) << '\n';
             func_end = false;
         }
 
-        std::string hex = itoh(position);
+        std::string hex = util::itoh(position);
         std::string padding(hex_length - hex.length(), ' ');
-        output << padding << hex << "    " << ctoh(instruction[0]) << " " << ctoh(instruction[1]) << " " <<
-            ctoh(instruction[2]) << " " << ctoh(instruction[3]) << "    ";
+        output << padding << hex << "    " << util::ctoh(instruction[0], false) << " " << util::ctoh(instruction[1], false) << " " <<
+            util::ctoh(instruction[2], false) << " " << util::ctoh(instruction[3], false) << "    ";
 
         output << instruct->code_name();
         output << " " << instruct->get_variables();
@@ -196,7 +196,7 @@ void read_data(types::REL *to_read, Section *section, const std::vector<types::R
         }
     }
     for (int offset : offsets) {
-        output << itoh(offset) << ": ";
+        output << util::itoh(offset) << ": ";
         // Need to add non ASCII stuff later
         int lookahead = offset;
         char dat = section->get_data()[lookahead++ - section->offset];
@@ -209,9 +209,9 @@ void read_data(types::REL *to_read, Section *section, const std::vector<types::R
             output << out << '\n';
         } else {
             lookahead = offset;
-            out = ctoh(section->get_data()[lookahead++ - section->offset]);
+            out = util::ctoh(section->get_data()[lookahead++ - section->offset], false);
             while (offsets.find(lookahead) == offsets.end() && lookahead - offset < 5) {
-                out += ctoh(section->get_data()[lookahead++ - section->offset]);
+                out += util::ctoh(section->get_data()[lookahead++ - section->offset], false);
             }
             if (!out.empty()) {
                 output << out << '\n';

@@ -6,7 +6,6 @@
 
 #include <string>
 #include "types.h"
-#include "utils.h"
 
 struct StartPos {
     float x_pos, y_pos, z_pos;

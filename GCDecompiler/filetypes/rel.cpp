@@ -4,9 +4,9 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "a_logging"
+#include "at_logging"
+#include "at_utils"
 #include "rel.h"
-#include "utils.h"
 
 namespace types {
 
@@ -23,40 +23,40 @@ REL::REL(const std::string& filename) {
 
 	logger->trace("Reading file header");
 	file.seekg(0, ios::beg);
-	this->id = next_int(file);
+	this->id = util::next_uint(file);
 	file.seekg(8, ios::cur); // Skip over the next and previous module values
-	uint num_sections = next_int(file);
-	uint section_offset = next_int(file);
-	this->name_offset = next_int(file);
-	this->name_size = next_int(file);
-	this->version = next_int(file);
-	this->bss_size = next_int(file);
+	uint num_sections = util::next_uint(file);
+	uint section_offset = util::next_uint(file);
+	this->name_offset = util::next_uint(file);
+	this->name_size = util::next_uint(file);
+	this->version = util::next_uint(file);
+	this->bss_size = util::next_uint(file);
 	file.seekg(4, ios::cur); // Because we don't need to know the relocation offset
-	uint import_offset = next_int(file);
-	uint num_imports = next_int(file) / 8; // Convert length of imports to number of imports
-	this->prolog_section = next_char(file);
-	this->epilog_section = next_char(file);
-	this->unresolved_section = next_char(file);
+	uint import_offset = util::next_uint(file);
+	uint num_imports = util::next_uint(file) / 8; // Convert length of imports to number of imports
+	this->prolog_section = util::next_uchar(file);
+	this->epilog_section = util::next_uchar(file);
+	this->unresolved_section = util::next_uchar(file);
 	file.seekg(1, ios::cur); // Skip padding
-	this->prolog_offset = next_int(file);
-	this->epilog_offset = next_int(file);
-	this->unresolved_offset = next_int(file);
+	this->prolog_offset = util::next_uint(file);
+	this->epilog_offset = util::next_uint(file);
+	this->unresolved_offset = util::next_uint(file);
 	if (this->version >= 2) {
-		this->align = next_int(file);
-		this->bss_align = next_int(file);
+		this->align = util::next_uint(file);
+		this->bss_align = util::next_uint(file);
 	}
 	if (this->version >= 3) {
-		this->fix_size = next_int(file);
+		this->fix_size = util::next_uint(file);
 	}
 	this->header_size = (uint)file.tellg();
 
 	logger->trace("Reading section table");
 	file.seekg(section_offset, ios::beg);
 	for (uint i = 0; i < num_sections; i++) {
-		uint offset = next_int(file);
+		uint offset = util::next_uint(file);
 		bool exec = offset & 1;
 		offset = offset >> 1 << 1;
-		uint length = next_int(file);
+		uint length = util::next_uint(file);
 		this->sections.push_back(Section(i, offset, exec, length));
 	}
 
@@ -73,8 +73,8 @@ REL::REL(const std::string& filename) {
 	logger->trace("Reading import table");
 	file.seekg(import_offset, ios::beg);
 	for (uint i = 0; i < num_imports; i++) {
-		uint module_id = next_int(file);
-		uint offset = next_int(file);
+		uint module_id = util::next_uint(file);
+		uint offset = util::next_uint(file);
 		this->imports.push_back(Import(module_id, offset));
 	}
 	
@@ -84,10 +84,10 @@ REL::REL(const std::string& filename) {
 		RelType rel_type = RelType(0);
 		while (rel_type != R_RVL_STOP) {
 			uint position = (uint)file.tellg();
-			ushort prev_offset = next_short(file);
-			rel_type = RelType(next_char(file));
-			Section *section = &this->sections.at(next_char(file));
-			uint rel_offset = next_int(file);
+			ushort prev_offset = util::next_ushort(file);
+			rel_type = RelType(util::next_uchar(file));
+			Section *section = &this->sections.at(util::next_uchar(file));
+			uint rel_offset = util::next_uint(file);
 			imp->add_relocation(rel_type, position, rel_offset, prev_offset, section);
 		}
 	}
@@ -143,30 +143,30 @@ void REL::compile(const std::string& filename) {
 
 	// Write Header to the file
 	logger->debug("Writing header");
-	write_int(out, this->id);
-	write_int(out, 0, 8); // Padding for Prev and Next module addresses.
-	write_int(out, this->num_sections());
-	write_int(out, this->section_offset());
-	write_int(out, this->name_offset);
-	write_int(out, this->name_size);
-	write_int(out, this->version);
-	write_int(out, this->bss_size);
-	write_int(out, this->relocation_offset());
-	write_int(out, this->import_offset());
-	write_int(out, this->num_imports() * 8); // Convert number of imports to length of imports
-	write_int(out, this->prolog_section, 1);
-	write_int(out, this->epilog_section, 1);
-	write_int(out, this->unresolved_section, 1);
-	write_int(out, 0, 1); // Padding for 8 byte alignment
-	write_int(out, this->prolog_offset);
-	write_int(out, this->epilog_offset);
-	write_int(out, this->unresolved_offset);
+	util::write_uint(out, this->id);
+    util::write_uint(out, 0, 8); // Padding for Prev and Next module addresses.
+    util::write_uint(out, this->num_sections());
+    util::write_uint(out, this->section_offset());
+    util::write_uint(out, this->name_offset);
+    util::write_uint(out, this->name_size);
+    util::write_uint(out, this->version);
+    util::write_uint(out, this->bss_size);
+    util::write_uint(out, this->relocation_offset());
+    util::write_uint(out, this->import_offset());
+    util::write_uint(out, this->num_imports() * 8); // Convert number of imports to length of imports
+    util::write_uint(out, this->prolog_section, 1);
+    util::write_uint(out, this->epilog_section, 1);
+    util::write_uint(out, this->unresolved_section, 1);
+    util::write_uint(out, 0, 1); // Padding for 8 byte alignment
+    util::write_uint(out, this->prolog_offset);
+    util::write_uint(out, this->epilog_offset);
+    util::write_uint(out, this->unresolved_offset);
 	if (this->version >= 2) {
-		write_int(out, this->align);
-		write_int(out, this->bss_align);
+        util::write_uint(out, this->align);
+        util::write_uint(out, this->bss_align);
 	}
 	if (this->version >= 3) {
-		write_int(out, this->fix_size);
+        util::write_uint(out, this->fix_size);
 	}
 
 	// Write Section Table to the file
@@ -174,8 +174,8 @@ void REL::compile(const std::string& filename) {
 	out.seekp(this->section_offset(), ios::beg);
 	for (uint i = 0; i < this->num_sections(); i++) {
 		Section section = this->sections.at(i);
-		write_int(out, section.offset | (int)section.exec); // Add exec bit back in
-		write_int(out, section.length);
+        util::write_uint(out, section.offset | (int)section.exec); // Add exec bit back in
+        util::write_uint(out, section.length);
 	}
 
 	// Write actual sections to the file
@@ -192,8 +192,8 @@ void REL::compile(const std::string& filename) {
 	out.seekp(this->import_offset(), ios::beg);
 	for (uint i = 0; i < this->num_imports(); i++) {
 		Import imp = this->imports.at(i);
-		write_int(out, imp.module);
-		write_int(out, imp.offset);
+        util::write_uint(out, imp.module);
+        util::write_uint(out, imp.offset);
 	}
 
 	// Write the Relocation Instructions
@@ -201,10 +201,10 @@ void REL::compile(const std::string& filename) {
 	for (auto imp = this->imports.begin(); imp != this->imports.end(); imp++) {
 		out.seekp(imp->offset, ios::beg);
 		for (auto reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
-			write_int(out, reloc->prev_offset, 2);
-			write_int(out, reloc->type, 1);
-			write_int(out, reloc->get_src_section().id, 1);
-			write_int(out, reloc->relative_offset);
+            util::write_uint(out, reloc->prev_offset, 2);
+            util::write_uint(out, reloc->type, 1);
+            util::write_uint(out, reloc->get_src_section().id, 1);
+            util::write_uint(out, reloc->relative_offset);
 		}
 	}
 	
@@ -218,21 +218,21 @@ std::string REL::dump_header(uint pad_len) {
 	out << "REL Header:" << '\n';
 	out << "  ID: " << this->id << '\n';
 	out << "  Version: " << this->version << '\n';
-	out << "  Name Offset: " << itoh(this->name_offset) << '\n';
-	out << "  Name Size: " << itoh(this->name_size) << '\n';
-	out << "  .bss Size: " << itoh(this->bss_size) << '\n';
-	out << "  Sections Start: " << itoh(this->section_offset()) << '\n';
+	out << "  Name Offset: " << util::itoh(this->name_offset) << '\n';
+	out << "  Name Size: " << util::itoh(this->name_size) << '\n';
+	out << "  .bss Size: " << util::itoh(this->bss_size) << '\n';
+	out << "  Sections Start: " << util::itoh(this->section_offset()) << '\n';
 	out << "  Num Sections: " << this->num_sections() << '\n';
-	out << "  Import Start: " << itoh(this->import_offset()) << '\n';
+	out << "  Import Start: " << util::itoh(this->import_offset()) << '\n';
 	out << "  Num Imports: " << this->num_imports() << '\n';
-	out << "  Relocation Start: " << itoh(this->relocation_offset()) << '\n';
+	out << "  Relocation Start: " << util::itoh(this->relocation_offset()) << '\n';
 	out << "  Num Relocations: " << this->num_relocations() << '\n';
 	out << "  Prolog Index: " << this->prolog_section << '\n';
-	out << "  Prolog Offset: " << itoh(this->prolog_offset) << '\n';
+	out << "  Prolog Offset: " << util::itoh(this->prolog_offset) << '\n';
 	out << "  Epilog Index: " << this->epilog_section << '\n';
-	out << "  Epilog Offset: " << itoh(this->epilog_offset) << '\n';
+	out << "  Epilog Offset: " << util::itoh(this->epilog_offset) << '\n';
 	out << "  Unresolved Index: " << this->unresolved_section << '\n';
-	out << "  Unresolved Offset: " << itoh(this->unresolved_offset) << '\n';
+	out << "  Unresolved Offset: " << util::itoh(this->unresolved_offset) << '\n';
 	if (this->version >= 2) {
 		out << "  Align: " << this->align << '\n';
 		out << "  .bss Align: " << this->bss_align << '\n';
@@ -258,10 +258,10 @@ std::string REL::dump_sections(uint pad_len) {
 	out << "Section Table:" << '\n';
 	for (auto section = this->sections.begin(); section != sections.end(); section++) {
 		out << "  Section " << section->id << ":" << '\n';
-		out << "    Offset: " << itoh(section->offset) << '\n';
-		out << "    Length: " << itoh(section->length) << '\n';
+		out << "    Offset: " << util::itoh(section->offset) << '\n';
+		out << "    Length: " << util::itoh(section->length) << '\n';
 		if (section->offset > 0) {
-			out << "    Range: " << itoh(section->offset) << " - " << itoh(section->offset + section->length) << '\n';
+			out << "    Range: " << util::itoh(section->offset) << " - " << util::itoh(section->offset + section->length) << '\n';
 		}
 		out << "    Executable: " << section->exec << '\n';
 	}
@@ -284,11 +284,11 @@ std::string REL::dump_imports(uint pad_len) {
 		std::cout << padding << "  Dumping Import " << imp->module << '\n';
 		out << "  Import:" << '\n';
 		out << "    Module: " << imp->module << '\n';
-		out << "    Offset: " << itoh(imp->offset) << '\n';
+		out << "    Offset: " << util::itoh(imp->offset) << '\n';
 		out << "    Relocation Table:" << '\n';
 		for (auto reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
 			out << "      Relocation:" << '\n';
-			out << "        Position: " << itoh(reloc->position) << '\n';
+			out << "        Position: " << util::itoh(reloc->position) << '\n';
 			out << "        Type: " << RelNames.at(reloc->type) << '\n';
 			if (reloc->type == R_RVL_STOP) {
 				continue;
@@ -297,9 +297,9 @@ std::string REL::dump_imports(uint pad_len) {
 				out << "        Destination Section: " << reloc->get_dest_section().id << '\n';
 				continue;
 			}
-			out << "        Offset from Prev: " << itoh(reloc->prev_offset) << '\n';
-			out << "        Source: " << reloc->get_src_section().id << " " << itoh(reloc->get_src_offset()) << '\n';
-			out << "        Destination: " << reloc->get_dest_section().id << " " << itoh(reloc->get_dest_offset()) << '\n';
+			out << "        Offset from Prev: " << util::itoh(reloc->prev_offset) << '\n';
+			out << "        Source: " << reloc->get_src_section().id << " " << util::itoh(reloc->get_src_offset()) << '\n';
+			out << "        Destination: " << reloc->get_dest_section().id << " " << util::itoh(reloc->get_dest_offset()) << '\n';
 		}
 	}
 	return out.str();

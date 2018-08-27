@@ -3,10 +3,10 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include "at_logging"
+#include "at_utils"
 #include "types.h"
 #include "dol.h"
-#include "utils.h"
-#include "a_logging"
 
 namespace types {
 
@@ -26,28 +26,28 @@ DOL::DOL(const std::string& filename) {
 	logger->trace("Reading executable sections table");
 	for (int i = 0; i < 7; i++) {
 		file.seekg(0x0 + i * 4, ios::beg);
-		offset = next_int(file);
+		offset = util::next_uint(file);
 		file.seekg(0x48 + i * 4, ios::beg);
-		address = next_int(file);
+		address = util::next_uint(file);
 		file.seekg(0x90 + i * 4, ios::beg);
-		size = next_int(file);
+		size = util::next_uint(file);
 		this->sections.push_back(Section(i, offset, true, size, address));
 	}
 	
 	logger->trace("Reading data sections table");
 	for (int i = 0; i < 11; i++) {
 		file.seekg(0x1C + i * 4, ios::beg);
-		offset = next_int(file);
+		offset = util::next_uint(file);
 		file.seekg(0x64 + i * 4, ios::beg);
-		address = next_int(file);
+		address = util::next_uint(file);
 		file.seekg(0xAC + i * 4, ios::beg);
-		size = next_int(file);
+		size = util::next_uint(file);
 		this->sections.push_back(Section(i + 7, offset, false, size, address));
 	}
  
-	this->bss_address = next_int(file);
-	this->bss_size = next_int(file);
-	this->entry_offset = next_int(file);
+	this->bss_address = util::next_uint(file);
+	this->bss_size = util::next_uint(file);
+	this->entry_offset = util::next_uint(file);
 	
 	logger->debug("Finished parsing DOL");
 }
@@ -57,21 +57,21 @@ std::string DOL::dump_all() {
 	std::stringstream out;
 
 	out << "Header Data:\n";
-	out << "  BSS Address: \n" << itoh(this->bss_address) << '\n';
-	out << "  BSS Size: " << itoh(this->bss_size) << '\n';
-	out << "  Entry Point Offset: " << itoh(this->entry_offset) << '\n';
+	out << "  BSS Address: \n" << util::itoh(this->bss_address) << '\n';
+	out << "  BSS Size: " << util::itoh(this->bss_size) << '\n';
+	out << "  Entry Point Offset: " << util::itoh(this->entry_offset) << '\n';
 
 	out << "Section Table:\n";
 	for (auto section = this->sections.begin(); section != sections.end(); section++) {
 		out << "  Section " << section->id << ":\n";
-		out << "    Offset: " << itoh(section->offset) << '\n';
-		out << "    Length: " << itoh(section->length) << '\n';
+		out << "    Offset: " << util::itoh(section->offset) << '\n';
+		out << "    Length: " << util::itoh(section->length) << '\n';
 		if (section->offset > 0) {
-			out << "    File Range: " << itoh(section->offset) << " - " << itoh(section->offset + section->length) << '\n';
+			out << "    File Range: " << util::itoh(section->offset) << " - " << util::itoh(section->offset + section->length) << '\n';
 		}
-		out << "    Address: " << itoh(section->address) << '\n';
+		out << "    Address: " << util::itoh(section->address) << '\n';
 		if (section->offset > 0) {
-			out << "    Mem Range: " << itoh(section->address) << " - " << itoh(section->address + section->length) << '\n';
+			out << "    Mem Range: " << util::itoh(section->address) << " - " << util::itoh(section->address + section->length) << '\n';
 		}
 		out << "    Executable: " << section->exec << '\n';
 	}

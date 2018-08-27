@@ -4,9 +4,9 @@
 
 #include <fstream>
 #include <sstream>
-#include "a_logging"
+#include "at_logging"
+#include "at_utils"
 #include "png.h"
-#include "utils.h"
 #include "zlib.h"
 #include "tpl.h"
 
@@ -71,16 +71,16 @@ uint Chunk::crc() {
     for (ulong i = 0; i < length; i++) {
         crc_data[i + 4] = data[i];
     }
-    uint crc = crc32(crc_data, length + 4);
+    uint crc = util::crc32(crc_data, length + 4);
     delete[] crc_data;
     return crc;
 }
 
 void Chunk::write_chunk(std::fstream &output) {
-    write_int(output, length);
-    write_string(output, type);
+    util::write_uint(output, length);
+    util::write_string(output, type);
     output.write((char*)data, length);
-    write_int(output, crc());
+    util::write_uint(output, crc());
 }
 
 void PNG::add_chunk(uint length, std::string name, uchar *data) {
@@ -104,14 +104,14 @@ PNG::PNG(const std::string &filename) {
     uint height = 0, width = 0;
     Color **image_data = nullptr;
     
-    if (next_long(input) != 0x89504E470D0A1A0AL) {
+    if (util::next_ulong(input) != 0x89504E470D0A1A0AL) {
         logger->warn("PNG magic doesn't match expected, file is likely corrupted or wrong type.");
     }
     
     bool first = true;
     while (true) {
-        uint length = next_int(input);
-        std::string header = next_string(input, 4);
+        uint length = util::next_uint(input);
+        std::string header = util::next_string(input, 4);
         if (first && header != "IHDR") {
             logger->error("First chunk not header chunk, expected IHDR but got " + header);
             break;
@@ -122,16 +122,16 @@ PNG::PNG(const std::string &filename) {
                 logger->error("Incorrect header length");
                 break;
             }
-            width = next_int(input);
-            height = next_int(input);
+            width = util::next_uint(input);
+            height = util::next_uint(input);
             image_data = new Color*[height];
             for (uint i = 0; i < height; ++i)
                 image_data[i] = new Color[width];
-            bit_depth = next_char(input);
-            color_type = ColorType::from_depth(next_char(input));
-            compression = next_char(input);
-            filter = next_char(input);
-            interlace = next_char(input);
+            bit_depth = util::next_uchar(input);
+            color_type = ColorType::from_depth(util::next_uchar(input));
+            compression = util::next_uchar(input);
+            filter = util::next_uchar(input);
+            interlace = util::next_uchar(input);
         } else if (header == "PLTE") {
             // TODO
         } else if (header == "IDAT") {
@@ -163,9 +163,9 @@ PNG::PNG(const std::string &filename) {
         } else if (header == "IEND") {
             break;
         } else {
-            if (is_lower(header[0])) {
+            if (std::islower(header[0])) {
                 logger->warn("Unknown ancillary chunk encountered");
-            } else if (is_upper(header[0])) {
+            } else if (std::isupper(header[0])) {
                 logger->error("PNG encountered unknown critical chunk");
                 break;
             } else {
@@ -234,8 +234,8 @@ void PNG::save(const std::string &filename) {
     // Write out header
     uchar *ihdr = new uchar[13];
     
-    const uchar *width = itob(image.width);
-    const uchar *height = itob(image.height);
+    const uchar *width = util::itob(image.width);
+    const uchar *height = util::itob(image.height);
     
     for (int i = 0; i < 4; i++) {
         ihdr[i] = width[i];

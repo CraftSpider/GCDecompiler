@@ -3,9 +3,9 @@
 #include <sstream>
 #include <cmath>
 #include <chrono>
-#include "a_logging"
+#include "at_logging"
+#include "at_utils"
 #include "tpl.h"
-#include "utils.h"
 #include "zlib.h"
 #include "png.h"
 
@@ -32,9 +32,9 @@ Color parse_rgb565(const uchar *block, const uchar& pixel) {
     uchar rgb[2];
     rgb[0] = block[start];
     rgb[1] = block[start + 1];
-    uchar red = (uchar)(0x8 * get_range(rgb, 0, 4));
-    uchar green = (uchar)(0x4 * get_range(rgb, 5, 10));
-    uchar blue = (uchar)(0x8 * get_range(rgb, 11, 15));
+    uchar red = (uchar)(0x8 * util::get_range(rgb, 0, 4));
+    uchar green = (uchar)(0x4 * util::get_range(rgb, 5, 10));
+    uchar blue = (uchar)(0x8 * util::get_range(rgb, 11, 15));
     return {red, green, blue, 0xFF};
 }
 
@@ -42,16 +42,16 @@ Color parse_rgb5A3(const uchar *block, const uchar& pixel) {
     uchar red, green, blue, alpha = 0xFF;
     const uchar *data = new uchar[2];
     data = block + pixel*2;
-    if (!get_bit(block, 0)) {
-        red = (uchar)(0x11 * get_range(data, 4, 7));
-        green = (uchar)(0x11 * get_range(data, 8, 11));
-        blue = (uchar)(0x11 * get_range(data, 12, 15));
-        alpha = (uchar)(0x20 * get_range(data, 1, 3));
+    if (!util::get_bit(block, 0)) {
+        red = (uchar)(0x11 * util::get_range(data, 4, 7));
+        green = (uchar)(0x11 * util::get_range(data, 8, 11));
+        blue = (uchar)(0x11 * util::get_range(data, 12, 15));
+        alpha = (uchar)(0x20 * util::get_range(data, 1, 3));
         return Color {red, green, blue, alpha};
     } else {
-        red = (uchar)(0x8 * get_range(data, 1, 5));
-        green = (uchar)(0x8 * get_range(data, 6, 10));
-        blue = (uchar)(0x8 * get_range(data, 11, 15));
+        red = (uchar)(0x8 * util::get_range(data, 1, 5));
+        green = (uchar)(0x8 * util::get_range(data, 6, 10));
+        blue = (uchar)(0x8 * util::get_range(data, 11, 15));
         return Color {red, green, blue, alpha};
     }
 }
@@ -212,8 +212,8 @@ uint TPL::get_num_mipmaps(const uint &index) const {
 
 WiiTPL::WiiTPL(std::fstream& input) {
 
-	num_images = next_int(input);
-	table_offset = next_int(input);
+	num_images = util::next_uint(input);
+	table_offset = util::next_uint(input);
 
 	input.seekg(this->table_offset);
 
@@ -221,8 +221,8 @@ WiiTPL::WiiTPL(std::fstream& input) {
     logger->trace("Building image table");
 	this->image_table = std::vector<WiiImageTableEntry>();
 	for (uint i = 0; i < this->num_images; ++i) {
-		uint image_header = next_int(input);
-		uint palette_header = next_int(input);
+		uint image_header = util::next_uint(input);
+		uint palette_header = util::next_uint(input);
 		WiiImageTableEntry entry = {image_header, palette_header};
 		this->image_table.push_back(entry);
 	}
@@ -235,11 +235,11 @@ WiiTPL::WiiTPL(std::fstream& input) {
 		
 		// Build Palette Header
 		input.seekg(entry.palette_header);
-		uint entry_count = next_short(input);
-		uchar unpacked = next_char(input);
+		ushort entry_count = util::next_ushort(input);
+		uchar unpacked = util::next_uchar(input);
 		input.seekg(1, ios::cur); // Skip padding
-		uint format = next_int(input);
-		uint offset = next_int(input);
+		uint format = util::next_uint(input);
+		uint offset = util::next_uint(input);
 
 		WiiPaletteHeader palette = {unpacked, entry_count, format, offset};
 		palette_heads.push_back(palette);
@@ -248,19 +248,19 @@ WiiTPL::WiiTPL(std::fstream& input) {
 		input.seekg(entry.image_header);
 
 		WiiImageHeader image_head {};
-		image_head.height = next_short(input);
-		image_head.width = next_short(input);
-		image_head.format = next_int(input);
-		image_head.offset = next_int(input);
-		image_head.wrap_s = next_int(input);
-		image_head.wrap_t = next_int(input);
-		image_head.min_filter = next_int(input);
-		image_head.max_filter = next_int(input);
-		image_head.lod_bias = next_float(input);
-		image_head.edge_lod_enable = next_char(input);
-		image_head.min_lod = next_char(input);
-		image_head.max_lod = next_char(input);
-		image_head.unpacked = next_char(input);
+		image_head.height = util::next_ushort(input);
+		image_head.width = util::next_ushort(input);
+		image_head.format = util::next_uint(input);
+		image_head.offset = util::next_uint(input);
+		image_head.wrap_s = util::next_uint(input);
+		image_head.wrap_t = util::next_uint(input);
+		image_head.min_filter = util::next_uint(input);
+		image_head.max_filter = util::next_uint(input);
+		image_head.lod_bias = util::next_float(input);
+		image_head.edge_lod_enable = util::next_uchar(input);
+		image_head.min_lod = util::next_uchar(input);
+		image_head.max_lod = util::next_uchar(input);
+		image_head.unpacked = util::next_uchar(input);
 		image_heads.push_back(image_head);
 
 		// Now, based on image type, pass the file, header, and palette into the right parser
@@ -286,17 +286,17 @@ void WiiTPL::save(const std::string &filename) const {
 
 XboxTPL::XboxTPL(std::fstream &input) {
     // NOTE: Xbox TPL is in opposite endian to Wii and GC. Be careful.
-    num_images = next_int(input, LITTLE);
+    num_images = util::next_uint<LITTLE>(input);
     
     logger->trace("Building image table");
     image_table = std::vector<XboxImageTableEntry>();
     for (uint i = 0; i < num_images; ++i) {
-        uint format = next_int(input, LITTLE);
-        uint offset = next_int(input, LITTLE);
-        ushort width = next_short(input, LITTLE);
-        ushort height = next_short(input, LITTLE);
-        ushort mipmaps = next_short(input, LITTLE);
-        ushort check = next_short(input);
+        uint format = util::next_uint<LITTLE>(input);
+        uint offset = util::next_uint<LITTLE>(input);
+        ushort width = util::next_ushort<LITTLE>(input);
+        ushort height = util::next_ushort<LITTLE>(input);
+        ushort mipmaps = util::next_ushort<LITTLE>(input);
+        ushort check = util::next_ushort(input);
         if (check != 0x1234) {
             logger->warn("Invalid TPL check. TPL may not load.");
         }
@@ -311,16 +311,16 @@ XboxTPL::XboxTPL(std::fstream &input) {
         input.seekg(entry.offset);
         
         XboxImageHeader head {};
-        head.format = next_int(input, LITTLE);
-        head.width = next_short(input, LITTLE);
-        next_short(input);
-        head.height = next_short(input, LITTLE);
-        next_short(input);
-        head.mipmaps = next_int(input, LITTLE);
-        head.compression = next_int(input, LITTLE);
-        head.uncompressed_size = next_int(input, LITTLE);
-        head.unknown_length = next_int(input, LITTLE);
-        next_int(input);
+        head.format = util::next_uint<LITTLE>(input);
+        head.width = util::next_ushort<LITTLE>(input);
+        util::next_ushort(input);
+        head.height = util::next_ushort<LITTLE>(input);
+        util::next_ushort(input);
+        head.mipmaps = util::next_uint<LITTLE>(input);
+        head.compression = util::next_uint<LITTLE>(input);
+        head.uncompressed_size = util::next_uint<LITTLE>(input);
+        head.unknown_length = util::next_uint<LITTLE>(input);
+        util::next_uint(input);
         
         if (head.compression) {
             std::stringstream error;
@@ -351,17 +351,17 @@ void XboxTPL::save(const std::string &filename) const {
 
 GCTPL::GCTPL(std::fstream& input) {
 
-	num_images = next_int(input);
+	num_images = util::next_uint(input);
     
     logger->trace("Building image table");
 	image_table = std::vector<GCImageTableEntry>();
 	for (uint i = 0; i < num_images; ++i) {
-		uint format = next_int(input);
-		uint offset = next_int(input);
-		ushort width = next_short(input);
-		ushort height = next_short(input);
-		ushort mipmaps = next_short(input);
-		ushort check = next_short(input);
+		uint format = util::next_uint(input);
+		uint offset = util::next_uint(input);
+		ushort width = util::next_ushort(input);
+		ushort height = util::next_ushort(input);
+		ushort mipmaps = util::next_ushort(input);
+		ushort check = util::next_ushort(input);
 		if (check != 0x1234) { // TODO: Fix later for other games than SMB2
 			logger->warn("Invalid TPL check. TPL may not load.");
 		}
@@ -417,15 +417,15 @@ void GCTPL::save(const std::string &filename) const {
     
     std::fstream output(filename, ios::binary | ios::out);
     
-    write_int(output, num_images);
+    util::write_uint(output, num_images);
     for (uint i = 0; i < num_images; ++i) {
         GCImageTableEntry header = image_table[i];
-        write_int(output, header.format);
-        write_int(output, header.offset);
-        write_short(output, header.width);
-        write_short(output, header.height);
-        write_short(output, header.mipmaps);
-        write_short(output, 0x1234);
+        util::write_uint(output, header.format);
+        util::write_uint(output, header.offset);
+        util::write_ushort(output, header.width);
+        util::write_ushort(output, header.height);
+        util::write_ushort(output, header.mipmaps);
+        util::write_ushort(output, 0x1234);
     }
     
     for (Image *image : images) {
@@ -441,15 +441,15 @@ TPL* tpl_factory(const std::string& filename) {
     }
     
     logger->debug("Parsing TPL");
-    if (!ends_with(filename, ".tpl")) {
+    if (!util::ends_with(filename, ".tpl")) {
         logger->warn("File " + filename + " is not a TPL, reading will likely fail.");
     }
     
-    if (next_int(input) == WiiTPL::IDENTIFIER) {
+    if (util::next_uint(input) == WiiTPL::IDENTIFIER) {
         return new WiiTPL(input);
     }
     input.seekg(0);
-    if (next_int(input) == XboxTPL::IDENTIFIER) {
+    if (util::next_uint(input) == XboxTPL::IDENTIFIER) {
         return new XboxTPL(input);
     }
     input.seekg(0);

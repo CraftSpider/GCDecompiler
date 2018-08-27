@@ -37,7 +37,8 @@ struct WiiImageTableEntry {
 
 struct WiiPaletteHeader {
 	char unpacked;
-	uint entry_count, format, offset;
+	ushort entry_count;
+	uint format, offset;
 };
 
 struct WiiImageHeader {

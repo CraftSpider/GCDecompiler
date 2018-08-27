@@ -8,25 +8,25 @@ namespace PPC {
 
 	// Codes to names
 
-	static const std::unordered_map<int, std::string> primary_codes({{3, "twi"},{4, "UNKNOWN PAIRED-SINGLE"},{7, "mulli"},{8, "subfic"},{10, "cmpli"},{11, "cmpi"},{12, "addic"},{13, "addic."},
+	static const std::unordered_map<ulong, std::string> primary_codes({{3, "twi"},{4, "UNKNOWN PAIRED-SINGLE"},{7, "mulli"},{8, "subfic"},{10, "cmpli"},{11, "cmpi"},{12, "addic"},{13, "addic."},
 		{14, "addi"},{15, "addis"},{16, "bc"},{17, "sc"},{18, "b"},{19, "UNKNOWN SPEC BRANCH"},{20, "rlwimi"},{21, "rlwinm"},{23, "rlwnm"},{24, "ori"},{25, "oris"},{26, "xori"},
 		{27, "xoris"},{28, "andi."},{29, "andis."},{31, "UNKNOWN MATH"},{32, "lwz"},{33, "lwzu"},{34, "lbz"},{35, "lbzu"},{36, "stw"},{37, "stwu"},{38, "stb"},{39, "stbu"},
 		{40, "lhz"},{41, "lhzu"},{42, "lha"},{43, "lhau"},{44, "sth"},{45, "sthu"},{46, "lmw"},{47, "smtw"},{48, "lfs"},{49, "lfsu"},{50, "lfd"},{51, "lfdu"},{52, "stfs"},
 		{53, "stfsu"},{54, "stfd"},{55, "stfdu"},{56, "ps_l"},{57, "ps_lu"},{59, "UNKNOWN FLOATING SINGLE"},{60, "ps_st"},{61, "ps_stu"},{63, "UNKNOWN FLOATING DOUBLE"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_codes_ps({
+	static const std::unordered_map<ulong, std::string> secondary_codes_ps({
 		{0, "ps_cmp"},{6, "ps_lx"},{7, "ps_stx"},{8, "UNKNOWN ABS/NEGATE"},{10, "ps_sum0"},{11, "ps_sum1"},{12, "ps_muls0"},{13, "ps_muls1"},{14, "ps_madds0"},{15, "ps_madds1"},{16, "ps_merge"},
 		{18, "ps_div"},{20, "ps_sub"},{21, "ps_add"},{23, "ps_sel"},{24, "ps_res"},{25, "ps_mul"},{26, "ps_rsqrte"},{28, "ps_msub"},{29, "ps_madd"},{30, "ps_nmsub"},
 		{31, "ps_nmadd"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_codes_sb({
+	static const std::unordered_map<ulong, std::string> secondary_codes_sb({
 		{0, "mcrf"},{16, "bclr"},{33, "crnor"},{50 ,"rfi"},{129, "crandc"},{150, "isync"},{193, "crxor"},{225, "crnand"},{257, "crand"},{289, "creqv"},
 		{417, "crorc"},{449, "cror"},{528, "bcctr"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_codes_math({
+	static const std::unordered_map<ulong, std::string> secondary_codes_math({
 		{0, "cmp"},{4, "tw"},{8, "subfc"},{10, "addc"},{11, "mulhwu"},{19, "mfcr"},{20, "lwarx"},{23, "lwzx"},{24, "slw"},{26, "cntlzw"},{28, "and"},{32, "cmpl"},
 		{40, "subf"},{54, "dcbst"},{55, "lwzux"},{60, "andc"},{75, "mulhw"},{83, "mfmsr"},{86, "dcbf"},{87, "lbzx"},{104, "neg"},{119, "lbzux"},{124, "nor"},
 		{136, "subfe"},{138, "adde"},{144, "mtcrf"},{146, "mtmsr"},{150, "stwcx"},{151, "stwx"},{183, "stwux"},{200, "subfze"},{202, "addze"},{210, "mtsr"},
@@ -40,11 +40,11 @@ namespace PPC {
 		{1003, "divwo"},{1014, "dcbz"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_codes_float({
+	static const std::unordered_map<ulong, std::string> secondary_codes_float({
 		{18, "fdivs"},{20, "fsubs"},{21, "fadds"},{22, "fsqrts"},{24, "fres"},{25, "fmuls"},{28, "fmsubs"},{29, "fmadds"},{30, "fnmsubs"},{31, "fnmadds"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_codes_double({
+	static const std::unordered_map<ulong, std::string> secondary_codes_double({
 		{0, "fcmpu"},{12, "frsp"},{14, "fctiw"},{15, "fctiwz"},{18, "fdiv"},{20, "fsub"},{21, "fadd"},{22, "fsqrt"},{23, "fsel"},{25, "fmul"},{26, "frsqrte"},
 		{28, "fmsub"},{29, "fmadd"},{30, "fnmsub"},{31, "fnmadd"},{32, "fcmpo"},{38, "mtfsb1"},{40, "fneg"},{64, "mcrfs"},{70, "mtfsb0"},{72, "fmr"},
 		{134, "mtfsfi"},{136, "fnabs"},{264, "fabs"},{583, "mffs"},{711, "mtfsf"}
@@ -52,7 +52,7 @@ namespace PPC {
 
 	// Codes to patterns
 
-	static const std::unordered_map<int, std::string> primary_patterns({
+	static const std::unordered_map<ulong, std::string> primary_patterns({
 		{3, "{X|6,10}, r{11,15}, {sX|16,31}"},{7, "r{6,10}, r{11,15}, {sX|16,31}"},{8, "r{6,10}, r{11,15}, {sX|16,31}"},{16, "{6,10}, {11,15}, {X|16,29}"},{17, "{}"},{18, "{X|6,29}"},
 		{19, "crb{6,10}, crb{11,15}, crb{16,20}"},{20, "r{11,15}, r{6,10}, {X|16,20}, {X|21,25}, {X|26,30}"},{21, "r{11,15}, r{6,10}, {X|16,20}, {X|21,25}, {X|26,30}"},
 		{23, "r{11,15}, r{6,10}, r{16,20}, {X|21,25}, {X|26,30}"},{24, "r{11,15}, r{6,10}, {X|16,31}"},{25, "r{11,15}, r{6,10}, {X|16,31}"},{26, "r{11,15}, r{6,10}, {X|16,31}"},
@@ -65,7 +65,7 @@ namespace PPC {
 		{57, "r{6,10}, r{11,15}, W{16,19}, {X|20,31}"},{59, "fr{6,10}, fr{11,15}, fr{21,25}, fr{16,20}"},{60, "r{11,15}, r{6,10}, W{16,19}, {X|20,31}"},{61, "r{11,15}, r{6,10}, W{16,19}, {X|20,31}"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_patterns_ps({
+	static const std::unordered_map<ulong, std::string> secondary_patterns_ps({
 		{0, "crf{6,8}, r{11,15}, r{16,20}"},{6, "r{6,10}, r{11,15}, r{16,20}, W{21,24}"},{7, "r{11,15}, r{6,10}, r{16,20}, W{21,24}"},{8, "r{6,10}, r{16,20}"},{10, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},
 		{11, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{12, "r{6,10}, r{11,15}, r{21,25}"},{13, "r{6,10}, r{11,15}, r{21,25}"},{14, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},
 		{15, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{16, "r{6,10}, r{11,15}, r{16,20}"},{18, "r{6,10}, r{11,15}, r{16,20}"},{20, "r{6,10}, r{11,15}, r{16,20}"},
@@ -73,11 +73,11 @@ namespace PPC {
 		{28, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{29, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{30, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"},{31, "r{6,10}, r{11,15}, r{16,20}, r{21,25}"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_patterns_sb({
+	static const std::unordered_map<ulong, std::string> secondary_patterns_sb({
 		{0, "crf{6,8}, crf{11,13}"},{50, "{}"},{150, "{}"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_patterns_math({
+	static const std::unordered_map<ulong, std::string> secondary_patterns_math({
 		{4, "{6,10}, r{11,15}, r{16,20}"},{19, "r{6,10}"},{24, "r{11,15}, r{6,10}, r{16,20}"},{26, "r{6,10}, r{11,15}"},{28, "r{11,15}, r{6,10}, r{16,20}"},{54, "r{11,15}, r{16,20}"},
 		{60, "r{11,15}, r{6,10}, r{16,20}"},{83, "r{6,10}"},{86, "r{11,15}, r{16,20}"},{104, "r{6,10}, r{11,15}"},{124, "r{11,15}, r{6,10}, r{16,20}"},{146, "r{6,10}"},{200, "r{6,10}, r{11,15}"},
 		{202, "r{6,10}, r{11,15}"},{210, "{12,15}, r{6,10}"},{232, "r{6,10}, r{11,15}"},{234, "r{6,10}, r{11,15}"},{242, "r{6,10}, r{16,20}"},{246, "r{11,15}, r{16,20}"},
@@ -90,12 +90,12 @@ namespace PPC {
 		{922, "r{11,15}, r{6,10}"},{954, "r{11,15}, r{6,10}"},{982, "r{11,15}, r{16,20}"},{983, "fr{6,10}, r{11,15}, r{16,20}"},{1014, "r{11,15}, r{16,20}"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_patterns_float({
+	static const std::unordered_map<ulong, std::string> secondary_patterns_float({
 		{18, "fr{6,10}, fr{11,15}, fr{16,20}"},{20, "fr{6,10}, fr{11,15}, fr{16,20}"},{21, "fr{6,10}, fr{11,15}, fr{16,20}"},{22, "fr{6,10}, fr{16,20}"},{24, "fr{6,10}, fr{16,20}"},
 		{25, "fr{6,10}, fr{11,15}, fr{21,25}"}
 		});
 
-	static const std::unordered_map<int, std::string> secondary_patterns_double({
+	static const std::unordered_map<ulong, std::string> secondary_patterns_double({
 		{0, "crf{6,8}, fr{11,15}, fr{16,20}"},{12, "fr{6,10}, fr{16,20}"},{14, "fr{6,10}, fr{16,20}"},{15, "fr{6,10}, fr{16,20}"},{18, "fr{6,10}, fr{11,15}, fr{16,20}"},
 		{20, "fr{6,10}, fr{11,15}, fr{16,20}"},{21, "fr{6,10}, fr{11,15}, fr{16,20}"},{22, "fr{6,10}, fr{16,20}"},{23, "fr{6,10}, fr{11,15}, fr{21,25}, fr{16,20}"},
 		{25, "fr{6,10}, fr{11,15}, fr{21,25}"},{26, "fr{6,10}, fr{16,20}"},{28, "fr{6,10}, fr{11,15}, fr{21,25}, fr{16,20}"},{29, "fr{6,10}, fr{11,15}, fr{21,25}, fr{16,20}"},
@@ -106,11 +106,11 @@ namespace PPC {
 
 	// Codes without destination register
 
-	static const std::set<int> primary_missing_dest({3, 16, 17, 18, 19, 36, 37, 38, 39, 44, 45, 47, 52, 53, 54, 55});
+	static const std::set<ulong> primary_missing_dest({3, 16, 17, 18, 19, 36, 37, 38, 39, 44, 45, 47, 52, 53, 54, 55});
 
-	static const std::set<int> secondary_missing_dest_math({4, 54, 86, 144, 146, 150, 151, 183, 210, 215, 242, 246, 247, 278, 306, 370, 407, 438, 439, 467, 470,
+	static const std::set<ulong> secondary_missing_dest_math({4, 54, 86, 144, 146, 150, 151, 183, 210, 215, 242, 246, 247, 278, 306, 370, 407, 438, 439, 467, 470,
 															566, 598, 661, 662, 663, 695, 725, 727, 758, 759, 854, 918, 982, 983, 1014});
 
-	static const std::set<int> secondary_missing_dest_double({711});
+	static const std::set<ulong> secondary_missing_dest_double({711});
 
 }

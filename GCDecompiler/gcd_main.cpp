@@ -5,11 +5,11 @@
 #include <sstream>
 #include <iostream>
 #include <experimental/filesystem>
+#include "at_logging"
+#include "at_utils"
 #include "types.h"
-#include "utils.h"
 #include "gcd_main.h"
 #include "ppc_reader.h"
-#include "a_logging"
 #include "filetypes/lz.h"
 #include "filetypes/tpl.h"
 #include "argparser.h"
@@ -148,11 +148,11 @@ int main(int argc, char **argv) {
         types::DOL *main = nullptr;
         // Form list of files to process. Mostly RELs and DOL file.
         for (auto dir : fs::recursive_directory_iterator(input)) {
-            if (ends_with(dir.path().string(), ".rel")) {
+            if (util::ends_with(dir.path().string(), ".rel")) {
                 std::string filename = dir.path().filename().string();
                 types::REL *rel = new types::REL(dir.path().string());
                 knowns.push_back(rel);
-            } else if (ends_with(dir.path().string(), ".dol")) {
+            } else if (util::ends_with(dir.path().string(), ".dol")) {
                 std::string filename = dir.path().filename().string();
                 main = new types::DOL(dir.path().string());
             }
@@ -167,11 +167,11 @@ int main(int argc, char **argv) {
         types::DOL *main = nullptr;
         // Form list of files to process. Mostly RELs and DOL file.
         for (auto dir : fs::recursive_directory_iterator(input)) {
-            if (ends_with(dir.path().string(), ".rel")) {
+            if (util::ends_with(dir.path().string(), ".rel")) {
                 std::string filename = dir.path().filename().string();
                 types::REL *rel = new types::REL(dir.path().string());
                 knowns.push_back(rel);
-            } else if (ends_with(dir.path().string(), ".dol")) {
+            } else if (util::ends_with(dir.path().string(), ".dol")) {
                 std::string filename = dir.path().filename().string();
                 main = new types::DOL(dir.path().string());
             }
@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
             log->warn("This feature is not yet complete");
             std::vector<types::Image*> images = std::vector<types::Image*>();
             for (auto file : fs::directory_iterator(input)) {
-                if (ends_with(file.path().filename(), ".png")) {
+                if (util::ends_with(file.path().filename(), ".png")) {
                     types::PNG png = types::PNG(file.path().filename());
                     types::Image *image = new types::Image(png.get_image());
                     images.push_back(image);

@@ -48,6 +48,11 @@ set(ZLIB
         zlib/inffast.c)
 
 set(HEADER_FILES
+        GCDecompiler/gcd_main.h
+        GCDecompiler/enums.h
+        GCDecompiler/import.h
+        GCDecompiler/relocation.h
+        GCDecompiler/section.h
         GCDecompiler/filetypes/dol.h
         GCDecompiler/filetypes/lz.h
         GCDecompiler/filetypes/rel.h
@@ -59,16 +64,13 @@ set(HEADER_FILES
         GCDecompiler/ppc/codes.h
         GCDecompiler/ppc/instruction.h
         GCDecompiler/ppc/register.h
-        GCDecompiler/ppc/symbol.h
-        GCDecompiler/gcd_main.h
-        GCDecompiler/types.h
-        GCDecompiler/enums.h
-        GCDecompiler/utils.h
-        GCDecompiler/import.h
-        GCDecompiler/relocation.h
-        GCDecompiler/section.h)
+        GCDecompiler/ppc/symbol.h)
 
 set(SOURCE_FILES
+        GCDecompiler/gcd_main.cpp
+        GCDecompiler/import.cpp
+        GCDecompiler/relocation.cpp
+        GCDecompiler/section.cpp
         GCDecompiler/filetypes/dol.cpp
         GCDecompiler/filetypes/lz.cpp
         GCDecompiler/filetypes/rel.cpp
@@ -79,12 +81,7 @@ set(SOURCE_FILES
         GCDecompiler/ppc/ppc_reader.cpp
         GCDecompiler/ppc/instruction.cpp
         GCDecompiler/ppc/register.cpp
-        GCDecompiler/ppc/symbol.cpp
-        GCDecompiler/gcd_main.cpp
-        GCDecompiler/utils.cpp
-        GCDecompiler/import.cpp
-        GCDecompiler/relocation.cpp
-        GCDecompiler/section.cpp)
+        GCDecompiler/ppc/symbol.cpp)
 
 add_executable(${PROJECT_NAME} ${ZLIB} ${HEADER_FILES} ${SOURCE_FILES})
 
@@ -93,4 +90,4 @@ install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "gcd")
 
 target_link_libraries(${PROJECT_NAME} stdc++fs)
-target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/libs/libalphautils.a)
+target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/libs/libalpha_tools.a)
