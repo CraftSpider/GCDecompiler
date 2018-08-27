@@ -3,7 +3,7 @@
 //
 
 #include <fstream>
-#include "logging.h"
+#include "a_logging"
 #include "stagedef.h"
 #include "utils.h"
 

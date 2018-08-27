@@ -9,7 +9,7 @@
 #include "utils.h"
 #include "gcd_main.h"
 #include "ppc_reader.h"
-#include "logging.h"
+#include "a_logging"
 #include "filetypes/lz.h"
 #include "filetypes/tpl.h"
 #include "argparser.h"

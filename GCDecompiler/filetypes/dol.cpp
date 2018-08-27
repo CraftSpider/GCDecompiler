@@ -6,7 +6,7 @@
 #include "types.h"
 #include "dol.h"
 #include "utils.h"
-#include "logging.h"
+#include "a_logging"
 
 namespace types {
 

@@ -4,7 +4,7 @@
 
 #include <fstream>
 #include <sstream>
-#include "logging.h"
+#include "a_logging"
 #include "png.h"
 #include "utils.h"
 #include "zlib.h"

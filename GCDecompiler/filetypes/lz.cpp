@@ -3,7 +3,7 @@
 #include <fstream>
 #include "utils.h"
 #include "lz.h"
-#include "logging.h"
+#include "a_logging"
 
 namespace types {
 

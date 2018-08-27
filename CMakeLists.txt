@@ -26,6 +26,7 @@ include_directories(GCDecompiler)
 include_directories(GCDecompiler/filetypes)
 include_directories(GCDecompiler/ppc)
 include_directories(zlib)
+include_directories(libs/include)
 
 set(ZLIB
         zlib/zconf.h
@@ -63,11 +64,9 @@ set(HEADER_FILES
         GCDecompiler/types.h
         GCDecompiler/enums.h
         GCDecompiler/utils.h
-        GCDecompiler/argparser.h
         GCDecompiler/import.h
         GCDecompiler/relocation.h
-        GCDecompiler/section.h
-        GCDecompiler/logging.h)
+        GCDecompiler/section.h)
 
 set(SOURCE_FILES
         GCDecompiler/filetypes/dol.cpp
@@ -83,15 +82,15 @@ set(SOURCE_FILES
         GCDecompiler/ppc/symbol.cpp
         GCDecompiler/gcd_main.cpp
         GCDecompiler/utils.cpp
-        GCDecompiler/argparser.cpp
         GCDecompiler/import.cpp
         GCDecompiler/relocation.cpp
-        GCDecompiler/section.cpp
-        GCDecompiler/logging.cpp)
+        GCDecompiler/section.cpp)
 
 add_executable(${PROJECT_NAME} ${ZLIB} ${HEADER_FILES} ${SOURCE_FILES})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "gcd")
+
 target_link_libraries(${PROJECT_NAME} stdc++fs)
+target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/libs/libalphautils.a)
