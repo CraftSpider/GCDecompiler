@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(src)
+project(GCDecompiler)
 
 #Add uninstall target
 configure_file("cmake/uninstall.cmake" "cmake/uninstall.cmake" COPYONLY)
@@ -47,7 +47,7 @@ set(ZLIB
         zlib/inffast.h
         zlib/inffast.c)
 
-set(HEADER_FILES
+set(HEADERS
         src/gcd_main.h
         src/enums.h
         src/import.h
@@ -66,8 +66,7 @@ set(HEADER_FILES
         src/ppc/register.h
         src/ppc/symbol.h)
 
-set(SOURCE_FILES
-        src/gcd_main.cpp
+set(SOURCES
         src/import.cpp
         src/relocation.cpp
         src/section.cpp
@@ -83,7 +82,20 @@ set(SOURCE_FILES
         src/ppc/register.cpp
         src/ppc/symbol.cpp)
 
-add_executable(${PROJECT_NAME} ${ZLIB} ${HEADER_FILES} ${SOURCE_FILES})
+set(TEST_HEADERS
+        test/test_instructions.h)
+
+set(TEST_SOURCES
+        test/main.cpp
+        test/test_instructions.cpp)
+
+set(ALL_CODE ${ZLIB} ${HEADERS} ${SOURCES})
+
+set(ALL_TEST ${TEST_HEADERS} ${TEST_SOURCES})
+
+add_executable(${PROJECT_NAME} ${ALL_CODE} src/gcd_main.cpp)
+
+add_executable(test_${PROJECT_NAME} ${ALL_CODE} ${ALL_TEST})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
@@ -91,3 +103,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "gcd")
 
 target_link_libraries(${PROJECT_NAME} stdc++fs)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/libs/libalpha_tools.a)
+
+target_link_libraries(test_${PROJECT_NAME} stdc++fs)
+target_link_libraries(test_${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/libs/libalpha_tools.a)
