@@ -2,7 +2,7 @@
 #include <string>
 
 #include "types.h"
-#include "register.h"
+#include "ppc/register.h"
 
 namespace PPC {
 

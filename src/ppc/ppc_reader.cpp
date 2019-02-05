@@ -7,6 +7,7 @@
 #include <cmath>
 #include <set>
 #include <unordered_map>
+
 #include "at_logging"
 #include "at_utils"
 #include "types.h"
@@ -20,22 +21,6 @@ namespace PPC {
 using std::ios;
 
 static logging::Logger *logger = logging::get_logger("ppc");
-
-Instruction* create_instruction(const uchar *instruction) {
-    const uchar opcode = (uchar)util::get_range(instruction, 0, 5);
-
-    if (opcode == 4) return new PairedSingleFamily(opcode, instruction);
-    else if (opcode == 10 || opcode == 11) return new CmpFamily(opcode, instruction);
-    else if (opcode >= 12 && opcode <= 15) return new AddFamily(opcode, instruction);
-    else if (opcode == 16 || opcode == 18) return new BFamily(opcode, instruction);
-    else if (opcode == 19) return new SpecBranchFamily(opcode, instruction);
-    else if (opcode == 23) return new ConditionInstruction(opcode, instruction);
-    else if (opcode == 24) return new Ori(opcode, instruction);
-    else if (opcode == 31) return new MathFamily(opcode, instruction);
-    else if (opcode == 59) return new FloatSingleFamily(opcode, instruction);
-    else if (opcode == 63) return new FloatDoubleFamily(opcode, instruction);
-    else return new Instruction(opcode, instruction);
-}
 
 void relocate(types::REL *rel, const uint& bss_pos, const std::string& file_out) {
     logger->info("Relocating file");

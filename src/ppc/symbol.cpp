@@ -1,6 +1,7 @@
 
 #include <set>
-#include "symbol.h"
+
+#include "ppc/symbol.h"
 
 namespace PPC {
 

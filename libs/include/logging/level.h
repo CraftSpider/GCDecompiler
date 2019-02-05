@@ -2,8 +2,6 @@
 
 #include <string>
 
-#define DEFAULT_LOGGER_LEVEL (Level::INFO)
-
 namespace logging {
 
 class Level {
@@ -26,11 +24,14 @@ public:
     
     std::string get_name();
     
-    bool operator ==(const Level& level) const;
-    bool operator <=(const Level& level) const;
-    bool operator >=(const Level& level) const;
+    bool operator==(const Level& level) const;
+    bool operator!=(const Level& level);
+    bool operator<=(const Level& level) const;
+    bool operator>=(const Level& level) const;
+    bool operator>(const Level& level) const;
+    bool operator<(const Level& level) const;
     
-    operator std::string() const;
+    explicit operator std::string() const;
     
 };
 

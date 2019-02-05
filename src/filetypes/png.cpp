@@ -4,11 +4,15 @@
 
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+
 #include "at_logging"
 #include "at_utils"
 #include "png.h"
 #include "zlib.h"
 #include "tpl.h"
+
+#define PNG_MAGIC 0x89504E470D0A1A0AL
 
 namespace types {
 
@@ -63,6 +67,10 @@ Chunk::~Chunk() {
     delete[] data;
 }
 
+bool Chunk::operator==(const types::Chunk &other) const {
+    return other.type == type && other.length == length && util::compare(other.data, data, length);
+}
+
 uint Chunk::crc() {
     uchar *crc_data = new uchar[4 + length];
     for (int i = 0; i < 4; i++) {
@@ -88,14 +96,25 @@ void PNG::add_chunk(uint length, std::string name, uchar *data) {
     chunks.push_back(chunk);
 }
 
-void PNG::replace_chunk(uint length, std::string name, uchar *data) {
-    Chunk chunk {length, name, data};
-    for (ulong i = 0; i < chunks.size(); ++i) {
-        if (chunks[i].type == name) {
-            chunks[i] = chunk;
+bool PNG::replace_chunk(uint length, std::string name, uchar* data) {
+    Chunk new_chunk {length, name, data};
+    for (auto& chunk : chunks) {
+        if (chunk.type == name) {
+            chunk = new_chunk;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool PNG::remove_chunk(const types::Chunk &chunk) {
+    uint i = 0;
+    for (; i < chunks.size(); ++i) {
+        if (chunk == chunks[i]) {
             break;
         }
     }
+    chunks.erase(chunks.begin() + i);
 }
 
 PNG::PNG(const std::string &filename) {
@@ -104,7 +123,7 @@ PNG::PNG(const std::string &filename) {
     uint height = 0, width = 0;
     Color **image_data = nullptr;
     
-    if (util::next_ulong(input) != 0x89504E470D0A1A0AL) {
+    if (util::next_ulong(input) != PNG_MAGIC) {
         logger->warn("PNG magic doesn't match expected, file is likely corrupted or wrong type.");
     }
     
@@ -218,11 +237,15 @@ void PNG::update_time(std::time_t timet) {
     replace_chunk(7, "tIME", time);
 }
 
-TPL* PNG::to_tpl() {
-    // TODO
+std::vector<Chunk> PNG::get_chunks() {
+    return chunks;
 }
 
-constexpr char PNG::magic[];
+std::vector<Chunk> PNG::get_chunks(const std::string& name) {
+    std::vector<Chunk> out;
+    std::copy_if(chunks.begin(), chunks.end(), std::back_inserter(out), [name](Chunk c){return c.type == name;});
+    return out;
+}
 
 void PNG::save(const std::string &filename) {
     logger->info("Writing PNG to " + filename);

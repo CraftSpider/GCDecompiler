@@ -1,10 +1,14 @@
 
 #include "at_tests"
 
-#include "test_instructions.h"
+#include "ppc/test_instructions.h"
+#include "ppc/test_registers.h"
+#include "ppc/test_symbols.h"
 
-int main(int argc, char **argv) {
+int main() {
     TEST_FILE(instructions)
+    TEST_FILE(registers)
+    TEST_FILE(symbols)
     
     testing::run_tests("GCDecompiler");
 }

@@ -1,11 +1,12 @@
 
 #include <sstream>
 #include <iostream>
+
 #include "at_logging"
 #include "at_utils"
-#include "codes.h"
-#include "instruction.h"
-#include "register.h"
+#include "ppc/codes.h"
+#include "ppc/instruction.h"
+#include "ppc/register.h"
 
 namespace PPC {
 
@@ -463,6 +464,38 @@ Register FloatDoubleFamily::destination_register() {
         return *this->destination;
     } else {
         return ConditionInstruction::destination_register();
+    }
+}
+
+Instruction* create_instruction(const uchar* instruction) {
+    const uchar opcode = (uchar)util::get_range(instruction, 0, 5);
+    
+    switch (opcode) {
+        case 4:
+            return new PairedSingleFamily(opcode, instruction);
+        case 10:
+        case 11:
+            return new CmpFamily(opcode, instruction);
+        case 12:
+        case 15:
+            return new AddFamily(opcode, instruction);
+        case 16:
+        case 18:
+            return new BFamily(opcode, instruction);
+        case 19:
+            return new SpecBranchFamily(opcode, instruction);
+        case 23:
+            return new ConditionInstruction(opcode, instruction);
+        case 24:
+            return new Ori(opcode, instruction);
+        case 31:
+            return new MathFamily(opcode, instruction);
+        case 59:
+            return new FloatSingleFamily(opcode, instruction);
+        case 63:
+            return new FloatDoubleFamily(opcode, instruction);
+        default:
+            return new Instruction(opcode, instruction);
     }
 }
 

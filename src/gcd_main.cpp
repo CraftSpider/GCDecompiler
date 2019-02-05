@@ -9,7 +9,7 @@
 #include "at_utils"
 #include "types.h"
 #include "gcd_main.h"
-#include "ppc_reader.h"
+#include "ppc/ppc_reader.h"
 #include "filetypes/lz.h"
 #include "filetypes/tpl.h"
 #include "argparser.h"

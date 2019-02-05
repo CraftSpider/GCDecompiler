@@ -22,9 +22,8 @@ if(UNIX)
     endif(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 endif(UNIX)
 
-include_directories(src)
-include_directories(src/filetypes)
-include_directories(src/ppc)
+include_directories(include)
+include_directories(include/filetypes)
 include_directories(zlib)
 include_directories(libs/include)
 
@@ -48,23 +47,23 @@ set(ZLIB
         zlib/inffast.c)
 
 set(HEADERS
-        src/gcd_main.h
-        src/enums.h
-        src/import.h
-        src/relocation.h
-        src/section.h
-        src/filetypes/dol.h
-        src/filetypes/lz.h
-        src/filetypes/rel.h
-        src/filetypes/tpl.h
-        src/filetypes/png.h
-        src/filetypes/image.h
-        src/filetypes/stagedef.h
-        src/ppc/ppc_reader.h
-        src/ppc/codes.h
-        src/ppc/instruction.h
-        src/ppc/register.h
-        src/ppc/symbol.h)
+        include/gcd_main.h
+        include/enums.h
+        include/import.h
+        include/relocation.h
+        include/section.h
+        include/filetypes/dol.h
+        include/filetypes/lz.h
+        include/filetypes/rel.h
+        include/filetypes/tpl.h
+        include/filetypes/png.h
+        include/filetypes/image.h
+        include/filetypes/stagedef.h
+        include/ppc/ppc_reader.h
+        include/ppc/codes.h
+        include/ppc/instruction.h
+        include/ppc/register.h
+        include/ppc/symbol.h)
 
 set(SOURCES
         src/import.cpp
@@ -83,11 +82,15 @@ set(SOURCES
         src/ppc/symbol.cpp)
 
 set(TEST_HEADERS
-        test/test_instructions.h)
+        test/ppc/test_instructions.h
+        test/ppc/test_registers.h
+        test/ppc/test_symbols.h)
 
 set(TEST_SOURCES
         test/main.cpp
-        test/test_instructions.cpp)
+        test/ppc/test_instructions.cpp
+        test/ppc/test_registers.cpp
+        test/ppc/test_symbols.cpp)
 
 set(ALL_CODE ${ZLIB} ${HEADERS} ${SOURCES})
 
@@ -101,8 +104,12 @@ install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "gcd")
 
-target_link_libraries(${PROJECT_NAME} stdc++fs)
-target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/libs/libalpha_tools.a)
+# Add various target link libraries
 
-target_link_libraries(test_${PROJECT_NAME} stdc++fs)
-target_link_libraries(test_${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/libs/libalpha_tools.a)
+file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.a")
+set(TARGET_LINKS stdc++fs ${files})
+
+foreach(link ${TARGET_LINKS})
+    target_link_libraries(${PROJECT_NAME} ${link})
+    target_link_libraries(test_${PROJECT_NAME} ${link})
+endforeach()

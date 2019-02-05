@@ -24,10 +24,10 @@ void copy_2D(T **source, T **dest, const ulong size);
 
 /**
  * Reverse an array in place. Returns the pointer to the array, to allow chaining.
- * @tparam T
- * @param arr
- * @param len
- * @return
+ * @tparam T The type of the array
+ * @param arr Array pointer
+ * @param len Length of the array
+ * @return Array pointer, allows chaining
  */
 template<typename T>
 T* reverse(T *arr, const ulong len);
@@ -35,11 +35,11 @@ T* reverse(T *arr, const ulong len);
 /**
  * Convert an array from one endian into another, reversing every X items.
  * size == len makes this equivalent to reverse.
- * @tparam T
- * @param arr
- * @param len
- * @param size
- * @return
+ * @tparam T The type of the array
+ * @param arr Array pointer
+ * @param len Length of the array
+ * @param size How many bytes per endian block, default to 4
+ * @return Array pointer, allows chaining
  */
 template<typename T>
 T* endian_convert(T *arr, const ulong len, const ulong size = 4);

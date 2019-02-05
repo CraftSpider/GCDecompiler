@@ -137,7 +137,7 @@ uint REL::relocation_offset() {
 }
 
 void REL::compile(const std::string& filename) {
-	logger->info("Compiling REL file " + this->id);
+	logger->info("Compiling REL file " + std::to_string(this->id));
 	std::fstream out(filename, ios::out | ios::binary);
 	// Recalculate any necessary numbers for offsets
 
