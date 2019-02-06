@@ -1,5 +1,0 @@
-
-#include "logging/level.h"
-#include "logging/handler.h"
-#include "logging/logger.h"
-#include "logging/logging.h"
