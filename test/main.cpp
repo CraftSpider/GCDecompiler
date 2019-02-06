@@ -10,5 +10,5 @@ int main() {
     TEST_FILE(registers)
     TEST_FILE(symbols)
     
-    testing::run_tests("GCDecompiler");
+    return testing::run_tests("GCDecompiler") & 0b011;
 }
