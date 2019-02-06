@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+src_dir=$(pwd)
+
+function cmake_build {
+    git clone https://github.com/$1/$2 libs/$2
+    cd libs/$2
+    cmake .
+    make
+    cd src_dir
+}
+
 function copy_headers {
     rsync -avm --include='*.h' -f 'hide,! */' libs/$1 libs/$2
 }
@@ -11,18 +21,17 @@ function copy_lib {
 mkdir libs
 
 # Clone and build zlib
-git clone https://github.com/madler/zlib libs/zlib
-cmake libs/zlib
-make -C libs/zlib zlibstatic
+author=madler
+project=zlib
+
+cmake_build "madler" "zlib"
 
 # Copy over .h files into libs/include and .a into libs
 copy_headers "include" "zlib"
 copy_lib "zlib"
 
 
-git clone https://github.com/craftspider/alphatools libs/alphatools
-cmake libs/alphatools
-make -C libs/alphatools
+cmake_build "craftspider" "alphatools"
 
 # Copy over .h files into libs/include and .a into libs
 copy_headers "libs" "alphatools"
