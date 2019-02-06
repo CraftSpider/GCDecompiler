@@ -3,11 +3,16 @@
 src_dir=$(pwd)
 
 function cmake_build {
-    git clone https://github.com/$1/$2 libs/$2
+    if [ -z "$3" ]; then
+        git clone --single-branch --branch $3 https://github.com/$1/$2 libs/$2;
+    else
+        git clone https://github.com/$1/$2 libs/$2;
+    fi
+
     cd libs/$2
     cmake .
     make
-    cd src_dir
+    cd ${src_dir}
 }
 
 function copy_headers {
@@ -31,7 +36,7 @@ copy_headers "include" "zlib"
 copy_lib "zlib"
 
 
-cmake_build "craftspider" "alphatools"
+cmake_build "craftspider" "alphatools" "alphalib"
 
 # Copy over .h files into libs/include and .a into libs
 copy_headers "libs" "alphatools"
