@@ -24,7 +24,8 @@ function copy_headers {
 }
 
 function copy_lib {
-    cp libs/$1/*.a libs/
+    # Attempts to copy a library file. If this fails, then the script immediately ends with a failure
+    cp libs/$1/*.a libs/ || exit 1
 }
 
 function cmake_dep {
