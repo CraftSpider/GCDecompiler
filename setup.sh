@@ -4,13 +4,17 @@ src_dir=$(pwd)
 
 function cmake_build {
     if [ -z "$3" ]; then
+        echo "Cloning branch $3 of project $2"
         git clone --single-branch --branch $3 https://github.com/$1/$2 libs/$2;
     else
+        echo "Cloning project $2"
         git clone https://github.com/$1/$2 libs/$2;
     fi
 
     cd libs/$2
+    echo "Running CMake for $2"
     cmake .
+    echo "Running Make for $2"
     make
     cd ${src_dir}
 }
