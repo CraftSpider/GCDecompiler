@@ -7,11 +7,20 @@
 # CLion
 .idea/
 
-# Build Folders
+# Cmake / make
+CMakeCache.txt
+CMakeFiles/
+*.cmake
+compile_commands.json
+Makefile
+
+# Build Folders / Files
 *x64/
 *Debug/
 *Release/
 *-build-*/
+gcd
+test_gcd
 
 # ISO Files and Output
 *root/
@@ -19,3 +28,6 @@
 *.rel
 *.ppc
 *.ppd
+
+# Library directory
+libs/

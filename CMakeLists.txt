@@ -24,27 +24,7 @@ endif(UNIX)
 
 include_directories(include)
 include_directories(include/filetypes)
-include_directories(zlib)
 include_directories(libs/include)
-
-set(ZLIB
-        zlib/zconf.h
-        zlib/zutil.h
-        zlib/zutil.c
-        zlib/zlib.h
-        zlib/crc32.h
-        zlib/crc32.c
-        zlib/trees.h
-        zlib/trees.c
-        zlib/adler32.c
-        zlib/deflate.h
-        zlib/deflate.c
-        zlib/inflate.h
-        zlib/inflate.c
-        zlib/inftrees.h
-        zlib/inftrees.c
-        zlib/inffast.h
-        zlib/inffast.c)
 
 set(HEADERS
         include/gcd_main.h
@@ -92,7 +72,7 @@ set(TEST_SOURCES
         test/ppc/test_registers.cpp
         test/ppc/test_symbols.cpp)
 
-set(ALL_CODE ${ZLIB} ${HEADERS} ${SOURCES})
+set(ALL_CODE ${HEADERS} ${SOURCES})
 
 set(ALL_TEST ${TEST_HEADERS} ${TEST_SOURCES})
 
@@ -103,6 +83,7 @@ add_executable(test_${PROJECT_NAME} ${ALL_CODE} ${ALL_TEST})
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "gcd")
+set_target_properties(test_${PROJECT_NAME} PROPERTIES OUTPUT_NAME "test_gcd")
 
 # Add various target link libraries
 
