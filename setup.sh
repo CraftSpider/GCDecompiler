@@ -51,7 +51,7 @@ function cmake_dep {
     copy_headers $2 $3
     copy_lib $2
 
-#    rm -rf libs/$2
+    rm -rf libs/$2
 }
 
 mkdir -p libs/include

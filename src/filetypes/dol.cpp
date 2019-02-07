@@ -13,7 +13,7 @@ namespace types {
 
 using std::ios;
 
-static logging::Logger *logger = logging::get_logger("dol");
+static logging::Logger* logger = logging::get_logger("dol");
 
 DOL::DOL(const std::string& filename) {
     logger->debug("Parsing DOL");

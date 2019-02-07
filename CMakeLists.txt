@@ -85,7 +85,11 @@ set_target_properties(test_${PROJECT_NAME} PROPERTIES OUTPUT_NAME "test_gcd")
 
 # Add various target link libraries
 
-file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.a" "${CMAKE_SOURCE_DIR}/libs/*.lib")
+if(WIN32 OR CYGWIN)
+    file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.lib")
+else()
+    file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.a")
+endif()
 set(TARGET_LINKS stdc++fs ${files})
 
 foreach(link ${TARGET_LINKS})
