@@ -1,5 +1,7 @@
 # GCDecompiler
 
+[![Build status](https://ci.appveyor.com/api/projects/status/doibev44ije1i8l9?svg=true)](https://ci.appveyor.com/project/CraftSpider/gcdecompiler)
+
 The GameCube Decompiler (GCD) is a project to create software capable of taking in GameCube games,
 and spitting out human readable assembly and data about them.
 
