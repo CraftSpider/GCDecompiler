@@ -8,9 +8,9 @@
 
 #include "at_logging"
 #include "at_utils"
-#include "png.h"
 #include "zlib.h"
-#include "tpl.h"
+#include "filetypes/png.h"
+#include "filetypes/tpl.h"
 
 #define PNG_MAGIC 0x89504E470D0A1A0AL
 
@@ -108,13 +108,16 @@ bool PNG::replace_chunk(uint length, std::string name, uchar* data) {
 }
 
 bool PNG::remove_chunk(const types::Chunk &chunk) {
-    uint i = 0;
+    uint i = chunks.size() + 1;
     for (; i < chunks.size(); ++i) {
         if (chunk == chunks[i]) {
             break;
         }
     }
-    chunks.erase(chunks.begin() + i);
+    if (i < chunks.size() + 1) {
+        chunks.erase(chunks.begin() + i);
+    }
+    return i < chunks.size() + 1;
 }
 
 PNG::PNG(const std::string &filename) {

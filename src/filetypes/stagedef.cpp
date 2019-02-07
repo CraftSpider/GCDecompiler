@@ -3,9 +3,10 @@
 //
 
 #include <fstream>
+
 #include "at_logging"
 #include "at_utils"
-#include "stagedef.h"
+#include "filetypes/stagedef.h"
 
 namespace types {
 

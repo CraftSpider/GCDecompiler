@@ -3,11 +3,12 @@
 #include <sstream>
 #include <cmath>
 #include <chrono>
+
 #include "at_logging"
 #include "at_utils"
-#include "tpl.h"
+#include "filetypes/tpl.h"
+#include "filetypes/png.h"
 #include "zlib.h"
-#include "png.h"
 
 namespace types {
 
@@ -191,7 +192,7 @@ PNG* TPL::to_png(const int& index, const int& mipmap) {
     out->compression = 0;
     out->filter = 0;
     out->interlace = 0;
-    
+
     out->update_time();
     std::stringstream title;
     title << "TPL Extract " << index;

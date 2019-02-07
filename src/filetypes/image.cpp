@@ -2,7 +2,7 @@
 // Created by Rune Tynan on 8/11/2018.
 //
 
-#include "image.h"
+#include "filetypes/image.h"
 
 namespace types {
 

@@ -23,7 +23,6 @@ if(UNIX)
 endif(UNIX)
 
 include_directories(include)
-include_directories(include/filetypes)
 include_directories(libs/include)
 
 set(HEADERS
@@ -77,7 +76,6 @@ set(ALL_CODE ${HEADERS} ${SOURCES})
 set(ALL_TEST ${TEST_HEADERS} ${TEST_SOURCES})
 
 add_executable(${PROJECT_NAME} ${ALL_CODE} src/gcd_main.cpp)
-
 add_executable(test_${PROJECT_NAME} ${ALL_CODE} ${ALL_TEST})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
@@ -87,10 +85,11 @@ set_target_properties(test_${PROJECT_NAME} PROPERTIES OUTPUT_NAME "test_gcd")
 
 # Add various target link libraries
 
-file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.a")
+file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.a" "${CMAKE_SOURCE_DIR}/libs/*.lib")
 set(TARGET_LINKS stdc++fs ${files})
 
 foreach(link ${TARGET_LINKS})
+    message(STATUS "Linking to library " ${link})
     target_link_libraries(${PROJECT_NAME} ${link})
     target_link_libraries(test_${PROJECT_NAME} ${link})
 endforeach()

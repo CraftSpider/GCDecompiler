@@ -1,9 +1,10 @@
 
 #include <string>
 #include <fstream>
+
 #include "at_logging"
 #include "at_utils"
-#include "lz.h"
+#include "filetypes/lz.h"
 
 namespace types {
 

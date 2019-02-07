@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include <experimental/filesystem>
+
 #include "at_logging"
 #include "at_utils"
 #include "types.h"
@@ -12,8 +13,8 @@
 #include "ppc/ppc_reader.h"
 #include "filetypes/lz.h"
 #include "filetypes/tpl.h"
+#include "filetypes/png.h"
 #include "argparser.h"
-#include "png.h"
 
 namespace fs = std::experimental::filesystem;
 
