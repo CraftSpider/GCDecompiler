@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 project(GCDecompiler)
 
 #Add uninstall target
@@ -22,76 +22,78 @@ if(UNIX)
     endif(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 endif(UNIX)
 
-include_directories(GCDecompiler)
-include_directories(GCDecompiler/filetypes)
-include_directories(GCDecompiler/ppc)
-include_directories(zlib)
+include_directories(include)
+include_directories(libs/include)
 
-set(ZLIB
-        zlib/zconf.h
-        zlib/zutil.h
-        zlib/zutil.c
-        zlib/zlib.h
-        zlib/crc32.h
-        zlib/crc32.c
-        zlib/trees.h
-        zlib/trees.c
-        zlib/adler32.c
-        zlib/deflate.h
-        zlib/deflate.c
-        zlib/inflate.h
-        zlib/inflate.c
-        zlib/inftrees.h
-        zlib/inftrees.c
-        zlib/inffast.h
-        zlib/inffast.c)
+set(HEADERS
+        include/gcd_main.h
+        include/enums.h
+        include/import.h
+        include/relocation.h
+        include/section.h
+        include/filetypes/dol.h
+        include/filetypes/lz.h
+        include/filetypes/rel.h
+        include/filetypes/tpl.h
+        include/filetypes/png.h
+        include/filetypes/image.h
+        include/filetypes/stagedef.h
+        include/ppc/ppc_reader.h
+        include/ppc/codes.h
+        include/ppc/instruction.h
+        include/ppc/register.h
+        include/ppc/symbol.h)
 
-set(HEADER_FILES
-        GCDecompiler/filetypes/dol.h
-        GCDecompiler/filetypes/lz.h
-        GCDecompiler/filetypes/rel.h
-        GCDecompiler/filetypes/tpl.h
-        GCDecompiler/filetypes/png.h
-        GCDecompiler/filetypes/image.h
-        GCDecompiler/filetypes/stagedef.h
-        GCDecompiler/ppc/ppc_reader.h
-        GCDecompiler/ppc/codes.h
-        GCDecompiler/ppc/instruction.h
-        GCDecompiler/ppc/register.h
-        GCDecompiler/ppc/symbol.h
-        GCDecompiler/gcd_main.h
-        GCDecompiler/types.h
-        GCDecompiler/enums.h
-        GCDecompiler/utils.h
-        GCDecompiler/argparser.h
-        GCDecompiler/import.h
-        GCDecompiler/relocation.h
-        GCDecompiler/section.h
-        GCDecompiler/logging.h)
+set(SOURCES
+        src/import.cpp
+        src/relocation.cpp
+        src/section.cpp
+        src/filetypes/dol.cpp
+        src/filetypes/lz.cpp
+        src/filetypes/rel.cpp
+        src/filetypes/tpl.cpp
+        src/filetypes/png.cpp
+        src/filetypes/image.cpp
+        src/filetypes/stagedef.cpp
+        src/ppc/ppc_reader.cpp
+        src/ppc/instruction.cpp
+        src/ppc/register.cpp
+        src/ppc/symbol.cpp)
 
-set(SOURCE_FILES
-        GCDecompiler/filetypes/dol.cpp
-        GCDecompiler/filetypes/lz.cpp
-        GCDecompiler/filetypes/rel.cpp
-        GCDecompiler/filetypes/tpl.cpp
-        GCDecompiler/filetypes/png.cpp
-        GCDecompiler/filetypes/image.cpp
-        GCDecompiler/filetypes/stagedef.cpp
-        GCDecompiler/ppc/ppc_reader.cpp
-        GCDecompiler/ppc/instruction.cpp
-        GCDecompiler/ppc/register.cpp
-        GCDecompiler/ppc/symbol.cpp
-        GCDecompiler/gcd_main.cpp
-        GCDecompiler/utils.cpp
-        GCDecompiler/argparser.cpp
-        GCDecompiler/import.cpp
-        GCDecompiler/relocation.cpp
-        GCDecompiler/section.cpp
-        GCDecompiler/logging.cpp)
+set(TEST_HEADERS
+        test/ppc/test_instructions.h
+        test/ppc/test_registers.h
+        test/ppc/test_symbols.h)
 
-add_executable(${PROJECT_NAME} ${ZLIB} ${HEADER_FILES} ${SOURCE_FILES})
+set(TEST_SOURCES
+        test/main.cpp
+        test/ppc/test_instructions.cpp
+        test/ppc/test_registers.cpp
+        test/ppc/test_symbols.cpp)
+
+set(ALL_CODE ${HEADERS} ${SOURCES})
+
+set(ALL_TEST ${TEST_HEADERS} ${TEST_SOURCES})
+
+add_executable(${PROJECT_NAME} ${ALL_CODE} src/gcd_main.cpp)
+add_executable(test_${PROJECT_NAME} ${ALL_CODE} ${ALL_TEST})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "gcd")
-target_link_libraries(${PROJECT_NAME} stdc++fs)
+set_target_properties(test_${PROJECT_NAME} PROPERTIES OUTPUT_NAME "test_gcd")
+
+# Add various target link libraries
+
+if(WIN32 OR CYGWIN)
+    file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.lib")
+else()
+    file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.a")
+endif()
+set(TARGET_LINKS stdc++fs ${files})
+
+foreach(link ${TARGET_LINKS})
+    message(STATUS "Linking to library " ${link})
+    target_link_libraries(${PROJECT_NAME} ${link})
+    target_link_libraries(test_${PROJECT_NAME} ${link})
+endforeach()
