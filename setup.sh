@@ -56,6 +56,7 @@ function cmake_dep {
 
 mkdir -p libs/include
 
-
 cmake_dep "madler" "zlib" "include" "develop"
 cmake_dep "craftspider" "alphatools" ""
+
+cmake -G"Unix Makefiles" .
