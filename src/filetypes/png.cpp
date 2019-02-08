@@ -198,17 +198,12 @@ PNG::PNG(const std::string &filename) {
     }
 }
 
-PNG::PNG(const types::Image& image) {
-    this->image = image;
+PNG::PNG(const Image& image) : SingleImageType(image) {
     bit_depth = 0;
     color_type = ColorType::truealpha;
     compression = 0;
     filter = 0;
     interlace = 0;
-}
-
-Image PNG::get_image() {
-    return image;
 }
 
 void PNG::add_text(std::string key, std::string content) {
@@ -260,8 +255,8 @@ void PNG::save(const std::string &filename) {
     // Write out header
     uchar *ihdr = new uchar[13];
     
-    const uchar *width = util::itob(image.width);
-    const uchar *height = util::itob(image.height);
+    const uchar *width = util::itob(_image.width);
+    const uchar *height = util::itob(_image.height);
     
     for (int i = 0; i < 4; i++) {
         ihdr[i] = width[i];
@@ -285,14 +280,14 @@ void PNG::save(const std::string &filename) {
     }
     
     // Write out IDAT chunk
-    uint line_width = image.width * 4 + 1;
-    uint in_size = image.height * line_width;
+    uint line_width = _image.width * 4 + 1;
+    uint in_size = _image.height * line_width;
     uchar *data = new uchar[in_size];
     
-    for (uint i = 0; i < image.height; ++i) {
+    for (uint i = 0; i < _image.height; ++i) {
         data[i * line_width] = 0;
-        for (uint j = 0; j < image.width; ++j) {
-            Color col = image.image_data[i][j];
+        for (uint j = 0; j < _image.width; ++j) {
+            Color col = _image.image_data[i][j];
             int pos = (j * 4 + i * line_width) + 1;
             data[pos] = col.R;
             data[pos + 1] = col.G;

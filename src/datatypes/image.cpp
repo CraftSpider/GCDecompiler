@@ -1,30 +1,11 @@
-//
-// Created by Rune Tynan on 8/11/2018.
-//
 
-#include "filetypes/image.h"
+#include "datatypes/image.h"
 
 namespace types {
 
-uint Color::to_int() {
-    uint out = 0;
-    out += R << 24U;
-    out += G << 16U;
-    out += B << 8U;
-    out += A;
-    return out;
-}
-
-Color Color::lerp_colors(const types::Color &a, const types::Color &b, const float &factor) {
-    return Color {
-            (uchar) (a.R + (b.R - a.R) * factor),
-            (uchar) (a.G + (b.G - a.G) * factor),
-            (uchar) (a.B + (b.B - a.B) * factor),
-            (uchar) (a.A + (b.A - a.A) * factor)
-    };
-}
-
 Image::Image() {
+    this->height = 0;
+    this->width = 0;
     this->image_data = nullptr;
 }
 

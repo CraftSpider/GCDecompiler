@@ -31,12 +31,14 @@ set(HEADERS
         include/import.h
         include/relocation.h
         include/section.h
+        include/datatypes/color.h
+        include/datatypes/image.h
         include/filetypes/dol.h
         include/filetypes/lz.h
         include/filetypes/rel.h
         include/filetypes/tpl.h
         include/filetypes/png.h
-        include/filetypes/image.h
+        include/filetypes/imagetype.h
         include/filetypes/stagedef.h
         include/ppc/ppc_reader.h
         include/ppc/codes.h
@@ -44,16 +46,21 @@ set(HEADERS
         include/ppc/register.h
         include/ppc/symbol.h)
 
+set(TEMPLATES
+        include/filetypes/imagetype.tpp)
+
 set(SOURCES
         src/import.cpp
         src/relocation.cpp
         src/section.cpp
+        src/datatypes/color.cpp
+        src/datatypes/image.cpp
         src/filetypes/dol.cpp
         src/filetypes/lz.cpp
         src/filetypes/rel.cpp
         src/filetypes/tpl.cpp
         src/filetypes/png.cpp
-        src/filetypes/image.cpp
+        src/filetypes/imagetype.cpp
         src/filetypes/stagedef.cpp
         src/ppc/ppc_reader.cpp
         src/ppc/instruction.cpp
@@ -61,17 +68,19 @@ set(SOURCES
         src/ppc/symbol.cpp)
 
 set(TEST_HEADERS
+        test/datatypes/test_color.h
         test/ppc/test_instructions.h
         test/ppc/test_registers.h
         test/ppc/test_symbols.h)
 
 set(TEST_SOURCES
         test/main.cpp
+        test/datatypes/test_color.cpp
         test/ppc/test_instructions.cpp
         test/ppc/test_registers.cpp
         test/ppc/test_symbols.cpp)
 
-set(ALL_CODE ${HEADERS} ${SOURCES})
+set(ALL_CODE ${HEADERS} ${TEMPLATES} ${SOURCES})
 
 set(ALL_TEST ${TEST_HEADERS} ${TEST_SOURCES})
 

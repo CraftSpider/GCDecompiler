@@ -4,7 +4,7 @@
 #include <vector>
 #include <map>
 #include "types.h"
-#include "image.h"
+#include "imagetype.h"
 
 namespace types {
 

@@ -7,11 +7,9 @@
 #include <string>
 #include <vector>
 #include <chrono>
-#include "image.h"
+#include "imagetype.h"
 
 namespace types {
-
-class TPL;
 
 struct ColorType {
     
@@ -46,9 +44,8 @@ struct Chunk {
     void write_chunk(std::fstream& output);
 };
 
-class PNG {
+class PNG : public SingleImageType {
     
-    Image image;
     std::vector<Chunk> chunks;
     
     void add_chunk(uint length, std::string name, uchar* data);
@@ -65,8 +62,6 @@ public:
     
     PNG(const std::string& filename);
     PNG(const Image& image);
-    
-    Image get_image();
     
     void add_text(std::string key, std::string content);
     
