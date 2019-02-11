@@ -41,8 +41,7 @@ Color parse_rgb565(const uchar *block, uchar pixel) {
 
 Color parse_rgb5A3(const uchar *block, uchar pixel) {
     uchar red, green, blue, alpha = 0xFF;
-    const uchar *data = new uchar[2];
-    data = block + pixel*2;
+    const uchar *data = block + pixel*2;
     if (!util::get_bit(block, 0)) {
         red = (uchar)(0x11 * util::get_range(data, 4, 7));
         green = (uchar)(0x11 * util::get_range(data, 8, 11));
@@ -60,23 +59,32 @@ Color parse_rgb5A3(const uchar *block, uchar pixel) {
 // Note: this isn't super efficient as it stands, it recalculates the pallete for every pixel.
 // But this way matches with the other formats.
 Color parse_cmpr(const uchar *block, uchar pixel) {
+    // TODO: Static palette based on block pointer
     // Determine block
     uchar bl_pos = (uchar)(pixel % 8 > 3 ? 1 : 0);
     if (pixel > 31) {
         bl_pos += 2;
     }
     uchar bl_start = bl_pos * 8;
+    
+    // Get raw ushorts at the positions
+    ushort bl_bit = bl_start * 8;
+    ushort first, second;
+    first = util::get_range(block, bl_bit, bl_bit + 15);
+    second = util::get_range(block, bl_bit + 15, bl_bit + 31);
+    
     // Read block palette
     Color palette[4];
     palette[0] = parse_rgb565(block, bl_start / 2);
     palette[1] = parse_rgb565(block, (bl_start + 2) / 2);
-    if (palette[0].to_int() > palette[1].to_int()) {
+    if (first >= second) {
         palette[2] = Color::lerp_colors(palette[0], palette[1], 1.f/3.f);
         palette[3] = Color::lerp_colors(palette[0], palette[1], 2.f/3.f);
     } else {
         palette[2] = Color::lerp_colors(palette[0], palette[1], .5f);
         palette[3] = Color {0, 0, 0, 0};
     }
+    
     // Get palette for pixel in block
     uchar bl_pix = pixel % 32;
     if (bl_pix % 8 >= 4) {
