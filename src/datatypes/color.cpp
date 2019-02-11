@@ -24,6 +24,10 @@ Color::Color(uchar R, uchar G, uchar B, uchar A) {
     this->A = A;
 }
 
+bool Color::operator==(const types::Color &other) {
+    return this->R == other.R && this->G == other.G && this->B == other.B && this->A == other.A;
+}
+
 uint Color::to_int() {
     uint out = 0;
     out += R << 24U;

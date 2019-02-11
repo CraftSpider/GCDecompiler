@@ -65,6 +65,12 @@ struct GCImageTableEntry {
     ushort width, height, mipmaps;
 };
 
+Color parse_i4(const uchar* block, uchar pixel);
+Color parse_i8(const uchar* block, uchar pixel);
+Color parse_rgb565(const uchar* block, uchar pixel);
+
+Color parse_cmpr(const uchar* block, uchar pixel);
+
 class TPL {
 
 protected:
@@ -78,10 +84,12 @@ protected:
 public:
 
 	TPL();
+	virtual ~TPL();
+	
 	virtual void save(const std::string& filename) const = 0;
 	virtual Image get_image(const uint& index, const uint& mipmap = 0) const;
 	virtual void add_image(Image* image, const uint& mipmaps = 1);
-	virtual PNG* to_png(const int& index, const int& mipmap = 0);
+	virtual PNG* to_png(int index, int mipmap = 0);
 	uint get_num_images() const;
 	uint get_num_mipmaps(const uint& index) const;
 

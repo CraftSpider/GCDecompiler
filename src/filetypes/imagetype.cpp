@@ -12,6 +12,8 @@ SingleImageType::SingleImageType(const Image& image) {
     _image = image;
 }
 
+SingleImageType::~SingleImageType() = default;
+
 Image SingleImageType::get_image() {
     return _image;
 }

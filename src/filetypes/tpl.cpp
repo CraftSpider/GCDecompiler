@@ -16,19 +16,19 @@ using std::ios;
 
 static logging::Logger *logger = logging::get_logger("tpl");
 
-Color parse_i4(const uchar *block, const uchar& pixel) {
+Color parse_i4(const uchar *block, uchar pixel) {
     uchar tone = (uchar)block[pixel / 2];
     bool which = !(pixel % 2);
     tone = (uchar)(((tone >> 4*which) & 0xF) * 0x11);
     return {tone, tone, tone, 0xFF};
 }
 
-Color parse_i8(const uchar *block, const uchar& pixel) {
+Color parse_i8(const uchar *block, uchar pixel) {
     uchar tone = (uchar)block[pixel];
     return {tone, tone, tone, 0xFF};
 }
 
-Color parse_rgb565(const uchar *block, const uchar& pixel) {
+Color parse_rgb565(const uchar *block, uchar pixel) {
     uchar start = (uchar)(pixel * 2);
     uchar rgb[2];
     rgb[0] = block[start];
@@ -39,7 +39,7 @@ Color parse_rgb565(const uchar *block, const uchar& pixel) {
     return {red, green, blue, 0xFF};
 }
 
-Color parse_rgb5A3(const uchar *block, const uchar& pixel) {
+Color parse_rgb5A3(const uchar *block, uchar pixel) {
     uchar red, green, blue, alpha = 0xFF;
     const uchar *data = new uchar[2];
     data = block + pixel*2;
@@ -59,7 +59,7 @@ Color parse_rgb5A3(const uchar *block, const uchar& pixel) {
 
 // Note: this isn't super efficient as it stands, it recalculates the pallete for every pixel.
 // But this way matches with the other formats.
-Color parse_cmpr(const uchar *block, const uchar& pixel) {
+Color parse_cmpr(const uchar *block, uchar pixel) {
     // Determine block
     uchar bl_pos = (uchar)(pixel % 8 > 3 ? 1 : 0);
     if (pixel > 31) {
@@ -98,7 +98,7 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
     ushort block_width = format_widths[format];
     uchar num_pixels = block_height * block_width;
     uchar block_size = (uchar)(num_pixels * bits_per_pixel[format] / 8);
-    uchar *block = new uchar[block_size];
+    uchar *block = new uchar[block_size]();
 
     for (ushort i = 0; i < height; i += block_height) {
         for (ushort j = 0; j < width; j += block_width) {
@@ -173,6 +173,12 @@ TPL::TPL() {
 	this->mipmaps = std::vector<uint>();
 }
 
+TPL::~TPL() {
+    for (auto& image : images) {
+        delete[] image;
+    }
+}
+
 Image TPL::get_image(const uint &index, const uint &mipmap) const {
     return images.at(index)[mipmap];
 }
@@ -183,7 +189,7 @@ void TPL::add_image(types::Image* image, const uint& mipmaps) {
     generate_table_entries();
 }
 
-PNG* TPL::to_png(const int& index, const int& mipmap) {
+PNG* TPL::to_png(int index, int mipmap) {
     logger->trace("Converting TPL to PNG");
 	Image *image = this->images[index];
     PNG *out = new PNG(image[mipmap]);

@@ -33,6 +33,7 @@ public:
     static const std::string image_type;
     
     SingleImageType(const Image& image);
+    virtual ~SingleImageType();
     virtual Image get_image();
     
 };

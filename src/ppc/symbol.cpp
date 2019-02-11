@@ -12,7 +12,7 @@ Symbol::Symbol(uint start, uint end, std::string name) {
 	this->r_input = std::set<uchar>();
 }
 
-void Symbol::add_source(const Register& reg) {
+void Symbol::add_input(const Register& reg) {
 	if (reg.type == Register::REGULAR) {
 		r_input.insert(reg.number);
 	} else if (reg.type == Register::FLOAT) {

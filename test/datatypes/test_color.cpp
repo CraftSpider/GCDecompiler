@@ -41,7 +41,14 @@ void test_to_int() {
 }
 
 void test_lerp() {
-    throw testing::skip_test();
+    types::Color color1 = types::Color(100, 100, 100);
+    types::Color color2 = types::Color(200, 200, 200);
+    
+    ASSERT(types::Color::lerp_colors(color1, color2, 0) == types::Color(100, 100, 100));
+    ASSERT(types::Color::lerp_colors(color1, color2, .25) == types::Color(125, 125, 125));
+    ASSERT(types::Color::lerp_colors(color1, color2, .5) == types::Color(150, 150, 150));
+    ASSERT(types::Color::lerp_colors(color1, color2, .75) == types::Color(175, 175, 175));
+    ASSERT(types::Color::lerp_colors(color1, color2, 1) == types::Color(200, 200, 200));
 }
 
 void run_color_tests() {

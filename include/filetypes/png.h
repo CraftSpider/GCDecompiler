@@ -33,7 +33,7 @@ struct Chunk {
     std::string type;
     uchar* data;
     
-    Chunk(const uint& length, const std::string& type, uchar* data);
+    Chunk(const uint& length, const std::string& type, const uchar* data);
     Chunk(const Chunk& chunk);
     ~Chunk();
     

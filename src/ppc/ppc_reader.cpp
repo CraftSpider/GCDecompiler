@@ -32,7 +32,7 @@ void relocate(types::REL *rel, const uint& bss_pos, const std::string& file_out)
     input.read(data, rel->file_size);
     output.write(data, rel->file_size);
 
-    for (auto imp : rel->imports) {
+    for (const auto& imp : rel->imports) {
         if (imp.module == rel->id) {
             for (auto reloc : imp.instructions) {
                 uint abs_offset = reloc.get_src_offset();
@@ -147,7 +147,10 @@ void read_data(const std::string& file_in, const std::string& file_out, int star
     std::fstream input(file_in, ios::in | ios::binary);
     std::fstream output(file_out, ios::out);
 
-    //TODO: Data guessing (tm)
+    input.seekg(start);
+    while(input.tellg() != end) {
+        //TODO: Data guessing (tm)
+    }
     
     input.close();
     output.close();
@@ -164,18 +167,17 @@ void read_data(types::REL *to_read, Section *section, const std::vector<types::R
     std::fstream output(file_out, ios::out);
     
     std::set<int> offsets;
-    for (auto rel_r = knowns.begin(); rel_r != knowns.end(); ++rel_r) {
-        types::REL *rel = (*rel_r);
-        for (auto imp = rel->imports.begin(); imp != rel->imports.end(); ++imp) {
-            if (imp->module != to_read->id && rel->id != to_read->id) {
+    for (auto rel : knowns) {
+        for (auto& imp : rel->imports) {
+            if (imp.module != to_read->id && rel->id != to_read->id) {
                 continue;
             }
-            for (auto reloc = imp->instructions.begin(); reloc != imp->instructions.end(); ++reloc) {
-                if (reloc->get_src_section().id == section->id && imp->module == rel->id) {
-                    offsets.insert(reloc->get_src_offset());
+            for (auto& reloc : imp.instructions) {
+                if (reloc.get_src_section().id == section->id && imp.module == rel->id) {
+                    offsets.insert(reloc.get_src_offset());
                 }
-                if (rel->id == to_read->id && reloc->get_dest_section().id == section->id) {
-                    offsets.insert(reloc->get_dest_offset());
+                if (rel->id == to_read->id && reloc.get_dest_section().id == section->id) {
+                    offsets.insert(reloc.get_dest_offset());
                 }
             }
         }
@@ -260,13 +262,13 @@ void decompile(const std::string& file_in, const std::string& file_out, int star
             f_end = position;
             std::stringstream name;
             name << "f_" << f_start << "_" << f_end;
-            symbols.push_back(Symbol(f_start, f_end, name.str()));
+            symbols.emplace_back(Symbol(f_start, f_end, name.str()));
             in_func = false;
         } else if (instruct->code_name() == "PADDING" && branch) {
             f_end = position - 4;
             std::stringstream name;
             name << "f_" << f_start << "_" << f_end;
-            symbols.push_back(Symbol(f_start, f_end, name.str()));
+            symbols.emplace_back(Symbol(f_start, f_end, name.str()));
             in_func = false;
         }
 
@@ -277,15 +279,15 @@ void decompile(const std::string& file_in, const std::string& file_out, int star
     f_end = position;
     std::stringstream name;
     name << "f_" << f_start << "_" << f_end;
-    symbols.push_back(Symbol(f_start, f_end, name.str()));
+    symbols.emplace_back(Symbol(f_start, f_end, name.str()));
 
     // Check internal code to determine inputs/return.
-    for (auto sym = symbols.begin(); sym != symbols.end(); sym++) {
+    for (auto& sym : symbols) {
         //std::cout << std::hex << sym->start << " " << sym->end << std::dec << endl;
-        input.seekg(sym->start + start, ios::beg);
+        input.seekg(sym.start + start, ios::beg);
 
         uchar *registers = new uchar[10]();
-        while (input.tellg() < sym->end + start + 4) {
+        while (input.tellg() < sym.end + start + 4) {
 
             input.read((char*)instruction, 4);
             Instruction *instruct = create_instruction(instruction);
@@ -307,7 +309,7 @@ void decompile(const std::string& file_in, const std::string& file_out, int star
         
         for (int i = 0; i < 10; ++i) {
             if (registers[i] == 1) {
-                sym->add_source(Register(i + 3, Register::REGULAR));
+                sym.add_input(Register(i + 3, Register::REGULAR));
             }
         }
 
@@ -315,16 +317,16 @@ void decompile(const std::string& file_in, const std::string& file_out, int star
     }
 
     // Write final list to symbol table
-    for (auto sym = symbols.begin(); sym != symbols.end(); sym++) {
-        output << "f_" << std::hex << sym->start << "_" << sym->end << std::dec << "(";
+    for (const auto& sym : symbols) {
+        output << "f_" << std::hex << sym.start << "_" << sym.end << std::dec << "(";
         bool first = true;
-        for (auto num = sym->r_input.begin(); num != sym->r_input.end(); ++num) {
+        for (auto num : sym.r_input) {
             if (!first) {
                 output << ", ";
             } else {
                 first = false;
             }
-            output << "r" << ((int)*num);
+            output << "r" << (int)num;
         }
         output << ");" << '\n';
     }

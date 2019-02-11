@@ -71,14 +71,14 @@ set(TEST_HEADERS
         test/datatypes/test_color.h
         test/ppc/test_instructions.h
         test/ppc/test_registers.h
-        test/ppc/test_symbols.h)
+        test/ppc/test_symbols.h test/filetypes/test_tpl.h test/filetypes/test_png.h)
 
 set(TEST_SOURCES
         test/main.cpp
         test/datatypes/test_color.cpp
         test/ppc/test_instructions.cpp
         test/ppc/test_registers.cpp
-        test/ppc/test_symbols.cpp)
+        test/ppc/test_symbols.cpp test/filetypes/test_tpl.cpp test/filetypes/test_png.cpp)
 
 set(ALL_CODE ${HEADERS} ${TEMPLATES} ${SOURCES})
 

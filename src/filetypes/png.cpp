@@ -48,10 +48,13 @@ ColorType ColorType::from_depth(uchar depth) {
     }
 }
 
-Chunk::Chunk(const uint& length, const std::string& type, uchar *data) {
+Chunk::Chunk(const uint& length, const std::string& type, const uchar *data) {
     this->length = length;
     this->type = type;
-    this->data = data;
+    this->data = new uchar[length];
+    for (uint i = 0; i < length; ++ i) {
+        this->data[i] = data[i];
+    }
 }
 
 Chunk::Chunk(const types::Chunk &chunk) {
@@ -199,7 +202,7 @@ PNG::PNG(const std::string &filename) {
 }
 
 PNG::PNG(const Image& image) : SingleImageType(image) {
-    bit_depth = 0;
+    bit_depth = 8;
     color_type = ColorType::truealpha;
     compression = 0;
     filter = 0;
@@ -212,6 +215,7 @@ void PNG::add_text(std::string key, std::string content) {
     strm.write("\0", 1);
     strm << content;
     std::string str = strm.str();
+    
     add_chunk(str.size(), "tEXt", (uchar*)str.c_str());
 }
 
@@ -233,6 +237,8 @@ void PNG::update_time(std::time_t timet) {
     time[5] = local.tm_min;
     time[6] = local.tm_sec;
     replace_chunk(7, "tIME", time);
+    
+    delete[] time;
 }
 
 std::vector<Chunk> PNG::get_chunks() {
@@ -246,13 +252,14 @@ std::vector<Chunk> PNG::get_chunks(const std::string& name) {
 }
 
 void PNG::save(const std::string &filename) {
-    logger->info("Writing PNG to " + filename);
+    logger->debug("Saving PNG");
     
     std::fstream output = std::fstream(filename, ios::out | ios::binary);
     
     output.write(magic, magic_len);
     
     // Write out header
+    logger->trace("Writing header");
     uchar *ihdr = new uchar[13];
     
     const uchar *width = util::itob(_image.width);
@@ -273,13 +280,16 @@ void PNG::save(const std::string &filename) {
     ihdr[12] = interlace;
     
     Chunk {13, "IHDR", ihdr}.write_chunk(output);
+    delete[] ihdr;
     
     // Write out ancillary chunkks
+    logger->trace("Writing chunks");
     for (auto chunk : chunks) {
         chunk.write_chunk(output);
     }
     
     // Write out IDAT chunk
+    logger->trace("Writing image data");
     uint line_width = _image.width * 4 + 1;
     uint in_size = _image.height * line_width;
     uchar *data = new uchar[in_size];
@@ -309,9 +319,12 @@ void PNG::save(const std::string &filename) {
     deflate(&strm, Z_FINISH);
     uint len = (uint)strm.total_out;
     Chunk {len, "IDAT", idat}.write_chunk(output);
+    delete[] idat;
+    deflateEnd(&strm);
     delete[] data;
     
     // write out IEND chunk
+    logger->trace("Writing end");
     Chunk {0, "IEND", nullptr}.write_chunk(output);
 }
 

@@ -16,8 +16,8 @@ public:
 	std::set<uchar> r_input, fr_input;
 
 	Symbol(uint start, uint end, std::string name);
-
-	void add_source(const Register& reg);
+	
+	void add_input(const Register& reg);
 
 };
 
