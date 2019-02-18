@@ -10,7 +10,6 @@
 # Cmake / make
 CMakeCache.txt
 CMakeFiles/
-*.cmake
 compile_commands.json
 Makefile
 
