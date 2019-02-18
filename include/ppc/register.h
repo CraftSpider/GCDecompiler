@@ -15,6 +15,7 @@ public:
     RType type;
 
     Register();
+    Register(const std::string& reg);
     Register(const uchar& number, const RType& type);
     Register(const uchar& number, const std::string& type);
 
@@ -24,5 +25,7 @@ public:
     bool operator>(const Register& reg) const;
 
 };
+
+Register::RType get_type(const std::string& type);
 
 }

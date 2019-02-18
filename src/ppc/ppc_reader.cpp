@@ -79,68 +79,6 @@ void relocate(types::REL *input, const std::string& file_out) {
     relocate(input, input->file_size, file_out);
 }
 
-void disassemble(const std::string& file_in, const std::string& file_out, int start, int end) {
-    logger->info("Disassembling PPC");
-    
-    std::fstream input(file_in, ios::in | ios::binary);
-    std::fstream output(file_out, ios::out);
-
-    uint position;
-    bool func_end = true, q1 = false, q2 = false, q3 = false;
-
-    if (end == -1) {
-        input.seekg(0, ios::end);
-        end = (int)input.tellg();
-    }
-    const int size = end - start;
-    const int hex_length = (int)std::floor((std::log(size) / std::log(16)) + 1) + 2;
-    uchar instruction[4];
-
-    input.seekg(start, ios::beg);
-    while (input.tellg() < end) {
-        position = (uint)input.tellg() - start;
-        
-        if ((float)position / size > .25 && !q1) {
-            logger->info("  25% Complete");
-            q1 = true;
-        } else if ((float)position / size > .5 && !q2) {
-            logger->info("  50% Complete");
-            q2 = true;
-        } else if ((float)position / size > .75 && !q3) {
-            logger->info("  75% Complete");
-            q3 = true;
-        }
-
-        input.read((char*)instruction, 4);
-
-        Instruction *instruct = create_instruction(instruction);
-
-        if (instruct->code_name() == "blr" || instruct->code_name() == "rfi") {
-            func_end = true;
-        }
-
-        if (func_end && instruct->code_name() != "blr" && instruct->code_name() != "rfi" && instruct->code_name() != "PADDING") {
-            output << "; function: f_" << std::hex << position << std::dec << " at " << util::itoh(position) << '\n';
-            func_end = false;
-        }
-
-        std::string hex = util::itoh(position);
-        std::string padding(hex_length - hex.length(), ' ');
-        output << padding << hex << "    " << util::ctoh(instruction[0], false) << " " << util::ctoh(instruction[1], false) << " " <<
-            util::ctoh(instruction[2], false) << " " << util::ctoh(instruction[3], false) << "    ";
-
-        output << instruct->code_name();
-        output << " " << instruct->get_variables();
-        output << std::endl;
-        delete instruct;
-    }
-    
-    input.close();
-    output.close();
-    
-    logger->info("PPC disassembly finished");
-}
-
 void read_data(const std::string& file_in, const std::string& file_out, int start, int end) {
     logger->info("Reading data section");
     
@@ -158,7 +96,7 @@ void read_data(const std::string& file_in, const std::string& file_out, int star
     logger->info("Finished reading data section");
 }
 
-void read_data(types::REL *to_read, Section *section, const std::vector<types::REL*>& knowns, const std::string& file_out) {
+void read_data(types::REL *to_read, const Section *section, const std::vector<types::REL*>& knowns, const std::string& file_out) {
     // open the file, look through every import in every REL file to check if they refer to a
     // location in the right area in this one. If they do, add it to the list. Once done, go through
     // the list and generate output values. Anything leftover goes in a separate section clearly marked.

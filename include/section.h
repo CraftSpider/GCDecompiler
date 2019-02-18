@@ -20,6 +20,6 @@ public:
 	uint get_start();
 	uint get_end();
 	uint *get_range();
-	char *get_data();
+	char *get_data() const;
 
 };

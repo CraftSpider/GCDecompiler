@@ -55,19 +55,19 @@ REL::REL(const std::string& filename) {
 	file.seekg(section_offset, ios::beg);
 	for (uint i = 0; i < num_sections; i++) {
 		uint offset = util::next_uint(file);
-		bool exec = offset & 1;
-		offset = offset >> 1 << 1;
+		bool exec = offset & 1u;
+		offset = offset >> 1u << 1u;
 		uint length = util::next_uint(file);
-		this->sections.push_back(Section(i, offset, exec, length));
+		this->sections.emplace_back(Section(i, offset, exec, length));
 	}
 
 	logger->trace("Reading section data");
-	for (auto section = this->sections.begin(); section != this->sections.end(); section++) {
-		if (section->offset != 0) {
-			file.seekg(section->offset, ios::beg);
-			char *data = new char[section->length];
-			file.read(data, section->length);
-			section->set_data(data);
+	for (auto& section : this->sections) {
+		if (section.offset != 0) {
+			file.seekg(section.offset, ios::beg);
+			char *data = new char[section.length];
+			file.read(data, section.length);
+			section.set_data(data);
 		}
 	}
 
@@ -76,12 +76,12 @@ REL::REL(const std::string& filename) {
 	for (uint i = 0; i < num_imports; i++) {
 		uint module_id = util::next_uint(file);
 		uint offset = util::next_uint(file);
-		this->imports.push_back(Import(module_id, offset));
+		this->imports.emplace_back(Import(module_id, offset));
 	}
 	
 	logger->trace("Reading relocation table");
-	for (auto imp = this->imports.begin(); imp != this->imports.end(); imp++) {
-		file.seekg(imp->offset, ios::beg);
+	for (auto imp : this->imports) {
+		file.seekg(imp.offset, ios::beg);
 		RelType rel_type = RelType(0);
 		while (rel_type != R_RVL_STOP) {
 			uint position = (uint)file.tellg();
@@ -89,7 +89,7 @@ REL::REL(const std::string& filename) {
 			rel_type = RelType(util::next_uchar(file));
 			Section *section = &this->sections.at(util::next_uchar(file));
 			uint rel_offset = util::next_uint(file);
-			imp->add_relocation(rel_type, position, rel_offset, prev_offset, section);
+			imp.add_relocation(rel_type, position, rel_offset, prev_offset, section);
 		}
 	}
 	
@@ -118,8 +118,8 @@ uint REL::section_offset() {
 
 uint REL::import_offset() {
 	uint out = this->relocation_offset();
-	for (auto imp = this->imports.begin(); imp != imports.end(); imp++) {
-		out += (uint)imp->instructions.size() * 8;
+	for (auto& imp : this->imports) {
+		out += (uint)imp.instructions.size() * 8;
 	}
 	return out;
 }
@@ -128,18 +128,18 @@ uint REL::relocation_offset() {
 	uint out = 0;
 	out += this->header_size;
 	out += this->num_sections() * 8;
-	for (auto section = this->sections.begin(); section != this->sections.end(); section++) {
-		if (section->offset != 0) {
-			out += section->length;
+	for (auto& section : this->sections) {
+		if (section.offset != 0) {
+			out += section.length;
 		}
 	}
 	out += 16;
 	return out;
 }
 
-void REL::compile(const std::string& filename) {
+void REL::compile(const std::string& file_out) {
 	logger->info("Compiling REL file " + std::to_string(this->id));
-	std::fstream out(filename, ios::out | ios::binary);
+	std::fstream out(file_out, ios::out | ios::binary);
 	// Recalculate any necessary numbers for offsets
 
 	// Write Header to the file
@@ -181,10 +181,10 @@ void REL::compile(const std::string& filename) {
 
 	// Write actual sections to the file
 	logger->debug("Writing section data");
-	for (auto section = this->sections.begin(); section != this->sections.end(); section++) {
-		if (section->offset != 0) {
-			out.seekp(section->offset, ios::beg);
-			out.write(section->get_data(), section->length);
+	for (auto& section : this->sections) {
+		if (section.offset != 0) {
+			out.seekp(section.offset, ios::beg);
+			out.write(section.get_data(), section.length);
 		}
 	}
 
@@ -199,13 +199,13 @@ void REL::compile(const std::string& filename) {
 
 	// Write the Relocation Instructions
 	logger->debug("Writing relocation instructions");
-	for (auto imp = this->imports.begin(); imp != this->imports.end(); imp++) {
-		out.seekp(imp->offset, ios::beg);
-		for (auto reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
-            util::write_uint(out, reloc->prev_offset, 2);
-            util::write_uint(out, reloc->type, 1);
-            util::write_uint(out, reloc->get_src_section().id, 1);
-            util::write_uint(out, reloc->relative_offset);
+	for (auto& imp : this->imports) {
+		out.seekp(imp.offset, ios::beg);
+		for (auto& reloc : imp.instructions) {
+            util::write_uint(out, reloc.prev_offset, 2);
+            util::write_uint(out, reloc.type, 1);
+            util::write_uint(out, reloc.get_src_section().id, 1);
+            util::write_uint(out, reloc.relative_offset);
 		}
 	}
 	
@@ -254,7 +254,7 @@ void REL::dump_header(const std::string& filename) {
 std::string REL::dump_sections(uint pad_len) {
 	logger->trace("Generating REL section dump string");
 	std::string padding(pad_len, ' ');
-	std::cout << padding << "Dumping REL Sections" << '\n';
+	logger->info(padding + "Dumping REL Sections");
 	std::stringstream out;
 	out << "Section Table:" << '\n';
 	for (auto section = this->sections.begin(); section != sections.end(); section++) {
@@ -281,26 +281,28 @@ std::string REL::dump_imports(uint pad_len) {
 	std::string padding(pad_len, ' ');
 	std::stringstream out;
 	out << "Import Table:" << '\n';
-	for (auto imp = this->imports.begin(); imp != this->imports.end(); imp++) {
-		std::cout << padding << "  Dumping Import " << imp->module << '\n';
+	for (auto& imp : this->imports) {
+	    std::stringstream temp;
+	    temp << padding << "  Dumping Import " << imp.module;
+		logger->info(temp.str());
 		out << "  Import:" << '\n';
-		out << "    Module: " << imp->module << '\n';
-		out << "    Offset: " << util::itoh(imp->offset) << '\n';
+		out << "    Module: " << imp.module << '\n';
+		out << "    Offset: " << util::itoh(imp.offset) << '\n';
 		out << "    Relocation Table:" << '\n';
-		for (auto reloc = imp->instructions.begin(); reloc != imp->instructions.end(); reloc++) {
+		for (auto& reloc : imp.instructions) {
 			out << "      Relocation:" << '\n';
-			out << "        Position: " << util::itoh(reloc->position) << '\n';
-			out << "        Type: " << RelNames.at(reloc->type) << '\n';
-			if (reloc->type == R_RVL_STOP) {
+			out << "        Position: " << util::itoh(reloc.position) << '\n';
+			out << "        Type: " << RelNames.at(reloc.type) << '\n';
+			if (reloc.type == R_RVL_STOP) {
 				continue;
 			}
-			if (reloc->type == R_RVL_SECT) {
-				out << "        Destination Section: " << reloc->get_dest_section().id << '\n';
+			if (reloc.type == R_RVL_SECT) {
+				out << "        Destination Section: " << reloc.get_dest_section().id << '\n';
 				continue;
 			}
-			out << "        Offset from Prev: " << util::itoh(reloc->prev_offset) << '\n';
-			out << "        Source: " << reloc->get_src_section().id << " " << util::itoh(reloc->get_src_offset()) << '\n';
-			out << "        Destination: " << reloc->get_dest_section().id << " " << util::itoh(reloc->get_dest_offset()) << '\n';
+			out << "        Offset from Prev: " << util::itoh(reloc.prev_offset) << '\n';
+			out << "        Source: " << reloc.get_src_section().id << " " << util::itoh(reloc.get_src_offset()) << '\n';
+			out << "        Destination: " << reloc.get_dest_section().id << " " << util::itoh(reloc.get_dest_offset()) << '\n';
 		}
 	}
 	return out.str();

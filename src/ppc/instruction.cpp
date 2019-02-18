@@ -220,51 +220,54 @@ Ori::Ori(const uchar& type, const uchar *instruction) : Instruction(type, instru
 }
 
 PairedSingleFamily::PairedSingleFamily(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
+    ulong ttype = util::get_range(instruction, 21, 30);
     ulong stype = util::get_range(instruction, 26, 30);
-    if (secondary_codes_ps.count(stype) > 0) {
+    
+    if (secondary_codes_ps.count(ttype) > 0) {
+        this->name = secondary_codes_ps.at(ttype);
+        
+        if (secondary_patterns_ps.count(ttype) > 0) {
+            this->pattern = secondary_patterns_ps.at(ttype);
+        }
+    } else if (secondary_codes_ps.count(stype) > 0) {
         this->name = secondary_codes_ps.at(stype);
+    
+        if (secondary_patterns_ps.count(stype) > 0) {
+            this->pattern = secondary_patterns_ps.at(stype);
+        }
+        
+        if (stype == 0) {
+            if (util::get_bit(instruction, 25)) {
+                this->name += "o";
+            } else {
+                this->name += "u";
+            }
+            if (util::get_bit(instruction, 24)) {
+                this->name += "1";
+            } else {
+                this->name += "0";
+            }
+        } else if (stype == 6 || stype == 7) {
+            if (util::get_bit(instruction, 25)) {
+                ulong len = this->name.length();
+                this->name = this->name.substr(0, len - 1) + "u" + this->name.substr(len - 1, len);
+            }
+        } else if (stype == 16) {
+            if (util::get_bit(instruction, 24)) {
+                this->name += "1";
+            } else {
+                this->name += "0";
+            }
+            if (util::get_bit(instruction, 25)) {
+                this->name += "1";
+            } else {
+                this->name += "0";
+            }
+        }
     }
-    if (secondary_patterns_ps.count(stype) > 0) {
-        this->pattern = secondary_patterns_ps.at(stype);
-    }
-    if (stype == 0) {
-        if (util::get_bit(instruction, 25)) {
-            this->name += "o";
-        } else {
-            this->name += "u";
-        }
-        if (util::get_bit(instruction, 24)) {
-            this->name += "1";
-        } else {
-            this->name += "0";
-        }
-    } else if (stype == 6 || stype == 7) {
-        if (util::get_bit(instruction, 25)) {
-            ulong len = this->name.length();
-            this->name = this->name.substr(0, len - 1) + "u" + this->name.substr(len - 1, len);
-        }
-    } else if (stype == 8) {
-        ulong ttype = util::get_range(instruction, 21, 25);
-        if (ttype == 1) {
-            this->name = "ps_neg";
-        } else if (ttype == 2) {
-            this->name = "ps_mr";
-        } else if (ttype == 4) {
-            this->name = "ps_nabs";
-        } else if (ttype == 8) {
-            this->name = "ps_abs";
-        }
-    } else if (stype == 16) {
-        if (util::get_bit(instruction, 24)) {
-            this->name += "1";
-        } else {
-            this->name += "0";
-        }
-        if (util::get_bit(instruction, 25)) {
-            this->name += "1";
-        } else {
-            this->name += "0";
-        }
+    
+    if (util::get_bit(instruction, 31)) {
+        this->name += ".";
     }
 }
 
@@ -337,7 +340,7 @@ MathFamily::MathFamily(const uchar& type, const uchar *instruction) : ConditionI
             this->name += ".";
         }
     } catch (const std::exception& e) {
-        logger->warn("Condition catch");
+        logger->warn("Math catch");
     }
     if (secondary_patterns_math.count(stype) > 0) {
         this->pattern = secondary_patterns_math.at(stype);

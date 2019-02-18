@@ -27,7 +27,7 @@ public:
 	uint import_offset();
 	uint relocation_offset();
 
-	void compile(const std::string& filename);
+	void compile(const std::string& file_out);
 
 	std::string dump_header(uint pad_len = 0);
 	void dump_header(const std::string& filename);

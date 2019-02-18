@@ -53,6 +53,6 @@ uint* Section::get_range() {
 	return new uint[2] { this->get_start(), this->get_end() };
 }
 
-char* Section::get_data() {
+char* Section::get_data() const {
 	return this->data;
 }
