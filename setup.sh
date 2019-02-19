@@ -9,19 +9,20 @@ function cmake_build {
     #   - Author
     #   - Project Name
     #   - Branch Name (optional)
+    #   - Make target (optional)
     if [ -z "$3" ]; then
         echo "Cloning project $2"
-        git clone --single-branch https://github.com/$1/$2 libs/$2;
+        git clone --single-branch --depth 1 https://github.com/$1/$2 "libs/$2";
     else
         echo "Cloning branch $3 of project $2"
-        git clone --single-branch --branch $3 https://github.com/$1/$2 libs/$2;
+        git clone --single-branch --depth 1 --branch "$3" https://github.com/$1/$2 "libs/$2";
     fi
 
-    cd libs/$2
+    cd "libs/$2"
     echo "Running CMake for $2"
     cmake -G"Unix Makefiles" .
     echo "Running Make for $2"
-    make
+    make $4
     cd ${src_dir}
 }
 
@@ -29,7 +30,7 @@ function copy_headers {
     # Arguments:
     #   - Source dir
     #   - Destination dir
-    rsync -avm --include='*.h' --include='*.tpp' --include='at_*' -f 'hide,! */' libs/$1/ libs/$2/
+    rsync -avm --include='*.h' --include='*.tpp' --include='at_*' -f 'hide,! */' "libs/$1/" "libs/$2/"
 }
 
 function copy_lib {
@@ -43,20 +44,21 @@ function cmake_dep {
     # Arguments:
     #   - Author
     #   - Project Name
-    #   - Destination for rsync
-    #   - Branch
+    #   - Destination for rsync (optional, root directory if empty)
+    #   - Branch (optional, default branch if empty)
+    #   - Make target (optional, all if empty)
     mkdir libs/$2
 
-    cmake_build $1 $2 $4
-    copy_headers $2 $3
-    copy_lib $2
+    cmake_build "$1" "$2" "$4" "$5"
+    copy_headers "$2" "$3"
+    copy_lib "$2"
 
-    rm -rf libs/$2
+    rm -rf "libs/$2"
 }
 
 mkdir -p libs/include
 
-cmake_dep "madler" "zlib" "include" "develop"
-cmake_dep "craftspider" "alphatools" ""
+cmake_dep "madler" "zlib" "include" "develop" "zlibstatic"
+cmake_dep "craftspider" "alphatools" "" "" "alpha_tools"
 
 # cmake -G"Unix Makefiles" .

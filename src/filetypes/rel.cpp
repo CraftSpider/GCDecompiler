@@ -80,7 +80,7 @@ REL::REL(const std::string& filename) {
 	}
 	
 	logger->trace("Reading relocation table");
-	for (auto imp : this->imports) {
+	for (auto& imp : this->imports) {
 		file.seekg(imp.offset, ios::beg);
 		RelType rel_type = RelType(0);
 		while (rel_type != R_RVL_STOP) {
