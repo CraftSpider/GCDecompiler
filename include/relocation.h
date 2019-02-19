@@ -28,8 +28,8 @@ public:
 	Relocation(Import *import, uint position, uint relative_offset, uint prev_offset, uint dest_offset, RelType type, Section *src_section, Section *dest_section);
 	uint get_src_offset();
 	uint get_dest_offset();
-	Section get_src_section();
-	Section get_dest_section();
-	Import get_import();
+	Section& get_src_section();
+	Section& get_dest_section();
+	Import& get_import();
 
 };

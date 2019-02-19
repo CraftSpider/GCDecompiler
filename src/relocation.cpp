@@ -25,14 +25,14 @@ uint Relocation::get_src_offset() {
 	}
 }
 
-Section Relocation::get_src_section() {
+Section& Relocation::get_src_section() {
 	return *(this->src_section);
 }
 
-Section Relocation::get_dest_section() {
+Section& Relocation::get_dest_section() {
 	return *(this->dest_section);
 }
 
-Import Relocation::get_import() {
+Import& Relocation::get_import() {
 	return *(this->import);
 }
