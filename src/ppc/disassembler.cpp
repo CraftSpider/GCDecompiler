@@ -40,7 +40,7 @@ void disassemble(const std::string& file_in, const std::string& file_out, int st
         output << "; function: " << symbol.name << " at " << util::ltoh(symbol.start) << "\n";
         
         input.seekg(symbol.start);
-        while (input.tellg() <= symbol.end) {
+        while (input.tellg() <= (std::streamoff)symbol.end) {
             position = (ulong)input.tellg() - start;
             
             input.read((char*)instruction, 4);

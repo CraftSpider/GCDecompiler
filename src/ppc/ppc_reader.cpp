@@ -225,7 +225,7 @@ void decompile(const std::string& file_in, const std::string& file_out, int star
         input.seekg(sym.start + start, ios::beg);
 
         uchar *registers = new uchar[10]();
-        while (input.tellg() < sym.end + start + 4) {
+        while (input.tellg() < (std::streamoff)sym.end + start + 4) {
 
             input.read((char*)instruction, 4);
             Instruction *instruct = create_instruction(instruction);

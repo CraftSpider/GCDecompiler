@@ -320,14 +320,22 @@ SpecBranchFamily::SpecBranchFamily(const uchar& type, const uchar *instruction) 
     // Set up commands with special conditions
     if (stype == 16 || stype == 528) { // If it's a branch command, set up that
         ulong BO = util::get_range(instruction, 6, 10);
-        ulong BI = util::get_range(instruction, 11, 15);
+        ulong BI = util::get_range(instruction, 11, 15); // Not used for anything?
         this->pattern = "{6,10}, {11,15}";
+        
+        if (BO == 20) {
+            this->name = "blr";
+            this->pattern = "{}";
+        } else if (BO == 12 && BI == 0) {
+            this->name = "bltlt";
+            this->pattern = "{}";
+        } else if (BO == 16 && BI == 0) {
+            this->name = "bdnzlr";
+            this->pattern = "{}";
+        }
+    
         if (util::get_bit(instruction, 31)) {
             this->name += "l";
-        }
-        if (BO == 20) {
-            this->name = "b" + this->name.substr(2, this->name.length());
-            this->pattern = "{}";
         }
     }
 }

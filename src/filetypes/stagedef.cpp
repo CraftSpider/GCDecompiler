@@ -19,6 +19,9 @@ STAGEDEF::STAGEDEF(const std::string &filename) {
     
     logger->trace("Read STAGEDEF header");
     ulong magic = util::next_ulong(input);
+    if (magic != 0x00000000447A0000) {
+        logger->warn("SMB2 Stagedef magic doesn't match. Parsing will likely fail");
+    }
     num_collision = util::next_uint(input);
     collision_offset = util::next_uint(input);
     start_pos_offset = util::next_uint(input);
