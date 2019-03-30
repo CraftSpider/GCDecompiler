@@ -15,6 +15,4 @@ void relocate(types::REL *input, const std::string& file_out);
 void read_data(const std::string& file_in, const std::string& file_out, int start = 0, int end = -1);
 void read_data(types::REL *to_read, const Section *section, const std::vector<types::REL*>& knowns, const std::string& file_out);
 
-void decompile(const std::string& file_in, const std::string& file_out, int start, int end);
-
 }

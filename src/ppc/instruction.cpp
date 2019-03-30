@@ -10,7 +10,7 @@
 
 namespace PPC {
 
-logging::Logger* logger = logging::get_logger("ppc.instruction");
+static logging::Logger* logger = logging::get_logger("ppc.instruction");
 
 Instruction::Instruction() {
     this->name = "UNKNOWN INSTRUCTION";

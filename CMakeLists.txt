@@ -45,7 +45,7 @@ set(HEADERS
         include/ppc/instruction.h
         include/ppc/register.h
         include/ppc/symbol.h
-        include/ppc/disassembler.h)
+        include/ppc/disassembler.h include/ppc/decompiler.h)
 
 set(TEMPLATES
         include/filetypes/imagetype.tpp)
@@ -67,7 +67,7 @@ set(SOURCES
         src/ppc/instruction.cpp
         src/ppc/register.cpp
         src/ppc/symbol.cpp
-        src/ppc/disassembler.cpp)
+        src/ppc/disassembler.cpp src/ppc/decompiler.cpp)
 
 set(TEST_HEADERS
         test/datatypes/test_color.h

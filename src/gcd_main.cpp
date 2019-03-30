@@ -12,6 +12,7 @@
 #include "gcd_main.h"
 #include "ppc/ppc_reader.h"
 #include "ppc/disassembler.h"
+#include "ppc/decompiler.h"
 #include "filetypes/lz.h"
 #include "filetypes/tpl.h"
 #include "filetypes/png.h"
