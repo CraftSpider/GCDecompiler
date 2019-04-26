@@ -16,7 +16,7 @@ build_script:
       msbuild ./GCDecompiler.sln
 test_script:
   - sh: ./test_gcd
-  - cmd: ./test_gcd.exe
+  - cmd: test_gcd.exe
 artifacts:
   - path: gcd
     name: gcd
