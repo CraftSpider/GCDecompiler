@@ -8,9 +8,11 @@ install:
 build_script:
   - sh: >-
       cmake .
+
       make
   - cmd: >-
       cmake .
+
       msbuild ./GCDecompiler.sln
 test_script:
   - sh: ./test_gcd
