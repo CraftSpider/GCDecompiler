@@ -1,0 +1,30 @@
+version: 0.1.{build}
+image:
+  - Ubuntu1804
+  - Visual Studio 2017
+install:
+  - sh: ./setup.sh
+  - cmd: ./setup.bat
+build_script:
+  - sh: >-
+      cmake .
+      make
+  - cmd: >-
+      cmake .
+      msbuild ./GCDecompiler.sln
+test_script:
+  - sh: ./test_gcd
+  - cmd: ./test_gcd.exe
+artifacts:
+  - path: gcd
+    name: gcd
+  - path: test_gcd
+    name: test_gcd
+notifications:
+  - provider: Email
+    to:
+      - runetynan@gmail.com
+    on_build_success: false
+    on_build_failure: true
+    on_build_status_changed: false
+
