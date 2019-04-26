@@ -16,12 +16,12 @@ build_script:
       msbuild ./GCDecompiler.sln
 test_script:
   - sh: ./test_gcd
-  - cmd: test_gcd.exe
+  - cmd: ./Debug/test_gcd.exe
 artifacts:
-  - path: gcd
-    name: gcd
-  - path: test_gcd
-    name: test_gcd
+  - path: '*gcd'
+    name: Ubuntu Executables
+  - path: 'Debug/*.exe'
+    name: Windows Executables
 notifications:
   - provider: Email
     to:
@@ -29,4 +29,3 @@ notifications:
     on_build_success: false
     on_build_failure: true
     on_build_status_changed: false
-
