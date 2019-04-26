@@ -60,5 +60,3 @@ mkdir -p libs/include
 
 cmake_dep "madler" "zlib" "include" "develop" "zlibstatic"
 cmake_dep "craftspider" "alphatools" "" "" "alpha_tools"
-
-# cmake -G"Unix Makefiles" .

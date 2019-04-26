@@ -12,7 +12,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 #Be really pedantic! Also make sure we use unsigned chars
-add_definitions(-Wall -Wextra -pedantic -funsigned-char)
+if(MSVC)
+    add_definitions(-W4 -J)
+else()
+    add_definitions(-Wall -Wextra -pedantic -funsigned-char)
+endif()
 
 #Show as an executable, not a shared library in file managers
 if(UNIX)

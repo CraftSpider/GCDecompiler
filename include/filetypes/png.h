@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <ctime>
 #include "imagetype.h"
 
 namespace types {
