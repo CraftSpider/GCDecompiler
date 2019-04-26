@@ -44,7 +44,7 @@ EXIT /B 0
     CALL :copy_headers "%~2", "%~3"
     CALL :copy_lib "%~2"
 
-    :: rd /S /Q "libs/%~2"
+    rd /S /Q "libs/%~2"
 EXIT /B 0
 
 :MAIN

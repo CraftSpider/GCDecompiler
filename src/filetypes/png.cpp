@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <cctype>
 
 #include "at_logging"
 #include "at_utils"

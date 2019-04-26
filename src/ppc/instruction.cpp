@@ -1,6 +1,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <cctype>
 
 #include "at_logging"
 #include "at_utils"
