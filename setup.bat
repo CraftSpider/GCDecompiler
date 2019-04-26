@@ -17,7 +17,8 @@ GOTO MAIN
 
     cd "libs/%~2"
     ECHO Running CMake for %~2
-    cmake -G"Visual Studio 15 2017" .
+    :: TODO: support x86 architecture?
+    cmake -G"Visual Studio 15 2017" -A x64 .
     msbuild "%~4.vcxproj"
     cd %SRC_DIR%
 EXIT /B 0
@@ -34,7 +35,7 @@ EXIT /B 0
 
 :copy_lib
     ECHO Copying library %~1
-    FOR /R "libs\%~1" %%x IN (*.a *.lib) do (copy "%%x" "libs\")
+    FOR /R "libs\%~1" %%x IN (*.a *.lib *.pdb) do (copy "%%x" "libs\")
 EXIT /B 0
 
 :cmake_dep

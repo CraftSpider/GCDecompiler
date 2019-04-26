@@ -105,7 +105,11 @@ if(WIN32 OR CYGWIN)
 else()
     file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.a")
 endif()
-set(TARGET_LINKS stdc++fs ${files})
+
+set(TARGET_LINKS ${files})
+if(NOT MSVC)
+    list(APPEND TARGET_LINKS stdc++fs)
+endif()
 
 foreach(link ${TARGET_LINKS})
     message(STATUS "Linking to library " ${link})

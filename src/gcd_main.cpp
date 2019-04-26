@@ -185,8 +185,9 @@ int command_tpl(const std::string& input, const std::string& output, ArgParser& 
         logger->warn("This feature is not yet complete");
         std::vector<types::Image*> images = std::vector<types::Image*>();
         for (const auto& file : fs::directory_iterator(input)) {
-            if (util::ends_with(file.path().filename(), ".png")) {
-                types::PNG png = types::PNG(file.path().filename());
+            std::string filename = file.path().filename().string();
+            if (util::ends_with(filename, ".png")) {
+                types::PNG png = types::PNG(filename);
                 types::Image *image = new types::Image(png.get_image());
                 images.push_back(image);
             }

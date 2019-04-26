@@ -1,6 +1,7 @@
 
 #include <string>
 #include <sstream>
+#include <cctype>
 
 #include "types.h"
 #include "ppc/register.h"
