@@ -20,6 +20,10 @@ GOTO MAIN
     :: TODO: support x86 architecture?
     cmake -G"Visual Studio 15 2017" -A x64 .
     msbuild "%~4.vcxproj"
+    IF %errorlevel% neq 0 (
+        ECHO MSbuild command failed
+        EXIT %errorlevel%
+    )
     cd %SRC_DIR%
 EXIT /B 0
 

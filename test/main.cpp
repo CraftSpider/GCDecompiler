@@ -8,7 +8,9 @@
 #include "ppc/test_registers.h"
 #include "ppc/test_symbols.h"
 
-int main() {
+int main(int argc, char** argv) {
+    testing::setup_tests(argc, argv);
+    
     TEST_FILE(color)
     
     TEST_FILE(png)

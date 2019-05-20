@@ -5,6 +5,7 @@
 
 #include "at_logging"
 #include "at_utils"
+#include "format.h"
 #include "ppc/codes.h"
 #include "ppc/instruction.h"
 #include "ppc/register.h"
@@ -59,7 +60,7 @@ Instruction::Instruction(const uchar& type, const uchar *instruction) : Instruct
 
     if (type == 0 && util::get_range(instruction, 6, 31) == 0) {
         this->name = "PADDING";
-        this->pattern = "{}";
+        this->pattern = "{b0:}";
     }
 
     this->set_instruction(instruction);
@@ -88,7 +89,7 @@ std::string Instruction::get_variables() {
     if (this->pattern.empty()) {
         return "FIX ME";
     }
-    return util::char_format(this->pattern, this->instruction);
+    return format(this->pattern, this->instruction);
 }
 
 std::set<Register> Instruction::used_registers() {
@@ -216,7 +217,7 @@ ConditionInstruction::ConditionInstruction(const uchar& type, const uchar *instr
 Ori::Ori(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
     if (util::get_range(instruction, 6, 31) == 0) {
         this->name = "nop";
-        this->pattern = "{}";
+        this->pattern = "{b0:}";
     }
 }
 
@@ -273,19 +274,19 @@ PairedSingleFamily::PairedSingleFamily(const uchar& type, const uchar *instructi
 }
 
 AddFamily::AddFamily(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
-    this->pattern = "r{6,10}, r{11,15}, {sX|16,31}";
+    this->pattern = "r{b0:6,10}, r{b0:11,15}, {b0:sX16,31}";
     if (util::get_signed_range(instruction, 16, 31) < 0) {
         this->name = "sub" + this->name.substr(3, this->name.length());
-        this->pattern = "r{6,10}, r{11,15}, {aX|16,31}";
+        this->pattern = "r{b0:6,10}, r{b0:11,15}, {b0:aX16,31}";
     }
 }
 
 CmpFamily::CmpFamily(const uchar& type, const uchar *instruction) : Instruction(type, instruction) {
     if (!util::get_bit(instruction, 10)) {
         this->name = this->name.substr(0, this->name.length() - 1) + "wi";
-        this->pattern = "crf{6,8}, r{11,15}, {X|16,31}";
+        this->pattern = "crf{b0:6,8}, r{b0:11,15}, {b0:X16,31}";
     } else {
-        this->pattern = "crf{6,8}, {10,10}, r{11,15}, {X|16,31}";
+        this->pattern = "crf{b0:6,8}, {b0:10,10}, r{b0:11,15}, {b0:X16,31}";
     }
 }
 
@@ -302,10 +303,10 @@ BFamily::BFamily(const uchar& type, const uchar *instruction) : Instruction(type
         ulong BI = util::get_range(instruction, 11, 15);
         if (BO == 12 && BI == 0) {
             this->name = "blt";
-            this->pattern = "{X|16,29}";
+            this->pattern = "{b0:X16,29}";
         } else if (BO == 4 && BI == 10) {
             this->name = "bne";
-            this->pattern = "{X|16,29}";
+            this->pattern = "{b0:X16,29}";
         }
     }
 }
@@ -322,17 +323,17 @@ SpecBranchFamily::SpecBranchFamily(const uchar& type, const uchar *instruction) 
     if (stype == 16 || stype == 528) { // If it's a branch command, set up that
         ulong BO = util::get_range(instruction, 6, 10);
         ulong BI = util::get_range(instruction, 11, 15); // Not used for anything?
-        this->pattern = "{6,10}, {11,15}";
+        this->pattern = "{b0:6,10}, {b0:11,15}";
         
         if (BO == 20) {
             this->name = "blr";
-            this->pattern = "{}";
+            this->pattern = "{b0:}";
         } else if (BO == 12 && BI == 0) {
             this->name = "bltlt";
-            this->pattern = "{}";
+            this->pattern = "{b0:}";
         } else if (BO == 16 && BI == 0) {
             this->name = "bdnzlr";
-            this->pattern = "{}";
+            this->pattern = "{b0:}";
         }
     
         if (util::get_bit(instruction, 31)) {
@@ -358,40 +359,40 @@ MathFamily::MathFamily(const uchar& type, const uchar *instruction) : ConditionI
     if (stype == 0 || stype == 32) {
         if (!util::get_bit(instruction, 10)) {
             this->name += "w";
-            this->pattern = "crf{6,8}, r{11,15}, r{16,20}";
+            this->pattern = "crf{b0:6,8}, r{b0:11,15}, r{b0:16,20}";
         } else {
-            this->pattern = "crf{6,8}, {10,10}, r{11,15}, r{16,20}";
+            this->pattern = "crf{b0:6,8}, {b0:10,10}, r{b0:11,15}, r{b0:16,20}";
         }
     } else if (stype == 124) {
         if (util::get_range(instruction, 6, 10) == util::get_range(instruction, 16, 20)) {
             this->name = "not";
-            this->pattern = "r{11,15}, r{6,10}";
+            this->pattern = "r{b0:11,15}, r{b0:6,10}";
         }
     } else if (stype == 144) {
         if (util::get_range(instruction, 12, 19) == 0xFF) {
             this->name = "mtcr";
-            this->pattern = "r{6,10}";
+            this->pattern = "r{b0:6,10}";
         } else {
-            this->pattern = "{X|12,19}, r{6,10}";
+            this->pattern = "{b0:X12,19}, r{b0:6,10}";
         }
     } else if (stype == 339 || stype == 467) {
         ulong reg = util::get_range(instruction, 11, 15) + (util::get_range(instruction, 16, 20) << 5);
         if (reg == 0b1) {
             this->name = this->name.substr(0, 2) + "xer";
-            this->pattern = "r{6,10}";
+            this->pattern = "r{b0:6,10}";
         } else if (reg == 0b01000) {
             this->name = this->name.substr(0, 2) + "lr";
-            this->pattern = "r{6,10}";
+            this->pattern = "r{b0:6,10}";
         } else if (reg == 0b01001) {
             this->name = this->name.substr(0, 2) + "ctr";
-            this->pattern = "r{6,10}";
+            this->pattern = "r{b0:6,10}";
         } else {
             std::stringstream out;
             if (stype == 339) {
-                out << reg << ", r{6,10}";
+                out << reg << ", r{b0:6,10}";
                 this->pattern = out.str();
             } else {
-                out << "r{6,10}, " << reg;
+                out << "r{b0:6,10}, " << reg;
                 this->pattern = out.str();
             }
         }
@@ -399,19 +400,19 @@ MathFamily::MathFamily(const uchar& type, const uchar *instruction) : ConditionI
         ulong reg = util::get_range(instruction, 11, 15) + (util::get_range(instruction, 16, 20) << 5);
         if (reg == 0b0100001100) {
             this->name = "mftb";
-            this->pattern = "r{6,10}";
+            this->pattern = "r{b0:6,10}";
         } else if (reg == 0b0100001101) {
             this->name = "mftbu";
-            this->pattern = "r{6,10}";
+            this->pattern = "r{b0:6,10}";
         } else {
             std::stringstream out;
-            out << "r{6,10}, " << reg;
+            out << "r{b0:6,10}, " << reg;
             this->pattern = out.str();
         }
     } else if (stype == 444) {
         if (util::get_range(instruction, 6, 10) == util::get_range(instruction, 16, 20)) {
             this->name = "mr";
-            this->pattern = "r{11,15}, r{6,10}";
+            this->pattern = "r{b0:11,15}, r{b0:6,10}";
         }
     }
 }
