@@ -1,8 +1,6 @@
 
 #include <vector>
 #include <string>
-#include <cstring>
-#include <sstream>
 #include <iostream>
 #include <experimental/filesystem>
 
@@ -21,6 +19,20 @@
 namespace fs = std::experimental::filesystem;
 
 logging::Logger *logger = logging::get_logger("main");
+
+static std::map<std::string, std::string> default_outs = {
+    {"decomp", "root_decomp"}, {"dump", "root_dump"}, {"recompile", "recompile.rel"}, {"dol", "dol_dump"},
+    {"rel", "rel_dump"}, {"tpl", "tpl_out"}
+};
+
+static std::map<std::string, command_handler> commands = {
+    {"decomp", &command_decomp},
+    {"dump", &command_dump},
+    {"recomp", &command_recomp},
+    {"rel", &command_rel},
+    {"dol", &command_dol},
+    {"tpl", &command_tpl}
+};
 
 void process_rel(types::REL *rel, const std::vector<types::REL*>& knowns, const std::string& output, bool info) {
     fs::create_directory(fs::path(output));
@@ -58,7 +70,7 @@ void process_dol(types::DOL *dol, const std::string& output, bool info) {
     }
 }
 
-int command_decomp(const std::string& input, const std::string& output) {
+int command_decomp(const std::string& input, const std::string& output, ArgParser& parser) {
     logger->info("Beginning root decompile. This will take a while.");
     fs::create_directory(output);
     std::vector<types::REL*> knowns;
@@ -135,7 +147,7 @@ int command_dump(const std::string& input, const std::string& output, ArgParser&
     return 0;
 }
 
-int command_recomp(const std::string& input, const std::string& output) {
+int command_recomp(const std::string& input, const std::string& output, ArgParser& parser) {
     types::REL rel(input);
     rel.compile(output);
     return 0;
@@ -198,15 +210,6 @@ int command_tpl(const std::string& input, const std::string& output, ArgParser& 
     return 0;
 }
 
-static std::map<std::string, std::string> default_outs = {
-        {"decomp", "root_decomp"}, {"dump", "root_dump"}, {"recompile", "recompile.rel"}, {"dol", "dol_dump"},
-        {"rel", "rel_dump"}, {"tpl", "tpl_out"}
-};
-
-static std::map<std::string, int> commands = {
-        {"decomp", 1}, {"dump", 2}, {"recomp", 3}, {"rel", 4}, {"dol", 5}, {"tpl", 6}
-};
-
 int main(int argc, char **argv) {
     ArgParser parser = ArgParser(argc, argv);
 
@@ -268,7 +271,7 @@ int main(int argc, char **argv) {
     } else {
         logging::set_default_level(logging::INFO);
     }
-	
+    
     std::string input, output = "out";
     if (parser.num_arguments() >= 2) {
         input = parser.get_argument(1);
@@ -286,23 +289,14 @@ int main(int argc, char **argv) {
         }
     }
     
-    int command = commands[parser.get_argument(0)];
-    
-    switch (command) {
-        case 1:
-            return command_decomp(input, output);
-        case 2:
-            return command_dump(input, output, parser);
-        case 3:
-            return command_recomp(input, output);
-        case 4:
-            return command_rel(input, output, parser);
-        case 5:
-            return command_dol(input, output, parser);
-        case 6:
-            return command_tpl(input, output, parser);
-        default:
-            std::cout << "Unrecognized Subcommand" << std::endl;
-            return 1;
+    std::string command_name = parser.get_argument(0);
+    if (commands.count(command_name)) {
+        command_handler command = commands[command_name];
+        return command(input, output, parser);
+    } else {
+        std::cout << "Unrecognized Subcommand" << std::endl;
+        return 1;
     }
+    
+    return 0;
 }

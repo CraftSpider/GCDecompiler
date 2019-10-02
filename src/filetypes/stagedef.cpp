@@ -26,8 +26,8 @@ STAGEDEF::STAGEDEF(const std::string &filename) {
     collision_offset = util::next_uint(input);
     start_pos_offset = util::next_uint(input);
     fallout_plane_offset = util::next_uint(input);
-    num_goals = util::next_uint(input);
-    goals_offset = util::next_uint(input);
+    uint num_goals = util::next_uint(input);
+    uint goals_offset = util::next_uint(input);
     num_bumpers = util::next_uint(input);
     bumper_offset = util::next_uint(input);
     num_jamabars = util::next_uint(input);
@@ -53,7 +53,7 @@ STAGEDEF::STAGEDEF(const std::string &filename) {
     reflective_offset = util::next_uint(input);
     util::next_long(input, 12); // Unknown/Null
     num_model_instances = util::next_uint(input);
-    model_offset = util::next_uint(input);
+    model_instances_offset = util::next_uint(input);
     num_models_a = util::next_uint(input);
     models_a_offset = util::next_uint(input);
     num_models_b = util::next_uint(input);
@@ -73,222 +73,138 @@ STAGEDEF::STAGEDEF(const std::string &filename) {
     
     logger->trace("Read start pos");
     input.seekg(start_pos_offset);
-    starts = new StartPos[1];
-    StartPos start {};
-    start.x_pos = util::next_float(input);
-    start.y_pos = util::next_float(input);
-    start.z_pos = util::next_float(input);
-    start.x_rot = util::next_ushort(input);
-    start.y_rot = util::next_ushort(input);
-    start.z_rot = util::next_ushort(input);
-    starts[0] = start;
+    start = StartPos();
+    start.read(input);
     
     logger->trace("Read fallout plane");
     input.seekg(fallout_plane_offset);
-    FalloutPlane plane {};
-    plane.y_pos = util::next_float(input);
-    fallout_plane = plane;
+    fallout_plane = FalloutPlane();
+    fallout_plane.read(input);
     
     logger->trace("Read goal list");
     input.seekg(goals_offset);
-    goals = new Goal[num_goals];
     for (uint i = 0; i < num_goals; ++i) {
-        Goal goal {};
-        goal.x_pos = util::next_float(input);
-        goal.y_pos = util::next_float(input);
-        goal.z_pos = util::next_float(input);
-        goal.x_rot = util::next_ushort(input);
-        goal.y_rot = util::next_ushort(input);
-        goal.z_rot = util::next_ushort(input);
-        goal.type = util::next_ushort(input);
-        goals[i] = goal;
+        this->_load_obj(input, this->goals);
     }
     
     logger->trace("Read bumper list");
     input.seekg(bumper_offset);
-    bumpers = new Bumper[num_bumpers];
     for (uint i = 0; i < num_bumpers; ++i) {
-        Bumper bumper {};
-        bumper.x_pos = util::next_float(input);
-        bumper.y_pos = util::next_float(input);
-        bumper.z_pos = util::next_float(input);
-        bumper.x_rot = util::next_ushort(input);
-        bumper.y_rot = util::next_ushort(input);
-        bumper.z_rot = util::next_ushort(input);
-        util::next_ushort(input);
-        bumper.x_scale = util::next_float(input);
-        bumper.y_scale = util::next_float(input);
-        bumper.z_scale = util::next_float(input);
-        bumpers[i] = bumper;
+        this->_load_obj(input, this->bumpers);
     }
     
     logger->trace("Read jamabar list");
     input.seekg(jamabar_offset);
-    jamabars = new Jamabar[num_jamabars];
     for (uint i = 0; i < num_jamabars; ++i) {
-        Jamabar jamabar {};
-        jamabar.x_pos = util::next_float(input);
-        jamabar.y_pos = util::next_float(input);
-        jamabar.z_pos = util::next_float(input);
-        jamabar.x_rot = util::next_ushort(input);
-        jamabar.y_rot = util::next_ushort(input);
-        jamabar.z_rot = util::next_ushort(input);
-        util::next_ushort(input);
-        jamabar.x_scale = util::next_float(input);
-        jamabar.y_scale = util::next_float(input);
-        jamabar.z_scale = util::next_float(input);
-        jamabars[i] = jamabar;
+        this->_load_obj(input, this->jamabars);
     }
     
     logger->trace("Read banana list");
     input.seekg(banana_offset);
-    bananas = new Banana[num_bananas];
     for (uint i = 0; i < num_bananas; ++i) {
-        Banana banana {};
-        banana.x_pos = util::next_float(input);
-        banana.y_pos = util::next_float(input);
-        banana.z_pos = util::next_float(input);
-        banana.type = util::next_uint(input);
-        bananas[i] = banana;
+        this->_load_obj(input, this->bananas);
     }
     
     logger->trace("Read cone collision objects");
     input.seekg(cone_offset);
-    cones = new ConeCollision[num_cones];
     for (uint i = 0; i < num_cones; ++i) {
-        ConeCollision cone {};
-        cone.x_pos = util::next_float(input);
-        cone.y_pos = util::next_float(input);
-        cone.z_pos = util::next_float(input);
-        cone.x_rot = util::next_ushort(input);
-        cone.y_rot = util::next_ushort(input);
-        cone.z_rot = util::next_ushort(input);
-        util::next_ushort(input);
-        cone.radius = util::next_float(input);
-        cone.height = util::next_float(input);
-        util::next_float(input); // Radius again?
-        cones[i] = cone;
+        this->_load_obj(input, this->cones);
     }
     
     logger->trace("Read sphere collision objects");
     input.seekg(sphere_offset);
-    spheres = new SphereCollision[num_spheres];
     for (uint i = 0; i < num_cones; ++i) {
-        SphereCollision sphere {};
-        sphere.x_pos = util::next_float(input);
-        sphere.y_pos = util::next_float(input);
-        sphere.z_pos = util::next_float(input);
-        sphere.radius = util::next_float(input);
-        util::next_uint(input); // Unknown/Null
-        spheres[i] = sphere;
+        this->_load_obj(input, this->spheres);
     }
     
     logger->trace("Read cylinder collision objects");
     input.seekg(cylinder_offset);
-    cylinders = new CylinderCollision[num_cylinders];
     for (uint i = 0; i < num_cylinders; ++i) {
-        CylinderCollision cylinder {};
-        cylinder.x_pos = util::next_float(input);
-        cylinder.y_pos = util::next_float(input);
-        cylinder.z_pos = util::next_float(input);
-        cylinder.radius = util::next_float(input);
-        cylinder.height = util::next_float(input);
-        cylinder.x_rot = util::next_ushort(input);
-        cylinder.y_rot = util::next_ushort(input);
-        cylinder.z_rot = util::next_ushort(input);
-        util::next_ushort(input);
-        cylinders[i] = cylinder;
+        this->_load_obj(input, this->cylinders);
     }
     
     logger->trace("Read fallout volume list");
     input.seekg(fallouts_offset);
-    fallout_volumes = new FalloutVolume[num_fallouts];
     for (uint i = 0; i < num_fallouts; ++i) {
-        FalloutVolume fallout {};
-        fallout.center_x = util::next_float(input);
-        fallout.center_y = util::next_float(input);
-        fallout.center_z = util::next_float(input);
-        fallout.x_size = util::next_float(input);
-        fallout.y_size = util::next_float(input);
-        fallout.z_size = util::next_float(input);
-        fallout.x_rot = util::next_ushort(input);
-        fallout.y_rot = util::next_ushort(input);
-        fallout.z_rot = util::next_ushort(input);
-        util::next_ushort(input);
-        fallout_volumes[i] = fallout;
+        this->_load_obj(input, this->fallout_volumes);
     }
     
     logger->trace("Read background models list");
-    // TODO
+    input.seekg(background_offset);
+    for (uint i = 0; i < num_backgrounds; ++i) {
+        this->_load_obj(input, this->backgrounds);
+    }
     
     logger->trace("Read unknown8s list");
     // TODO
     
     logger->trace("Read reflective models list");
-    // TODO
+    input.seekg(reflective_offset);
+    for (uint i = 0; i < num_reflective; ++i) {
+        this->_load_obj(input, this->reflective_models);
+    }
     
     logger->trace("Read level model instances list");
-    // TODO
+    input.seekg(model_instances_offset);
+    for (uint i = 0; i < num_model_instances; ++i) {
+        this->_load_obj(input, this->model_instances);
+    }
     
     logger->trace("Read level model pointers A list");
-    // TODO
+    input.seekg(models_a_offset);
+    for (uint i = 0; i < num_models_a; ++i) {
+        this->_load_obj(input, this->level_pointer_As);
+    }
     
     logger->trace("Read level model pointers B list");
-    // TODO
+    input.seekg(models_b_offset);
+    for (uint i = 0; i < num_models_b; ++i) {
+        this->_load_obj(input, this->level_pointer_Bs);
+    }
     
     logger->trace("Read switches list");
     input.seekg(switch_offset);
-    switches = new Switch[num_switches];
     for (uint i = 0; i < num_switches; ++i) {
-        Switch s {};
-        s.x_pos = util::next_float(input);
-        s.y_pos = util::next_float(input);
-        s.z_pos = util::next_float(input);
-        s.x_rot = util::next_ushort(input);
-        s.y_rot = util::next_ushort(input);
-        s.z_rot = util::next_ushort(input);
-        s.type = util::next_ushort(input);
-        s.anim_ids = util::next_ushort(input);
-        util::next_ushort(input);
-        switches[i] = s;
+        this->_load_obj(input, this->switches);
     }
     
     logger->trace("Read fog animation header");
+    if (fog_anim_offset != 0) {
+        input.seekg(fog_anim_offset);
+        fog_anim_header = new FogAnimationHeader {};
+        fog_anim_header->read(input);
+    }
     
     logger->trace("Read wormhole list");
     input.seekg(wormhole_offset);
-    wormholes = new Wormhole[num_wormholes];
     for (uint i = 0; i < num_wormholes; ++i) {
-        Wormhole wormhole {};
-        if (util::next_uint(input) != 1)
-            logger->warn("Malformed wormhole entry, file may be invalid");
-        wormhole.offset = (uint)input.tellg();
-        wormhole.x_pos = util::next_float(input);
-        wormhole.y_pos = util::next_float(input);
-        wormhole.z_pos = util::next_float(input);
-        wormhole.x_rot = util::next_ushort(input);
-        wormhole.y_rot = util::next_ushort(input);
-        wormhole.z_rot = util::next_ushort(input);
-        util::next_ushort(input);
-        wormhole.destination = (Wormhole*)(ulong)util::next_uint(input);
-        wormholes[i] = wormhole;
-    }
-    for (uint i = 0; i < num_wormholes; ++i) {
-        ulong offset = (ulong)wormholes[i].destination;
-        for (uint j = 0; j < num_wormholes; ++j) {
-            if (wormholes[j].offset == offset) {
-                wormholes[i].destination = &wormholes[j];
-            }
-        }
+        this->_load_obj(input, this->wormholes);
     }
     
     logger->trace("Read fog");
-    // TODO
+    if (fog_offset != 0) {
+        input.seekg(fog_offset);
+        fog = new Fog {};
+    }
     
     logger->trace("Read unknown3");
     // TODO
     
     logger->debug("Finished parsing STAGEDEF");
+}
+
+std::string* STAGEDEF::_load_model_name(std::iostream& input, uint offset) {
+    static std::map<uint, std::string*> names;
+    
+    if (!names.count(offset)) {
+        size_t pos = input.tellg();
+        input.seekg(offset);
+        model_names.emplace_back(util::next_string(input));
+        names[offset] = &model_names.back();
+        input.seekg(pos);
+    }
+    
+    return names[offset];
 }
 
 }
