@@ -50,6 +50,6 @@ void test_condition() {
 }
 
 void run_instructions_tests() {
-    TEST_CLASS(TestInstruction)
+    TEST(TestInstruction())
     TEST(test_condition)
 }

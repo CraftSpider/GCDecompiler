@@ -1,6 +1,20 @@
 @echo off
 setlocal enableextensions enabledelayedexpansion
 
+SET VS_LOC=""
+
+IF %VS_LOC%=="" (
+    SET VS_LOC="%VS150COMNTOOLS%"
+)
+IF %VS_LOC%=="" (
+    SET VS_LOC="%VS140COMNTOOLS%"
+)
+
+CALL %VS_LOC%"\VsDevCmd.bat"
+IF %errorlevel% neq 0 (
+    ECHO Couldn't setup MSBuild
+    EXIT %errorlevel%
+)
 SET SRC_DIR=%cd%
 
 :: Because batch is a stupid language

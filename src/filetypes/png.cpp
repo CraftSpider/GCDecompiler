@@ -257,7 +257,7 @@ void PNG::save(const std::string &filename) {
     
     std::fstream output = std::fstream(filename, ios::out | ios::binary);
     
-    output.write(magic, magic_len);
+    output.write((char*)magic, magic_len);
     
     // Write out header
     logger->trace("Writing header");

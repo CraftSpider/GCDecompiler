@@ -56,7 +56,7 @@ class PNG : public SingleImageType {
 public:
     
     constexpr static uint magic_len = 8;
-    constexpr static char magic[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+    constexpr static uchar magic[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
     
     ColorType color_type;
     uchar bit_depth, compression, filter, interlace;

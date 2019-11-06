@@ -89,5 +89,5 @@ void TestBlockParsers::run() {
 }
 
 void run_tpl_tests() {
-    TEST_CLASS(TestBlockParsers)
+    TEST(TestBlockParsers())
 }

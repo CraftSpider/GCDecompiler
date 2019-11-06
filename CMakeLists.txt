@@ -13,9 +13,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 #Be really pedantic! Also make sure we use unsigned chars
 if(MSVC)
-    add_definitions(-W4 -J)
+    add_definitions(-W4)
 else()
-    add_definitions(-Wall -Wextra -pedantic -funsigned-char)
+    add_definitions(-Wall -Wextra -pedantic)
 endif()
 
 #Show as an executable, not a shared library in file managers

@@ -18,15 +18,41 @@ Symbol::Symbol(ulong start, ulong end, const std::string& name) {
     this->start = start;
     this->end = end;
     this->name = name;
-    this->r_input = std::set<uchar>();
+    
+    this->r_input = std::set<Register>();
+    this->inputs_made = false;
 }
 
-void Symbol::add_input(const Register& reg) {
-    if (reg.type == Register::REGULAR) {
-        r_input.insert(reg.number);
-    } else if (reg.type == Register::FLOAT) {
-        fr_input.insert(reg.number);
+void Symbol::gen_inputs() {
+    std::set<Register> seen_dests;
+    
+    for (auto i : instructions) {
+        for (auto r : i->source_registers()) {
+            if (!seen_dests.count(r)) {
+                if (r.type == Register::REGULAR) {
+                    r_input.emplace(r);
+                } else if (r.type == Register::FLOAT) {
+                    fr_input.emplace(r);
+                }
+                seen_dests.emplace(r);
+            }
+        }
+        
+        Register r = i->destination_register();
+        seen_dests.emplace(r);
     }
+}
+
+const std::set<Register>& Symbol::get_input_regular() {
+    if (!inputs_made)
+        gen_inputs();
+    return this->r_input;
+}
+
+const std::set<Register>& Symbol::get_input_float() {
+    if (!inputs_made)
+        gen_inputs();
+    return this->fr_input;
 }
 
 std::vector<Symbol> generate_symbols(const std::string& file_in, int start, int end) {
@@ -40,6 +66,7 @@ std::vector<Symbol> generate_symbols(const std::string& file_in, int start, int 
     }
     
     std::vector<Symbol> out = std::vector<Symbol>();
+    std::vector<Instruction*> cur_instructions = std::vector<Instruction*>();
     uint sym_start = start, sym_end = 0, position = start;
     uchar inst[4];
     bool skip_padding = true;
@@ -64,31 +91,31 @@ std::vector<Symbol> generate_symbols(const std::string& file_in, int start, int 
             
             name << std::hex << sym_start - start;
             Symbol symb = Symbol(sym_start, sym_end, name.str());
+            symb.instructions = std::move(cur_instructions);
             out.emplace_back(symb);
             
             sym_start = position + 4;
+            cur_instructions = std::vector<Instruction*>();
             skip_padding = true;
         } else if (instruction->code_name() == "PADDING" && skip_padding) {
             sym_start += 4;
         } else {
+            cur_instructions.emplace_back(instruction);
             skip_padding = false;
         }
         
         position += 4;
-        
-        delete instruction;
     }
     
     logger->info("Symbol generation complete");
     return out;
 }
 
-void generate_inputs(const std::string& file_in, std::vector<Symbol>& symbols) {
-    
-    std::fstream input(file_in, ios::binary | ios::in);
+void generate_inputs(std::vector<Symbol>& symbols) {
     
     for (auto& symbol : symbols) {
         // Go through each instruction, find its inputs
+        
     }
 }
 

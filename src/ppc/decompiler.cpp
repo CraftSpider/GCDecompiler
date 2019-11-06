@@ -34,10 +34,39 @@ void decompile(const std::string& file_in, const std::string& file_out, int star
     // New way
     
     std::vector<Symbol> symbols = generate_symbols(file_in, start, end);
+    generate_inputs(symbols);
     
     for (auto& symbol : symbols) {
         logger->debug(symbol.name);
-        // TODO
+        
+        bool start = true;
+        
+        output << "void " << symbol.name << "(";
+        for (auto r : symbol.get_input_regular()) {
+            if (!start) {
+                output << ", ";
+            } else {
+                start = false;
+            }
+            output << "int32_t r" << r.number;
+        }
+        for (auto r : symbol.get_input_float()) {
+            if (!start) {
+                output << ", ";
+            } else {
+                start = false;
+            }
+            output << "float fr" << r.number;
+        }
+        output << ") {\n";
+        
+        for (auto i : symbol.instructions) {
+//            if (i->code_name() == "bl") {
+//                output << "" << ";";
+//            }
+        }
+        
+        output << "}\n";
     }
     
     // Old way
