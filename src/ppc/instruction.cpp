@@ -1,11 +1,9 @@
 
-#include <sstream>
 #include <iostream>
 #include <cctype>
 
 #include "at_logging"
 #include "at_utils"
-#include "format.h"
 #include "ppc/codes.h"
 #include "ppc/instruction.h"
 #include "ppc/register.h"
@@ -89,7 +87,7 @@ std::string Instruction::get_variables() {
     if (this->pattern.empty()) {
         return "FIX ME";
     }
-    return format(this->pattern, this->instruction);
+    return util::format(this->pattern, this->instruction);
 }
 
 std::set<Register> Instruction::used_registers() {

@@ -1,4 +1,5 @@
 
+#include <fstream>
 #include <at_tests>
 
 #include "datatypes/color.h"
@@ -39,6 +40,10 @@ void TestBlockParsers::test_parse_i4() {
     
     types::PNG png = types::PNG(types::Image(8, 8, data));
     png.save("./test_i4.png");
+    
+    std::ifstream good("./resources/test_i4.png");
+    std::ifstream output("./test_i4.png");
+    testing::assert_files_equal(output, good);
 }
 
 void TestBlockParsers::test_parse_i8() {
@@ -59,6 +64,10 @@ void TestBlockParsers::test_parse_rgb565() {
     
     types::PNG png = types::PNG(types::Image(4, 4, data));
     png.save("./test_rgb565.png");
+    
+    std::ifstream good("./resources/test_rgb565.png");
+    std::ifstream output("./test_rgb565.png");
+    testing::assert_files_equal(output, good);
 }
 
 void TestBlockParsers::test_parse_rgb5A3() {
@@ -78,6 +87,10 @@ void TestBlockParsers::test_parse_cmpr() {
     
     types::PNG png = types::PNG(types::Image(8, 8, data));
     png.save("./test_cmpr.png");
+    
+    std::ifstream good("./resources/test_cmpr.png");
+    std::ifstream output("./test_cmpr.png");
+    testing::assert_files_equal(output, good);
 }
 
 void TestBlockParsers::run() {

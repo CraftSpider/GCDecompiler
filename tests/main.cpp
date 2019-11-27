@@ -20,5 +20,9 @@ int main(int argc, char** argv) {
     TEST_FILE(registers)
     TEST_FILE(symbols)
     
-    return testing::run_tests("GCDecompiler") & 0b011;
+    int result = (int)(testing::run_tests("GCDecompiler") & 0b011u);
+    
+    testing::teardown_tests();
+    
+    return result;
 }

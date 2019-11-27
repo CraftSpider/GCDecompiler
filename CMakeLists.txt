@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(GCDecompiler)
 
+include(AlphaTest.cmake)
+
 #Add uninstall target
 configure_file("cmake/uninstall.cmake" "cmake/uninstall.cmake" COPYONLY)
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "cmake/uninstall.cmake")
@@ -29,66 +31,18 @@ endif(UNIX)
 include_directories(include)
 include_directories(libs/include)
 
-set(HEADERS
-        include/gcd_main.h
-        include/enums.h
-        include/import.h
-        include/relocation.h
-        include/section.h
-        include/datatypes/color.h
-        include/datatypes/image.h
-        include/filetypes/dol.h
-        include/filetypes/lz.h
-        include/filetypes/rel.h
-        include/filetypes/tpl.h
-        include/filetypes/png.h
-        include/filetypes/imagetype.h
-        include/filetypes/stagedef.h
-        include/ppc/ppc_reader.h
-        include/ppc/codes.h
-        include/ppc/instruction.h
-        include/ppc/register.h
-        include/ppc/symbol.h
-        include/ppc/disassembler.h include/ppc/decompiler.h include/datatypes/stageobjects.h)
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS include/*.h)
+file(GLOB_RECURSE TEMPLATES CONFIGURE_DEPENDS include/*.tpp)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
-set(TEMPLATES
-        include/filetypes/imagetype.tpp)
-
-set(SOURCES
-        src/import.cpp
-        src/relocation.cpp
-        src/section.cpp
-        src/datatypes/color.cpp
-        src/datatypes/image.cpp
-        src/filetypes/dol.cpp
-        src/filetypes/lz.cpp
-        src/filetypes/rel.cpp
-        src/filetypes/tpl.cpp
-        src/filetypes/png.cpp
-        src/filetypes/imagetype.cpp
-        src/filetypes/stagedef.cpp
-        src/ppc/ppc_reader.cpp
-        src/ppc/instruction.cpp
-        src/ppc/register.cpp
-        src/ppc/symbol.cpp
-        src/ppc/disassembler.cpp src/ppc/decompiler.cpp src/datatypes/stageobjects.cpp)
-
-set(TEST_HEADERS
-        test/datatypes/test_color.h
-        test/ppc/test_instructions.h
-        test/ppc/test_registers.h
-        test/ppc/test_symbols.h test/filetypes/test_tpl.h test/filetypes/test_png.h)
-
-set(TEST_SOURCES
-        test/main.cpp
-        test/datatypes/test_color.cpp
-        test/ppc/test_instructions.cpp
-        test/ppc/test_registers.cpp
-        test/ppc/test_symbols.cpp test/filetypes/test_tpl.cpp test/filetypes/test_png.cpp)
+file(GLOB_RECURSE TEST_HEADERS CONFIGURE_DEPENDS tests/*.h)
+file(GLOB_RECURSE TEST_TEMPLATES CONFIGURE_DEPENDS tests/*.tpp)
+file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS tests/*.cpp)
 
 set(ALL_CODE ${HEADERS} ${TEMPLATES} ${SOURCES})
+set(ALL_TEST ${TEST_HEADERS} ${TEST_TEMPLATES} ${TEST_SOURCES})
 
-set(ALL_TEST ${TEST_HEADERS} ${TEST_SOURCES})
+list(REMOVE_ITEM ALL_CODE ${CMAKE_SOURCE_DIR}/src/gcd_main.cpp)
 
 add_executable(${PROJECT_NAME} ${ALL_CODE} src/gcd_main.cpp)
 add_executable(test_${PROJECT_NAME} ${ALL_CODE} ${ALL_TEST})
@@ -116,3 +70,5 @@ foreach(link ${TARGET_LINKS})
     target_link_libraries(${PROJECT_NAME} ${link})
     target_link_libraries(test_${PROJECT_NAME} ${link})
 endforeach()
+
+copy_test_resources(test_${PROJECT_NAME})
