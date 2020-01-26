@@ -46,7 +46,7 @@ void LZ::decompress() {
 
 //	uint file_size = btoi(compressed, datapos, datapos + 4, LITTLE);
 	datapos += 4;
-	uint data_size = util::btoi<LITTLE>(compressed, datapos, datapos + 4);
+	uint data_size = util::btoi<Endian::LITTLE>(compressed, datapos, datapos + 4);
 	datapos += 4;
 
 	uint mempos = 0;

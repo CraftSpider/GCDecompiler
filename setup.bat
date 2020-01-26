@@ -2,12 +2,36 @@
 setlocal enableextensions enabledelayedexpansion
 
 SET VS_LOC=""
+SET VS_VER=0
+SET VS_YEAR=""
 
 IF %VS_LOC%=="" (
     SET VS_LOC="%VS150COMNTOOLS%"
+    SET VS_VER=15
+    SET VS_YEAR=2017
 )
 IF %VS_LOC%=="" (
     SET VS_LOC="%VS140COMNTOOLS%"
+    SET VS_VER=14
+    SET VS_YEAR=2019
+)
+
+SET NUM=16
+FOR %%Y in (2019 2017) DO (
+    SET _DIR="C:\Program Files (x86)\Microsoft Visual Studio\%%Y\Community\Common7\Tools"
+    IF exist !_DIR! (
+        SET VS_LOC=!_DIR!
+        SET VS_VER=!NUM!
+        SET VS_YEAR=%%Y
+        GOTO :loop_end
+    )
+    SET /a NUM -= 1
+)
+:loop_end
+
+IF %VS_LOC%=="" (
+ECHO Couldn't locate VS tooling
+EXIT 1
 )
 
 CALL %VS_LOC%"\VsDevCmd.bat"
@@ -32,7 +56,7 @@ GOTO MAIN
     cd "libs/%~2"
     ECHO Running CMake for %~2
     :: TODO: support x86 architecture?
-    cmake -G"Visual Studio 15 2017" -A x64 .
+    cmake -G"Visual Studio %VS_VER% %VS_YEAR%" -A x64 .
     msbuild "%~4.vcxproj"
     IF %errorlevel% neq 0 (
         ECHO MSbuild command failed

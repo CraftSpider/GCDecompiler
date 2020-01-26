@@ -98,7 +98,7 @@ Color parse_cmpr(const uchar *block, uchar pixel) {
     return palette[index];
 }
 
-void parse_image_data(std::fstream& input, ushort height, ushort width, uint offset, uint format, Color **image_data, const Endian& endian = BIG) {
+void parse_image_data(std::fstream& input, ushort height, ushort width, uint offset, uint format, Color **image_data, const Endian& endian = Endian::BIG) {
     logger->debug("Parsing " + format_names[format]);
     input.seekg(offset);
 
@@ -111,9 +111,9 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
     for (ushort i = 0; i < height; i += block_height) {
         for (ushort j = 0; j < width; j += block_width) {
             
-            if (endian == BIG) {
+            if (endian == Endian::BIG) {
                 input.read((char*)block, block_size);
-            } else if (endian == LITTLE && format == 14) { // This is a mess of weird math. Hate the xbox CMPR format.
+            } else if (endian == Endian::LITTLE && format == 14) { // This is a mess of weird math. Hate the xbox CMPR format.
                 if (i && !j) {
                     input.seekg((ulong)input.tellg() + width*2);
                 }
@@ -301,16 +301,16 @@ void WiiTPL::save(const std::string &filename) const {
 
 XboxTPL::XboxTPL(std::fstream &input) {
     // NOTE: Xbox TPL is in opposite endian to Wii and GC. Be careful.
-    num_images = util::next_uint<LITTLE>(input);
+    num_images = util::next_uint<Endian::LITTLE>(input);
     
     logger->trace("Building image table");
     image_table = std::vector<XboxImageTableEntry>();
     for (uint i = 0; i < num_images; ++i) {
-        uint format = util::next_uint<LITTLE>(input);
-        uint offset = util::next_uint<LITTLE>(input);
-        ushort width = util::next_ushort<LITTLE>(input);
-        ushort height = util::next_ushort<LITTLE>(input);
-        ushort mipmaps = util::next_ushort<LITTLE>(input);
+        uint format = util::next_uint<Endian::LITTLE>(input);
+        uint offset = util::next_uint<Endian::LITTLE>(input);
+        ushort width = util::next_ushort<Endian::LITTLE>(input);
+        ushort height = util::next_ushort<Endian::LITTLE>(input);
+        ushort mipmaps = util::next_ushort<Endian::LITTLE>(input);
         ushort check = util::next_ushort(input);
         if (check != 0x1234) {
             logger->warn("Invalid TPL check. TPL may not load.");
@@ -326,15 +326,15 @@ XboxTPL::XboxTPL(std::fstream &input) {
         input.seekg(entry.offset);
         
         XboxImageHeader head {};
-        head.format = util::next_uint<LITTLE>(input);
-        head.width = util::next_ushort<LITTLE>(input);
+        head.format = util::next_uint<Endian::LITTLE>(input);
+        head.width = util::next_ushort<Endian::LITTLE>(input);
         util::next_ushort(input);
-        head.height = util::next_ushort<LITTLE>(input);
+        head.height = util::next_ushort<Endian::LITTLE>(input);
         util::next_ushort(input);
-        head.mipmaps = util::next_uint<LITTLE>(input);
-        head.compression = util::next_uint<LITTLE>(input);
-        head.uncompressed_size = util::next_uint<LITTLE>(input);
-        head.unknown_length = util::next_uint<LITTLE>(input);
+        head.mipmaps = util::next_uint<Endian::LITTLE>(input);
+        head.compression = util::next_uint<Endian::LITTLE>(input);
+        head.uncompressed_size = util::next_uint<Endian::LITTLE>(input);
+        head.unknown_length = util::next_uint<Endian::LITTLE>(input);
         util::next_uint(input);
         
         if (head.compression) {
@@ -348,7 +348,7 @@ XboxTPL::XboxTPL(std::fstream &input) {
         Color** image_data = new Color*[entry.height];
         for (ushort i = 0; i < entry.height; ++i)
             image_data[i] = new Color[entry.width];
-        parse_image_data(input, entry.height, entry.width, entry.offset + 32, entry.format, image_data, LITTLE);
+        parse_image_data(input, entry.height, entry.width, entry.offset + 32, entry.format, image_data, Endian::LITTLE);
         
         Image *image = new Image(entry.height, entry.width, image_data);
         images.push_back(image);
