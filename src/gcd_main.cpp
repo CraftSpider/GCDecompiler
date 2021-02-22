@@ -210,7 +210,7 @@ int command_tpl(const std::string& input, const std::string& output, ArgParser& 
     return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
     ArgParser parser = ArgParser(argc, argv);
 
 	if (parser.num_arguments() == 0 && parser.has_flag("help")) {

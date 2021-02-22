@@ -21,7 +21,7 @@ and spitting out human readable assembly and data about them.
 
 GCD is designed to build and import its own dependencies, simply run the `setup.sh` file in the root directory and the project will set itself up. Note that only Native Unix, Cygwin, and WSL have been formally tested. If there are problems on any other system, please report it in issues.
 
-Once the project has been set up, simply run `make` to compile the program. By default this will compile both the gcd and test_gcd executables. gcd is the command line tool, test_gcd runs the built-in tests.
+Once the project has been set up, simply run `cmake .` then `make` to compile the program. By default this will compile both the gcd and test_gcd executables. gcd is the command line tool, test_gcd runs the built-in tests.
 
 ### Functionality
 
