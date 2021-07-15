@@ -11,6 +11,7 @@ and spitting out human readable assembly and data about them.
 
 - CMake 3.10 or later
 - Make
+- Git
 - Unix:
   - GCC or similar compiler
 - Windows:
