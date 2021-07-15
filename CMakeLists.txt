@@ -52,7 +52,10 @@ install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "gcd")
 set_target_properties(test_${PROJECT_NAME} PROPERTIES OUTPUT_NAME "test_gcd")
 
-# Add various target link libraries
+if(UNIX)
+    # Add various target link libraries
+    target_link_libraries(${PROJECT_NAME} z)
+endif(UNIX)
 
 if(WIN32 OR CYGWIN)
     file(GLOB files "${CMAKE_SOURCE_DIR}/libs/*.lib")
