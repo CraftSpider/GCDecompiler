@@ -23,7 +23,7 @@ function cmake_build {
     cmake -G"Unix Makefiles" .
     echo "Running Make for $2"
     make $4
-    cd ${src_dir}
+    cd "${src_dir}"
 }
 
 function copy_headers {

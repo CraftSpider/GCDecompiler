@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 17)
 #Export compile commands for editor autocomplete
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-#Be really pedantic! Also make sure we use unsigned chars
+#Be really pedantic!
 if(MSVC)
     add_definitions(-W4)
 else()

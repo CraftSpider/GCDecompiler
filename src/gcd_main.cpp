@@ -97,7 +97,7 @@ int command_decomp(const std::string& input, const std::string& output, ArgParse
 			std::stringstream name;
 			name << output << "/Section" << sect->id << ".c";
 			// TODO: do relocations on each REL
-			PPC::decompile(main->filename, name.str(), sect->offset, sect->offset + sect->length);
+			PPC::decompile(main->filename, name.str(), (sint)sect->offset, (sint)(sect->offset + sect->length));
 		}
 	}
     
@@ -232,11 +232,12 @@ int main(int argc, const char **argv) {
         std::cout << "Expected subcommand. Valid subcommands:\n";
         std::cout << "  ";
         std::stringstream stream;
-        for (auto name : commands) {
+        for (const auto& name : commands) {
             stream << name.first << ", ";
         }
         std::cout << stream.str().substr(0, stream.str().size() - 2);
         std::cout << std::flush;
+        return 1;
     } else if (parser.has_flag("help")) {
         std::string subcom = parser.get_argument(0);
         std::stringstream usage;

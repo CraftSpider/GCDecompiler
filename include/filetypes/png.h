@@ -38,6 +38,8 @@ struct Chunk {
     Chunk(const Chunk& chunk);
     ~Chunk();
     
+    Chunk& operator=(const Chunk&) = default;
+    
     bool operator==(const Chunk& other) const;
     
     uint crc();
