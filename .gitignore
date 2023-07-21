@@ -18,8 +18,11 @@ Makefile
 *Debug/
 *Release/
 *-build-*/
+target/
 gcd
 test_gcd
+target
+!crates/gcd
 
 # ISO Files and Output
 *root/

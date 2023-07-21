@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/gcd",
+    "crates/gcd-tpl",
+    "crates/gcd-utils",
+]

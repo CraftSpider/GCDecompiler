@@ -13,20 +13,20 @@ using std::string;
 // Forward reference
 class PNG;
 
-static std::map<int, string> format_names = {
+static std::map<uint, string> format_names = {
         {0, "I4"}, {1, "I8"}, {2, "IA4"}, {3, "IA8"}, {4, "RGB565"}, {5, "RGB5A3"}, {6, "RGBA32"}, {8, "C4"}, {9, "C8"},
         {10, "C14x2"}, {14, "CMPR"}
 };
 
-static std::map<int, uchar> bits_per_pixel = {
+static std::map<uint, uchar> bits_per_pixel = {
         {0, 4}, {1, 8}, {2, 8}, {3, 16}, {4, 16}, {5, 16}, {6, 32}, {8, 4}, {9, 8}, {10, 16}, {14, 4}
 };
 
-static std::map<int, uchar> format_heights = {
+static std::map<uint, uchar> format_heights = {
         {0, 8}, {1, 4}, {2, 4}, {3, 4}, {4, 4}, {5, 4}, {6, 4}, {8, 8}, {9, 4}, {10, 4}, {14, 8}
 };
 
-static std::map<int, uchar> format_widths = {
+static std::map<uint, uchar> format_widths = {
         {0, 8}, {1, 8}, {2, 8}, {3, 4}, {4, 4}, {5, 4}, {6, 4}, {8, 8}, {9, 8}, {10, 4}, {14, 8}
 };
 

@@ -61,7 +61,7 @@ Color parse_rgb5A3(const uchar *block, uchar pixel) {
 Color parse_cmpr(const uchar *block, uchar pixel) {
     // TODO: Static palette based on block pointer
     // Determine block
-    uchar bl_pos = (uchar)(pixel % 8 > 3 ? 1 : 0);
+    uchar bl_pos = pixel % 8 > 3 ? 1 : 0;
     if (pixel > 31) {
         bl_pos += 2;
     }
@@ -115,14 +115,14 @@ void parse_image_data(std::fstream& input, ushort height, ushort width, uint off
                 input.read((char*)block, block_size);
             } else if (endian == Endian::LITTLE && format == 14) { // This is a mess of weird math. Hate the xbox CMPR format.
                 if (i && !j) {
-                    input.seekg((ulong)input.tellg() + width*2);
+                    input.seekg((slong)input.tellg() + width*2);
                 }
                 input.read((char*)block, block_size / 2);
-                input.seekg((ulong)input.tellg() + width*2 - block_size/2);
+                input.seekg((slong)input.tellg() + width*2 - block_size/2);
                 input.read((char*)block + block_size / 2, block_size / 2);
-                input.seekg((ulong)input.tellg() - (width*2 - block_size/2 + block_size / 2));
+                input.seekg((slong)input.tellg() - (width*2 - block_size/2 + block_size / 2));
                 if (j % 2) {
-                    input.seekg((ulong)input.tellg() + block_size);
+                    input.seekg((slong)input.tellg() + block_size);
                 }
                 
                 uchar *new_block = new uchar[block_size];

@@ -131,7 +131,7 @@ PNG::PNG(const std::string &filename) {
     Color **image_data = nullptr;
     
     if (util::next_ulong(input) != PNG_MAGIC) {
-        logger->warn("PNG magic doesn't match expected, file is likely corrupted or wrong type.");
+        logger->warn("PNG magic doesn_'t match expected, file is likely corrupted or wrong type.");
     }
     
     bool first = true;
