@@ -16,7 +16,7 @@ pub mod combinator;
 pub mod primitives;
 
 use std::marker::PhantomData;
-use gcd_utils::tlist::{Node, TList};
+use gcd_utils::tlist::{Node, Null, TList};
 use crate::{
     error::ParseError,
     parse::FileCtx,
@@ -24,12 +24,15 @@ use crate::{
     combinator::*,
 };
 
-pub trait Reader {
+pub trait Reader<L: TList> {
     type Output;
 
-    fn go(&self, ctx: &mut FileCtx<'_>) -> Result<Self::Output, ParseError>;
+    fn go(&self, ctx: &mut FileCtx<'_, L>) -> Result<Self::Output, ParseError>;
 
-    fn parse(&self, mut file: ParseFile) -> Result<Self::Output, ParseError> {
+    fn parse(&self, mut file: ParseFile) -> Result<<Self as Reader<Null>>::Output, ParseError> 
+    where
+        Self: Reader<Null>,
+    {
         let mut ctx = FileCtx::new(&mut file);
         let out = self.go(&mut ctx)?;
         file.finish()?;
@@ -52,7 +55,7 @@ pub trait Reader {
     ) -> And<Self, R>
     where
         Self: Sized,
-        R: Reader,
+        R: Reader<L>,
     {
         And {
             first: self,
@@ -60,15 +63,15 @@ pub trait Reader {
         }
     }
     
-    fn jump_and<A, R>(
+    fn jump_and<'a, A, R>(
         self,
         pos: A,
         second: R,
     ) -> JumpAnd<Self, R, A>
     where
         Self: Sized,
-        A: for<'a> Action<Output<'a> = usize>,
-        R: Reader,
+        A: Action<'a, L, Output = usize>,
+        R: Reader<L>,
     {
         JumpAnd {
             first: self,
@@ -95,11 +98,11 @@ pub trait Reader {
         }
     }
     
-    fn map_with<T, A, F>(self, action: A, func: F) -> MapWith<Self, A, F, T>
+    fn map_with<'a, T, A, F>(self, action: A, func: F) -> MapWith<Self, A, F, T>
     where
         Self: Sized,
-        A: Action,
-        F: Fn(Self::Output, A::Output<'_>) -> T,
+        A: Action<'a, L>,
+        F: Fn(Self::Output, A::Output) -> T,
     {
         MapWith {
             inner: self,
@@ -115,7 +118,7 @@ pub trait Reader {
     ) -> Retrieve<Self, A, T>
     where
         Self: Sized,
-        A: for<'a> Action<Output<'a> = T>,
+        A: for<'a> Action<'a, L, Output = T>,
     {
         Retrieve {
             inner: self,
@@ -125,15 +128,15 @@ pub trait Reader {
     }
 }
 
-pub trait Action {
-    type Output<'a>;
+pub trait Action<'a, L: TList> {
+    type Output;
     
-    fn go<'a>(&self, ctx: &'a FileCtx<'_>) -> Result<Self::Output<'a>, ParseError>;
+    fn go(&self, ctx: &'a FileCtx<'_, L>) -> Result<Self::Output, ParseError>;
     
     fn map<T, F>(self, func: F) -> Map<Self, F>
     where
         Self: Sized,
-        F: Fn(Self::Output<'_>) -> T,
+        F: Fn(Self::Output) -> T,
     {
         Map {
             inner: self,
@@ -156,17 +159,10 @@ pub trait Action {
     }
 }
 
-pub trait StaticAction<T>: for<'a> Action<Output<'a> = T> {}
+impl<'a, L: TList> Action<'a, L> for () {
+    type Output = ();
 
-impl<A, T> StaticAction<T> for A
-where
-    for<'a> A: Action<Output<'a> = T>
-{}
-
-impl Action for () {
-    type Output<'a> = ();
-
-    fn go<'a>(&self, _: &'a FileCtx<'_>) -> Result<Self::Output<'a>, ParseError> {
+    fn go(&self, _: &'a FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         Ok(())
     }
 }

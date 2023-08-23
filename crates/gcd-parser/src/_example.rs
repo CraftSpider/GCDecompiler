@@ -21,19 +21,19 @@ fn foo() {
     let section1 = todo::<Section1>();
     let section2 = todo::<Section2>();
 
-    let file = header
-        .memorize()
-        .jump_and(
-            memorized::<Header>().map(|h| h.pos1),
-            section1.repeated()
-                .exactly(memorized::<Header>().map(|h| h.len1))
-                .memorize(),
-        )
-        .jump_and(
-            memorized::<Header>().map(|h| h.pos2),
-            section2.memorize(),
-        )
-        .retrieve::<(), _>(
-            group((memorized::<Header>(), memorized::<Vec<Section1>>(), memorized::<Section2>())).map(|(h, sec1s, sec2)| todo!())
-        );
+    // let file = header
+    //     .memorize()
+    //     .jump_and(
+    //         memorized::<Header>().map(|h| h.pos1),
+    //         section1.repeated()
+    //             .exactly(memorized::<Header>().map(|h| h.len1))
+    //             .memorize(),
+    //     )
+    //     .jump_and(
+    //         memorized::<Header>().map(|h| h.pos2),
+    //         section2.memorize(),
+    //     )
+    //     .retrieve::<(), _>(
+    //         group((memorized::<Header>(), memorized::<Vec<Section1>>(), memorized::<Section2>())).map(|(h, sec1s, sec2)| todo!())
+    //     );
 }

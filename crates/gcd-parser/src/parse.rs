@@ -3,6 +3,7 @@ use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use gcd_utils::Endian;
+use gcd_utils::tlist::{Null, TList};
 use crate::consume::Consume;
 use crate::error::ParseError;
 use crate::file::ParseFile;
@@ -42,16 +43,20 @@ impl Borrow<TypeId> for Stored {
     }
 }
 
-pub struct FileCtx<'a> {
-    file: &'a mut ParseFile,
+pub struct FileCtx<'f, L> {
+    file: &'f mut ParseFile,
     memorized: HashSet<Stored>,
-    current: Option<Box<dyn Any>>,
+    current: L,
 }
 
-impl<'a> FileCtx<'a> {
-    pub(crate) fn new(file: &'a mut ParseFile) -> FileCtx<'a> {
-        FileCtx { file, memorized: HashSet::new(), current: None }
+impl<'f, 's> FileCtx<'f, Null> {
+    pub(crate) fn new(file: &'f mut ParseFile) -> FileCtx<'f, Null> {
+        FileCtx { file, memorized: HashSet::new(), current: Null }
     }
+}
+
+impl<'f, 's, L: TList> FileCtx<'f, L> {
+    
     
     pub(crate) fn consume<T: Consume>(&mut self, endian: Endian) -> Result<T, ParseError> {
         self.file.consume::<T>(endian)
@@ -77,7 +82,7 @@ impl<'a> FileCtx<'a> {
     }
     
     pub(crate) fn set_current<T: 'static>(&mut self, val: T) {
-        self.current = Some(Box::new(val));
+        self.current = todo!();
     }
     
     pub(crate) fn get_memorized<T: Any>(&self) -> Result<&T, ParseError> {
@@ -91,9 +96,7 @@ impl<'a> FileCtx<'a> {
     }
     
     pub(crate) fn get_current<T: 'static>(&self) -> Option<&T> {
-        self.current
-            .as_ref()
-            .and_then(|b| b.downcast_ref::<T>())
+        todo!()
     }
 }
 

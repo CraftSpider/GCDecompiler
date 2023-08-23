@@ -1,7 +1,8 @@
 use std::marker::PhantomData;
+use gcd_utils::tlist::TList;
 use crate::error::ParseError;
 use crate::parse::FileCtx;
-use crate::{Action, Reader, StaticAction};
+use crate::{Action, Reader};
 
 // Common combinators
 
@@ -10,28 +11,28 @@ pub struct Map<P, F> {
     pub(crate) func: F,
 }
 
-impl<R, F, U> Reader for Map<R, F>
+impl<R, F, U, L: TList> Reader<L> for Map<R, F>
 where
-    R: Reader,
+    R: Reader<L>,
     F: Fn(R::Output) -> U,
 {
     type Output = U;
 
-    fn go(&self, ctx: &mut FileCtx<'_>) -> Result<Self::Output, ParseError> {
+    fn go(&self, ctx: &mut FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         self.inner
             .go(ctx)
             .map(&self.func)
     }
 }
 
-impl<A, F, U> Action for Map<A, F>
+impl<'a, A, F, U, L: TList> Action<'a, L> for Map<A, F>
 where
-    A: Action,
-    F: Fn(A::Output<'_>) -> U,
+    A: Action<'a, L>,
+    F: Fn(A::Output) -> U,
 {
-    type Output<'a> = U;
+    type Output = U;
 
-    fn go<'a>(&self, ctx: &'a FileCtx<'_>) -> Result<Self::Output<'a>, ParseError> {
+    fn go(&self, ctx: &'a FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         self.inner
             .go(ctx)
             .map(&self.func)
@@ -47,17 +48,18 @@ pub struct MapWith<R, A, F, T> {
     pub(crate) _phantom: PhantomData<T>,
 }
 
-impl<R, A, F, T> Reader for MapWith<R, A, F, T>
+impl<'a, R, A, F, T, L: TList> Reader<L> for MapWith<R, A, F, T>
 where
-    R: Reader,
-    A: Action,
-    F: for<'a> Fn(R::Output, A::Output<'a>) -> T,
+    R: Reader<L>,
+    A: Action<'a, L>,
+    F: Fn(R::Output, A::Output) -> T,
 {
     type Output = T;
 
-    fn go(&self, ctx: &mut FileCtx<'_>) -> Result<Self::Output, ParseError> {
+    fn go(&self, ctx: &mut FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         let r = self.inner.go(ctx)?;
         let a = self.action.go(ctx)?;
+        
         Ok((self.func)(r, a))
     }
 }
@@ -74,9 +76,9 @@ pub struct Repeated<R, A> {
 }
 
 impl<R> Repeated<R, ()> {
-    pub fn exactly<A>(self, action: A) -> Repeated<R, RepeatExact<A>>
+    pub fn exactly<A, L: TList>(self, action: A) -> Repeated<R, RepeatExact<A>>
     where
-        A: for<'a> Action<Output<'a> = usize> + 'static
+        A: for<'a> Action<'a, L, Output = usize> + 'static
     {
         Repeated {
             inner: self.inner,
@@ -84,9 +86,9 @@ impl<R> Repeated<R, ()> {
         }
     }
     
-    pub fn until<A>(self, action: A) -> Repeated<R, RepeatUntil<A>>
+    pub fn until<A, L: TList>(self, action: A) -> Repeated<R, RepeatUntil<A>>
     where
-        A: for<'a> Action<Output<'a> = bool> + 'static
+        A: for<'a> Action<'a, L, Output = bool> + 'static
     {
         Repeated {
             inner: self.inner,
@@ -94,10 +96,10 @@ impl<R> Repeated<R, ()> {
         }
     }
     
-    pub fn for_each<I, A>(self, action: A) -> Repeated<R, ForEach<A, I>>
+    pub fn for_each<'a, I, A, L: TList>(self, action: A) -> Repeated<R, ForEach<A, I>>
     where
-        A: StaticAction<I>,
-        I: IntoIterator,
+        A: Action<'a, L, Output = I>,
+        I: IntoIterator + 'a,
     {
         Repeated {
             inner: self.inner,
@@ -106,14 +108,14 @@ impl<R> Repeated<R, ()> {
     }
 }
 
-impl<R, A> Reader for Repeated<R, RepeatExact<A>>
+impl<'a, R, A, L: TList> Reader<L> for Repeated<R, RepeatExact<A>>
 where
-    R: Reader,
-    A: for<'a> Action<Output<'a> = usize>,
+    R: Reader<L>,
+    A: Action<'a, L, Output = usize>,
 {
     type Output = Vec<R::Output>;
 
-    fn go(&self, ctx: &mut FileCtx<'_>) -> Result<Self::Output, ParseError> {
+    fn go(&self, ctx: &mut FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         let num = self.method.0.go(ctx)?;
         (0..num)
             .map(|_| self.inner.go(ctx))
@@ -121,28 +123,28 @@ where
     }
 }
 
-impl<R, A> Reader for Repeated<R, RepeatUntil<A>>
+impl<R, A, L: TList> Reader<L> for Repeated<R, RepeatUntil<A>>
 where
-    R: Reader,
-    A: for<'a> Action<Output<'a> = bool>,
+    R: Reader<L>,
+    A: for<'a> Action<'a, L, Output = bool>,
 {
     type Output = Vec<R>;
 
-    fn go(&self, _: &mut FileCtx<'_>) -> Result<Self::Output, ParseError> {
+    fn go(&self, _: &mut FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         todo!()
     }
 }
 
-impl<R, A, I> Reader for Repeated<R, ForEach<A, I>>
+impl<'a, R, A, I, L: TList> Reader<L> for Repeated<R, ForEach<A, I>>
 where
-    R: Reader,
-    A: StaticAction<I>,
-    I: IntoIterator,
-    I::Item: 'static,
+    R: Reader<L>,
+    A: Action<'a, L, Output = I>,
+    I: IntoIterator + 'a,
+    I::Item: 'a,
 {
     type Output = Vec<R::Output>;
 
-    fn go(&self, ctx: &mut FileCtx<'_>) -> Result<Self::Output, ParseError> {
+    fn go(&self, ctx: &mut FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         let num = self.method.0.go(ctx)?;
         num.into_iter()
             .map(|val| {
@@ -158,14 +160,14 @@ pub struct And<R1, R2> {
     pub(crate) second: R2,
 }
 
-impl<R1, R2> Reader for And<R1, R2>
+impl<R1, R2, L: TList> Reader<L> for And<R1, R2>
 where
-    R1: Reader,
-    R2: Reader,
+    R1: Reader<L>,
+    R2: Reader<L>,
 {
     type Output = R2::Output;
 
-    fn go(&self, ctx: &mut FileCtx<'_>) -> Result<Self::Output, ParseError> {
+    fn go(&self, ctx: &mut FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         self.first.go(ctx)?;
         self.second.go(ctx)
     }
@@ -177,15 +179,15 @@ pub struct JumpAnd<R1, R2, A> {
     pub(crate) pos: A,
 }
 
-impl<R1, R2, A> Reader for JumpAnd<R1, R2, A>
+impl<'a, R1, R2, A, L: TList> Reader<L> for JumpAnd<R1, R2, A>
 where
-    R1: Reader,
-    R2: Reader,
-    A: for<'a> Action<Output<'a> = usize>,
+    R1: Reader<L>,
+    R2: Reader<L>,
+    A: Action<'a, L, Output = usize>,
 {
     type Output = R2::Output;
 
-    fn go(&self, ctx: &mut FileCtx<'_>) -> Result<Self::Output, ParseError> {
+    fn go(&self, ctx: &mut FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         self.first.go(ctx)?;
         let pos = self.pos.go(ctx)?;
         ctx.jump(pos)?;
@@ -199,14 +201,14 @@ pub struct Retrieve<R, A, T> {
     pub(crate) _phantom: PhantomData<T>,
 }
 
-impl<R, A, T: 'static> Reader for Retrieve<R, A, T>
+impl<R, A, T: 'static, L: TList> Reader<L> for Retrieve<R, A, T>
 where
-    R: Reader,
-    A: for<'a> Action<Output<'a> = T>,
+    R: Reader<L>,
+    A: Action<'static, L, Output = T>,
 {
     type Output = T;
     
-    fn go<'a>(&self, ctx: &'a mut FileCtx<'_>) -> Result<Self::Output, ParseError> {
+    fn go<'a>(&self, ctx: &'a mut FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         self.inner.go(ctx)?;
         let out = self.action.go(ctx)?;
         Ok(out)
@@ -217,14 +219,14 @@ pub struct Memorize<R> {
     pub(crate) inner: R,
 }
 
-impl<R> Reader for Memorize<R>
+impl<R, L: TList> Reader<L> for Memorize<R>
 where
-    R: Reader,
+    R: Reader<L>,
     R::Output: 'static,
 {
     type Output = ();
 
-    fn go(&self, ctx: &mut FileCtx<'_>) -> Result<Self::Output, ParseError> {
+    fn go(&self, ctx: &mut FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         let val = self.inner.go(ctx)?;
         ctx.memorize(val)
     }
@@ -236,14 +238,14 @@ pub struct Copied<A> {
     pub(crate) inner: A,
 }
 
-impl<A, T> Action for Copied<A>
+impl<'a, A, T, L: TList> Action<'a, L> for Copied<A>
 where
-    A: for<'a> Action<Output<'a> = &'a T>,
-    T: Copy,
+    A: Action<'a, L, Output = &'a T>,
+    T: Copy + 'a,
 {
-    type Output<'a> = T;
+    type Output = T;
     
-    fn go<'a>(&self, ctx: &'a FileCtx<'_>) -> Result<Self::Output<'a>, ParseError> {
+    fn go(&self, ctx: &'a FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         let out = self.inner.go(ctx)?;
         Ok(*out)
     }
@@ -253,14 +255,14 @@ pub struct Cloned<A> {
     pub(crate) inner: A,
 }
 
-impl<A, T> Action for Cloned<A>
+impl<'a, A, T, L: TList> Action<'a, L> for Cloned<A>
 where
-    A: for<'a> Action<Output<'a> = &'a T>,
-    T: Clone,
+    A: Action<'a, L, Output = &'a T>,
+    T: Clone + 'a,
 {
-    type Output<'a> = T;
+    type Output = T;
 
-    fn go<'a>(&self, ctx: &'a FileCtx<'_>) -> Result<Self::Output<'a>, ParseError> {
+    fn go(&self, ctx: &'a FileCtx<'_, L>) -> Result<Self::Output, ParseError> {
         let out = self.inner.go(ctx)?;
         Ok(out.clone())
     }
